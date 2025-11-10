@@ -1,4 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:go_router/go_router.dart';
+import 'package:quizify_proyek_mmp/pages/auth/landing_page.dart';
+import 'package:quizify_proyek_mmp/pages/auth/login/login_page.dart';
+import 'package:quizify_proyek_mmp/pages/auth/register/register_page.dart';
+import 'package:quizify_proyek_mmp/pages/student/home/home_page.dart';
+import 'package:quizify_proyek_mmp/pages/student/quizzes/quizzes_page.dart';
+import 'package:quizify_proyek_mmp/pages/teacher/home/home_page.dart'
+    as teacher_home;
+import 'package:quizify_proyek_mmp/pages/teacher/manage/manage_page.dart';
+import 'package:quizify_proyek_mmp/widgets/shells.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,59 +20,72 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+    final initialRoute = kIsWeb ? '/' : '/login';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+    final router = GoRouter(
+      initialLocation: initialRoute,
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const LandingPage()),
+        GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+        GoRoute(
+          path: '/register',
+          builder: (context, state) => const RegisterPage(),
+        ),
 
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+        // Student shell with bottom nav (mobile) or navbar+drawer (desktop)
+        ShellRoute(
+          builder: (context, state, child) => StudentShell(child: child),
+          routes: [
+            GoRoute(
+              path: '/student',
+              redirect: (context, state) => '/student/home',
+            ),
+            GoRoute(
+              path: '/student/home',
+              builder: (context, state) => const StudentHomePage(),
+            ),
+            GoRoute(
+              path: '/student/quizzes',
+              builder: (context, state) => const StudentQuizzesPage(),
             ),
           ],
         ),
+
+        // Teacher shell
+        ShellRoute(
+          builder: (context, state, child) => TeacherShell(child: child),
+          routes: [
+            GoRoute(
+              path: '/teacher',
+              redirect: (context, state) => '/teacher/home',
+            ),
+            GoRoute(
+              path: '/teacher/home',
+              builder: (context, state) => const teacher_home.TeacherHomePage(),
+            ),
+            GoRoute(
+              path: '/teacher/manage',
+              builder: (context, state) => const TeacherManagePage(),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    return MaterialApp.router(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+        useMaterial3: true,
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
+          bodyMedium: TextStyle(fontSize: 16),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      routerConfig: router,
     );
   }
 }
