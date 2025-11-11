@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
+import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
 import 'package:quizify_proyek_mmp/pages/auth/landing_page.dart';
 import 'package:quizify_proyek_mmp/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/pages/student/home/home_page.dart';
-import 'package:quizify_proyek_mmp/pages/student/quizzes/quizzes_page.dart';
 import 'package:quizify_proyek_mmp/pages/teacher/home/home_page.dart'
     as teacher_home;
-import 'package:quizify_proyek_mmp/pages/teacher/manage/manage_page.dart';
 import 'package:quizify_proyek_mmp/widgets/shells.dart';
 
 void main() {
@@ -43,11 +42,7 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: '/student/home',
               builder: (context, state) => const StudentHomePage(),
-            ),
-            GoRoute(
-              path: '/student/quizzes',
-              builder: (context, state) => const StudentQuizzesPage(),
-            ),
+            )
           ],
         ),
 
@@ -63,28 +58,14 @@ class MyApp extends StatelessWidget {
               path: '/teacher/home',
               builder: (context, state) => const teacher_home.TeacherHomePage(),
             ),
-            GoRoute(
-              path: '/teacher/manage',
-              builder: (context, state) => const TeacherManagePage(),
-            ),
           ],
         ),
       ],
     );
 
     return MaterialApp.router(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        useMaterial3: true,
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo,
-          ),
-          bodyMedium: TextStyle(fontSize: 16),
-        ),
-      ),
+      title: 'Quizify',
+      theme: AppTheme.mainTheme,
       routerConfig: router,
     );
   }

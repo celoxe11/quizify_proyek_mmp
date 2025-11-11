@@ -5,6 +5,20 @@ class LandingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Quizify'),
+        actions: [
+          FilledButton(onPressed: () {}, child: Text('Login')),
+          OutlinedButton(onPressed: () {}, child: Text('Register')),
+        ],
+      ),
+      body: Center(
+        child: Text(
+          'Landing Page',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
   }
 }
