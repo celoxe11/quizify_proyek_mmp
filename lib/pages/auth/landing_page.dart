@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/widgets/hover_card.dart';
+import 'package:go_router/go_router.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -125,8 +126,7 @@ class LandingPage extends StatelessWidget {
                               horizontal: 24,
                             ),
                           ),
-                          onPressed: () =>
-                              Navigator.pushNamed(context, "/login"),
+                          onPressed: () => context.push('/login'),
                           child: const Text(
                             'Get Started for Free',
                             style: TextStyle(
@@ -151,8 +151,7 @@ class LandingPage extends StatelessWidget {
                               width: 2,
                             ),
                           ),
-                          onPressed: () =>
-                              Navigator.pushNamed(context, "/register"),
+                          onPressed: () => context.push('/register'),
                           child: const Text(
                             'Already Have an Account',
                             style: TextStyle(
@@ -450,7 +449,7 @@ class LandingPage extends StatelessWidget {
         actions: [
           FilledButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/login');
+              context.push('/login');
             },
             child: Text(
               'Login',
@@ -464,7 +463,7 @@ class LandingPage extends StatelessWidget {
               side: BorderSide(color: AppColors.primaryBlue),
             ),
             onPressed: () {
-              Navigator.pushNamed(context, '/register');
+              context.push('/register');
             },
             child: Text(
               'Register',

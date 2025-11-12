@@ -6,9 +6,17 @@ import 'package:quizify_proyek_mmp/pages/auth/landing_page.dart';
 import 'package:quizify_proyek_mmp/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/pages/student/home/home_page.dart';
-import 'package:quizify_proyek_mmp/pages/teacher/home/home_page.dart'
-    as teacher_home;
+import 'package:quizify_proyek_mmp/pages/teacher/home/home_page.dart';
 import 'package:quizify_proyek_mmp/widgets/shells.dart';
+
+// --- Global Navigator Keys (REQUIRED for ShellRoute) ---
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _studentShellNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'studentShell',
+);
+final _teacherShellNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'teacherShell',
+);
 
 void main() {
   runApp(const MyApp());
@@ -23,6 +31,7 @@ class MyApp extends StatelessWidget {
 
     final router = GoRouter(
       initialLocation: initialRoute,
+      navigatorKey: _rootNavigatorKey,
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
         GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
@@ -31,8 +40,12 @@ class MyApp extends StatelessWidget {
           builder: (context, state) => const RegisterPage(),
         ),
 
+        // ------------------------------------------------
+        // Student Shell Route
+        // ------------------------------------------------
         // Student shell with bottom nav (mobile) or navbar+drawer (desktop)
         ShellRoute(
+          navigatorKey: _studentShellNavigatorKey,
           builder: (context, state, child) => StudentShell(child: child),
           routes: [
             GoRoute(
@@ -42,12 +55,15 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: '/student/home',
               builder: (context, state) => const StudentHomePage(),
-            )
+            ),
           ],
         ),
 
-        // Teacher shell
+        // ------------------------------------------------
+        // Teacher Shell Route
+        // ------------------------------------------------
         ShellRoute(
+          navigatorKey: _teacherShellNavigatorKey,
           builder: (context, state, child) => TeacherShell(child: child),
           routes: [
             GoRoute(
@@ -56,7 +72,7 @@ class MyApp extends StatelessWidget {
             ),
             GoRoute(
               path: '/teacher/home',
-              builder: (context, state) => const teacher_home.TeacherHomePage(),
+              builder: (context, state) => const TeacherHomePage(),
             ),
           ],
         ),
