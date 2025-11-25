@@ -16,13 +16,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
     on<LogoutRequested>(_onLogoutRequested);
+    on<GoogleSignInRequested>(_onGoogleSignInRequested);
+    on<UpdateProfileRequested>(_onUpdateProfileRequested);
+    on<PasswordResetRequested>(_onPasswordResetRequested);
   }
 
   Future<void> _onAppStarted(AppStarted event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     try {
-      final user = await _userService.getCurrentUser();
-      if (user == null) {
+      final user = _authRepository.currentUser;
+      if (user.isEmpty) {
         emit(const AuthUnauthenticated());
       } else {
         emit(AuthAuthenticated(user));
@@ -38,7 +41,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      final user = await _userService.registerWithEmailPassword(
+      final user = await _authRepository.register(
         name: event.name,
         username: event.username,
         email: event.email,
@@ -58,7 +61,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      final user = await _userService.signInWithEmailPassword(
+      final user = await _authRepository.logIn(
         email: event.email,
         password: event.password,
       );
@@ -75,7 +78,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      final user = await _userService.signInWithGoogle(role: event.role);
+      final user = await _authRepository.signInWithGoogle(role: event.role);
       emit(AuthAuthenticated(user));
     } catch (e) {
       emit(AuthFailure(e.toString()));
@@ -89,7 +92,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      await _userService.signOut();
+      await _authRepository.logOut();
       emit(const AuthUnauthenticated());
     } catch (e) {
       emit(AuthFailure(e.toString()));
@@ -104,12 +107,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     emit(const AuthLoading());
     try {
-      final updatedUser = await _userService.updateUserProfile(
-        userId: event.userId,
-        name: event.name,
-        username: event.username,
-      );
-      emit(AuthAuthenticated(updatedUser));
+      // TODO: Implement update profile in repository
+      // final updatedUser = await _authRepository.updateProfile(
+      //   userId: event.userId,
+      //   name: event.name,
+      //   username: event.username,
+      // );
+      // emit(AuthAuthenticated(updatedUser));
+      emit(const AuthFailure('Update profile not yet implemented'));
     } catch (e) {
       emit(AuthFailure(e.toString()));
       // Restore previous authenticated state
@@ -124,9 +129,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
-      await _userService.sendPasswordResetEmail(event.email);
-      emit(const PasswordResetSent());
-      emit(const AuthUnauthenticated());
+      // TODO: Implement password reset in repository
+      // await _authRepository.sendPasswordResetEmail(event.email);
+      // emit(const PasswordResetSent());
+      // emit(const AuthUnauthenticated());
+      emit(const AuthFailure('Password reset not yet implemented'));
     } catch (e) {
       emit(AuthFailure(e.toString()));
     }

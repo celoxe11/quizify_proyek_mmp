@@ -10,7 +10,10 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   final AuthApiService _apiService;
 
   // Stream controller to broadcast User Entity updates to the app
-  final _controller = StreamController<User>();
+  final _controller = StreamController<User>.broadcast();
+
+  // Cache the current user
+  User _currentUser = User.empty;
 
   AuthenticationRepositoryImpl({
     AuthService? firebaseAuthService,
@@ -23,13 +26,16 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
         try {
           // If firebase user exists, fetch full profile from MySQL (Node.js)
           final userModel = await _apiService.getUserProfile();
+          _currentUser = userModel;
           _controller.add(userModel);
         } catch (_) {
           // If API fetch fails but Firebase is logged in, you might want to
           // emit User.empty or a cached user.
+          _currentUser = User.empty;
           _controller.add(User.empty);
         }
       } else {
+        _currentUser = User.empty;
         _controller.add(User.empty);
       }
     });
@@ -39,11 +45,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   Stream<User> get user => _controller.stream;
 
   @override
-  User get currentUser {
-    // Note: In a real app, you might want to cache the last known user in a variable
-    // inside this class to return it synchronously.
-    return User.empty;
-  }
+  User get currentUser => _currentUser;
 
   @override
   Future<User> logIn({required String email, required String password}) async {
@@ -95,6 +97,48 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
       // Rollback: If API fails, delete Firebase user to prevent ghost accounts
       try {
         await _firebaseAuthService.deleteAccount();
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  @override
+  Future<User> signInWithGoogle({required String role}) async {
+    try {
+      // 1. Sign in with Google via Firebase
+      final credential = await _firebaseAuthService.signInWithGoogle(
+        role: role,
+      );
+
+      if (credential == null) {
+        throw Exception('Google sign in was cancelled');
+      }
+
+      final firebaseUser = credential.user!;
+
+      // 2. Try to fetch from backend, if user doesn't exist, return Firebase data
+      // The authStateChanges listener will handle syncing with backend
+      try {
+        final userModel = await _apiService.getUserProfile();
+        return userModel;
+      } catch (_) {
+        // User doesn't exist in backend yet, return basic User from Firebase
+        // Note: This user won't have full profile data until backend is synced
+        return User(
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName ?? 'User',
+          username: firebaseUser.email?.split('@')[0] ?? 'user',
+          email: firebaseUser.email ?? '',
+          firebaseUid: firebaseUser.uid,
+          role: role,
+          subscriptionId: 1,
+          isActive: true,
+        );
+      }
+    } catch (e) {
+      // Rollback: Sign out from Firebase if it fails
+      try {
+        await _firebaseAuthService.signOut();
       } catch (_) {}
       rethrow;
     }

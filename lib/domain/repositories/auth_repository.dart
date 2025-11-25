@@ -7,10 +7,7 @@ abstract class AuthenticationRepository {
   /// Returns the current user value synchronously
   User get currentUser;
 
-  Future<User> logIn({
-    required String email,
-    required String password,
-  });
+  Future<User> logIn({required String email, required String password});
 
   Future<User> register({
     required String name,
@@ -19,6 +16,8 @@ abstract class AuthenticationRepository {
     required String password,
     required String role,
   });
+
+  Future<User> signInWithGoogle({required String role});
 
   Future<void> logOut();
 }
