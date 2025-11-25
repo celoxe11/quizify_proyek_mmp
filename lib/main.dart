@@ -3,16 +3,21 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
+import 'package:quizify_proyek_mmp/core/services/auth_api_service.dart';
 import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
-import 'package:quizify_proyek_mmp/pages/auth/landing_page.dart';
-import 'package:quizify_proyek_mmp/pages/auth/login/login_page.dart';
-import 'package:quizify_proyek_mmp/pages/auth/register/register_page.dart';
-import 'package:quizify_proyek_mmp/pages/student/home/home_page.dart';
-import 'package:quizify_proyek_mmp/pages/teacher/home/home_page.dart';
-import 'package:quizify_proyek_mmp/widgets/shells.dart';
-import 'package:quizify_proyek_mmp/blocs/auth/auth_bloc.dart';
-import 'package:quizify_proyek_mmp/blocs/auth/auth_event.dart';
-import 'package:quizify_proyek_mmp/core/services/user_service.dart';
+import 'package:quizify_proyek_mmp/domain/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_event.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/shells.dart';
+// import repository
+import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/core/services/auth_service.dart';
+import 'package:quizify_proyek_mmp/core/services/auth_api_service.dart';
 
 // --- Global Navigator Keys (REQUIRED for ShellRoute) ---
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -26,10 +31,10 @@ final _teacherShellNavigatorKey = GlobalKey<NavigatorState>(
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
   await FirebaseConfig.initialize();
-  
+
   runApp(const MyApp());
 }
 
@@ -90,14 +95,30 @@ class MyApp extends StatelessWidget {
       ],
     );
 
-    return BlocProvider(
-      create: (context) => AuthBloc(
-        userService: UserService(),
-      )..add(const AppStarted()),
-      child: MaterialApp.router(
-        title: 'Quizify',
-        theme: AppTheme.mainTheme,
-        routerConfig: router,
+    return MultiRepositoryProvider(
+      providers: [
+        // 1. Initialize the Repository with its dependencies (Services)
+        RepositoryProvider(
+          create: (context) => AuthenticationRepositoryImpl(
+            firebaseAuthService: AuthService(),
+            apiService: AuthApiService(),
+          ),
+        ),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          // 2. Inject the Repository into the Bloc
+          BlocProvider(
+            create: (context) => AuthBloc(
+              authRepository: context.read<AuthenticationRepository>(),
+            )..add(const AppStarted()),
+          ),
+        ],
+        child: MaterialApp.router(
+          title: 'Quizify',
+          theme: AppTheme.mainTheme,
+          routerConfig: router,
+        ),
       ),
     );
   }
