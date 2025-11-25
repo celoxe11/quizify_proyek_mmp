@@ -1,27 +1,24 @@
+// lib/blocs/auth/auth_bloc.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/services/user_service.dart';
+import '../../../data/repositories/auth_repository.dart'; // Import Repository
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final UserService _userService;
+  // Dependency is now the Repository
+  final AuthenticationRepositoryImpl _authRepository;
 
-  AuthBloc({required UserService userService})
-      : _userService = userService,
-        super(const AuthInitial()) {
+  AuthBloc({required AuthenticationRepositoryImpl authRepository})
+    : _authRepository = authRepository,
+      super(const AuthInitial()) {
     on<AppStarted>(_onAppStarted);
-    on<RegisterRequested>(_onRegisterRequested);
     on<LoginRequested>(_onLoginRequested);
-    on<GoogleSignInRequested>(_onGoogleSignInRequested);
+    on<RegisterRequested>(_onRegisterRequested);
     on<LogoutRequested>(_onLogoutRequested);
-    on<UpdateProfileRequested>(_onUpdateProfileRequested);
-    on<PasswordResetRequested>(_onPasswordResetRequested);
   }
 
-  Future<void> _onAppStarted(
-    AppStarted event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onAppStarted(AppStarted event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     try {
       final user = await _userService.getCurrentUser();
