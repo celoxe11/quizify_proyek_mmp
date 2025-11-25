@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:quizify_proyek_mmp/pages/auth/login/login_desktop.dart';
-import 'package:quizify_proyek_mmp/pages/auth/login/login_mobile.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_desktop.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_mobile.dart';
 
 // a responsive login page that switches between mobile and desktop layouts
 class LoginPage extends StatelessWidget{

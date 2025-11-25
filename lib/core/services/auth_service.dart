@@ -45,34 +45,37 @@ class AuthService {
 
   // Sign in with Google
   Future<UserCredential?> signInWithGoogle({required String role}) async {
-    // Ensure fresh chooser by signing out cached google session
     try {
-      await _googleSignIn.signOut();
-      await _auth.signOut();
-    } catch (_) {}
+      // Ensure fresh chooser by signing out cached google session
+      try {
+        await _googleSignIn.signOut();
+        await _auth.signOut();
+      } catch (_) {}
 
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) return null; // user cancelled
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null; // user cancelled
 
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    final userCredential = await _auth.signInWithCredential(credential);
+      final userCredential = await _auth.signInWithCredential(credential);
 
-    // Send to your backend: userCredential.user!.uid and role
-    // Backend should return existing user if uid exists, or create using supplied role
-    return userCredential;
+      // Send to your backend: userCredential.user!.uid and role
+      // Backend should return existing user if uid exists, or create using supplied role
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      throw _handleFirebaseAuthError(e);
+    } catch (e) {
+      throw Exception('Google sign in failed: ${e.toString()}');
+    }
   }
 
   // Sign out
   Future<void> signOut() async {
-    await Future.wait([
-      _auth.signOut(),
-      _googleSignIn.signOut(),
-    ]);
+    await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
   }
 
   // Send password reset email
@@ -85,10 +88,7 @@ class AuthService {
   }
 
   // Update user profile
-  Future<void> updateProfile({
-    String? displayName,
-    String? photoURL,
-  }) async {
+  Future<void> updateProfile({String? displayName, String? photoURL}) async {
     try {
       final user = _auth.currentUser;
       if (user != null) {

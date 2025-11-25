@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:quizify_proyek_mmp/pages/auth/register/register_desktop.dart';
-import 'package:quizify_proyek_mmp/pages/auth/register/register_mobile.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_desktop.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_mobile.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});

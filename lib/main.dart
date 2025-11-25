@@ -3,17 +3,17 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
-import 'package:quizify_proyek_mmp/core/services/auth_api_service.dart';
 import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
-import 'package:quizify_proyek_mmp/domain/repositories/auth_repository.dart';
+
+// Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_event.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/shells.dart';
+
 // import repository
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/core/services/auth_service.dart';
@@ -110,8 +110,8 @@ class MyApp extends StatelessWidget {
           // 2. Inject the Repository into the Bloc
           BlocProvider(
             create: (context) => AuthBloc(
-              authRepository: context.read<AuthenticationRepository>(),
-            )..add(const AppStarted()),
+              authRepository: context.read<AuthenticationRepositoryImpl>(),
+            ),
           ),
         ],
         child: MaterialApp.router(

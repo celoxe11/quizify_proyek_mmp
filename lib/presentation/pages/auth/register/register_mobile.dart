@@ -226,7 +226,7 @@ class _RegisterMobileState extends State<RegisterMobile> {
                                           ),
                                           const SizedBox(width: 12),
                                           const Text(
-                                            'Sign Up with Google',
+                                            'Sign in with Google',
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,

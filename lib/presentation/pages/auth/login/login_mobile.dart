@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../presentation/blocs/auth/auth_bloc.dart';
 import '../../../../../presentation/blocs/auth/auth_event.dart';
@@ -43,10 +44,7 @@ class _LoginMobileState extends State<LoginMobile> {
     }
 
     context.read<AuthBloc>().add(
-      LoginRequested(
-        email: email,
-        password: password,
-      ),
+      LoginRequested(email: email, password: password),
     );
   }
 
@@ -60,7 +58,9 @@ class _LoginMobileState extends State<LoginMobile> {
     // Google Sign-In for login will fetch existing user from database
     // Role selection is only needed during registration
     context.read<AuthBloc>().add(
-      GoogleSignInRequested(role: 'student'), // Default, will be ignored if user exists
+      GoogleSignInRequested(
+        role: 'student',
+      ), // Default, will be ignored if user exists
     );
   }
 
@@ -69,9 +69,7 @@ class _LoginMobileState extends State<LoginMobile> {
     return Scaffold(
       body: SafeArea(
         child: Container(
-          decoration: const BoxDecoration(
-            color: AppColors.darkAzure,
-          ),
+          decoration: const BoxDecoration(color: AppColors.darkAzure),
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -89,7 +87,7 @@ class _LoginMobileState extends State<LoginMobile> {
                     ),
                   ),
                   const SizedBox(height: 60),
-        
+
                   // Login Container
                   Container(
                     padding: const EdgeInsets.all(32),
@@ -105,15 +103,15 @@ class _LoginMobileState extends State<LoginMobile> {
                           child: const Text(
                             'Login',
                             style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.darkAzure
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.darkAzure,
                             ),
                             // We can remove the redundant 'textAlign: TextAlign.center' now
                           ),
                         ),
                         const SizedBox(height: 24),
-        
+
                         // Email Field
                         const Text(
                           'Email',
@@ -121,7 +119,7 @@ class _LoginMobileState extends State<LoginMobile> {
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: AppColors.darkAzure,
-                          )
+                          ),
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -142,7 +140,7 @@ class _LoginMobileState extends State<LoginMobile> {
                           ),
                         ),
                         const SizedBox(height: 20),
-        
+
                         // Password Field
                         const Text(
                           'Password',
@@ -184,11 +182,11 @@ class _LoginMobileState extends State<LoginMobile> {
                           ),
                         ),
                         const SizedBox(height: 24),
-        
+
                         // Divider
                         Container(height: 1, color: AppColors.darkAzure),
                         const SizedBox(height: 24),
-        
+
                         // Login Button with loading state
                         BlocConsumer<AuthBloc, AuthState>(
                           listener: (context, state) {
@@ -219,13 +217,15 @@ class _LoginMobileState extends State<LoginMobile> {
                                   width: double.infinity,
                                   child: ElevatedButton(
                                     onPressed: _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.darkAzure,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.darkAzure,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
                                     child: const Text(
                                       'Login',
                                       style: TextStyle(
@@ -237,7 +237,7 @@ class _LoginMobileState extends State<LoginMobile> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                
+
                                 // Google Login Button
                                 SizedBox(
                                   width: double.infinity,
@@ -245,13 +245,16 @@ class _LoginMobileState extends State<LoginMobile> {
                                     onPressed: _handleGoogleLogin,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.pureWhite,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         // Google Icon
                                         Image.asset(
@@ -262,7 +265,7 @@ class _LoginMobileState extends State<LoginMobile> {
                                         const SizedBox(width: 10),
                                         // Button Text
                                         const Text(
-                                          'Login with Google',
+                                          'Sign in with Google',
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
@@ -281,7 +284,7 @@ class _LoginMobileState extends State<LoginMobile> {
                     ),
                   ),
                   const SizedBox(height: 32),
-        
+
                   // Register Link
                   GestureDetector(
                     onTap: () => context.push('/register'),

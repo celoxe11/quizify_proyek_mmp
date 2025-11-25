@@ -6,6 +6,9 @@ class ApiException implements Exception {
   final String message;
   final int? statusCode;
   ApiException(this.message, {this.statusCode});
+
+  @override
+  String toString() => message;
 }
 
 class ApiClient {
@@ -17,18 +20,22 @@ class ApiClient {
    *  */
   static const String baseUrl = 'http://10.0.2.2:3000/api';
 
-  Future<Map<String, String>> _getHeaders() async {
-    final user = FirebaseAuth.instance.currentUser;
-    final token = await user?.getIdToken();
+  Future<Map<String, String>> _getHeaders({bool requiresAuth = true}) async {
+    final headers = <String, String>{'Content-Type': 'application/json'};
 
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
+    if (requiresAuth) {
+      final user = FirebaseAuth.instance.currentUser;
+      final token = await user?.getIdToken();
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+    }
+
+    return headers;
   }
 
-  Future<dynamic> get(String endpoint) async {
-    final headers = await _getHeaders();
+  Future<dynamic> get(String endpoint, {bool requiresAuth = true}) async {
+    final headers = await _getHeaders(requiresAuth: requiresAuth);
     final response = await http.get(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
@@ -36,8 +43,12 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
-    final headers = await _getHeaders();
+  Future<dynamic> post(
+    String endpoint,
+    Map<String, dynamic> data, {
+    bool requiresAuth = true,
+  }) async {
+    final headers = await _getHeaders(requiresAuth: requiresAuth);
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
@@ -46,8 +57,12 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
-    final headers = await _getHeaders();
+  Future<dynamic> put(
+    String endpoint,
+    Map<String, dynamic> data, {
+    bool requiresAuth = true,
+  }) async {
+    final headers = await _getHeaders(requiresAuth: requiresAuth);
     final response = await http.put(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
@@ -56,8 +71,8 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  Future<dynamic> delete(String endpoint) async {
-    final headers = await _getHeaders();
+  Future<dynamic> delete(String endpoint, {bool requiresAuth = true}) async {
+    final headers = await _getHeaders(requiresAuth: requiresAuth);
     final response = await http.delete(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
