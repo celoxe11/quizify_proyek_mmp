@@ -21,4 +21,4 @@ key.properties
 
 # Common local JDK folders (if any were placed in the android folder)
 /jdk*/
-
+/jdk-*/
