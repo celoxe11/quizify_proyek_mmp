@@ -12,6 +12,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/shells.dart';
 
 // import repository
@@ -89,6 +90,16 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: '/teacher/home',
               builder: (context, state) => const TeacherHomePage(),
+            ),
+            GoRoute(
+              path: '/teacher/quizzes',
+              builder: (context, state) => const TeacherQuizPage(),
+            ),
+            GoRoute(
+              path: '/teacher/profile',
+              builder: (context, state) => const Scaffold(
+                body: Center(child: Text('Teacher Profile Page')),
+              ),
             ),
           ],
         ),
