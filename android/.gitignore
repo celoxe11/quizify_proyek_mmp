@@ -12,3 +12,13 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Ignore locally downloaded JDKs used by `run-gradle-with-jdk.ps1`
+# This prevents committing the auto-downloaded JDK into the repo.
+/.gradle-jdks/
+.gradle-jdks/
+**/.gradle-jdks/
+
+# Common local JDK folders (if any were placed in the android folder)
+/jdk*/
+
