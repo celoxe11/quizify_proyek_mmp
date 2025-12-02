@@ -1,16 +1,59 @@
 # quizify_proyek_mmp
 
-A new Flutter project.
+A Multiplatform Quiz App with Flutter
 
-## Getting Started
+## Cara Setup buat Development
 
-This project is a starting point for a Flutter application.
+**1. Buka Terminal**
+```bash
+firebase login
+dart pub global activate flutterfire_cli
+flutterfire configure --project=quizify-proyek-mmp
+```
 
-A few resources to get you started if this is your first Flutter project:
+Ini akan menamnbahkan configurasi firebase (google-services.json di android dan GoogleService-Info.plist di ios)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+**2. Install Dependecies**
+```bash
+flutter pub get
+```
+Catatan: Mohon sabar, nunggu errornya hilang agak lama
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**3. Menambahkan fingerprint (SHA) untuk Google Sign-In**
+
+Jalani ini terlebih dahulu untuk mendapatkan file-file gradlenya
+```bash
+flutter create . --platforms=android
+```
+
+Beberapa layanan Firebase (mis. Google Sign-In, Phone Auth, Dynamic Links) memerlukan fingerprint sertifikat aplikasi (SHA-1 dan SHA-256) agar fitur otentikasi berfungsi. Script `run-gradle-with-jdk.ps1` menjalankan Gradle `signingReport` menggunakan JDK 17 yang disediakan lokal (tanpa merubah `JAVA_HOME` sistem), lalu menampilkan fingerprint yang dipakai untuk menandatangani APK.
+
+Jalankan perintah ini dari root proyek:
+```powershell
+cd android
+.\run-gradle-with-jdk.ps1 signingReport
+```
+
+Salin nilai **SHA-1** dan **SHA-256** yang muncul di output, lalu tambahkan ke Firebase Console:
+- Buka Firebase Console → Project settings → General → pada bagian "Your apps" pilih aplikasi Android → klik "Add fingerprint"
+- Tempelkan **SHA-1** dan simpan; ulangi untuk **SHA-256**
+- Setelah menambahkan fingerprint, unduh ulang `google-services.json` dari Firebase dan ganti file di `android/app/google-services.json`
+- Rebuild aplikasi agar konfigurasi baru diterapkan
+
+Catatan: Untuk build production gunakan fingerprint dari release keystore. Jika memakai Play App Signing, tambahkan fingerprint App signing certificate dari Play Console (bukan upload key). 
+
+
+
+4. Jalankan backend, pull dari https://github.com/celoxe11/Quizify-Web-Service-Proyek-WS-
+```bash
+npm i
+node seeder
+```
+
+``` bash
+npm run dev 
+
+// atau
+
+npx nodemon index
+```
