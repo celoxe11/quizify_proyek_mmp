@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:quizify_proyek_mmp/pages/auth/register/register_desktop.dart';
-import 'package:quizify_proyek_mmp/pages/auth/register/register_mobile.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_desktop.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_mobile.dart';
 
-class RegisterPage extends StatelessWidget {
-  const RegisterPage({super.key});
-
+// a responsive login page that switches between mobile and desktop layouts
+class LoginPage extends StatelessWidget{
+  const LoginPage({super.key});
+  
   // Define the common breakpoint for the application
   static const double _kMobileBreakpoint = 600;
 
@@ -15,11 +16,11 @@ class RegisterPage extends StatelessWidget {
 
     // Use the mobile design if the width is less than the breakpoint
     if (isMobile) {
-      return const RegisterMobile();
-    }
+      return const LoginMobile();
+    } 
     // Otherwise, use the desktop design
     else {
-      return const RegisterDesktop();
+      return const LoginDesktop();
     }
   }
 }

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 
 // Hoverable card wrapper used for web/desktop to animate border, shadow and slight lift on pointer hover.
 class HoverCardWrapper extends StatefulWidget {
   final Widget child;
-  const HoverCardWrapper({required this.child, Key? key}) : super(key: key);
+  const HoverCardWrapper({required this.child, super.key});
 
   @override
   State<HoverCardWrapper> createState() => HoverCardWrapperState();

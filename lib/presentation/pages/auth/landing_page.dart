@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
-import 'package:quizify_proyek_mmp/widgets/hover_card.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/hover_card.dart';
 import 'package:go_router/go_router.dart';
 
 class LandingPage extends StatelessWidget {
