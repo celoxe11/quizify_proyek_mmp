@@ -11,7 +11,16 @@ dart pub global activate flutterfire_cli
 flutterfire configure --project=quizify-proyek-mmp
 ```
 
-Ini akan menamnbahkan configurasi firebase (google-services.json di android dan GoogleService-Info.plist di ios)
+Ini akan menamnbahkan configurasi firebase (`google-services.json` di `android`)
+
+*Seharusnya bisa nambahin `GoogleService-Info.plist` di ios, tapi entah kenapa gk bisa.*
+
+Jadi kalau mau run di `ios` atau `macos`, tambahkan secara manual file `GoogleService-Info.plist` ke `ios/Runner`
+Unduh filenya ada di:
+- Firebase Console > Project Settings
+- Scroll ke Your Apps
+- Pilih Apple Apps
+- Download `GoogleService-Info.plist`
 
 **2. Install Dependecies**
 ```bash
