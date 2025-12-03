@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import '../../../../../core/constants/app_colors.dart';
-import '../../../../../presentation/blocs/auth/auth_bloc.dart';
-import '../../../../../presentation/blocs/auth/auth_event.dart';
+import '../login/login_common.dart';
 
 class LoginMobile extends StatefulWidget {
   const LoginMobile({super.key});
@@ -33,35 +30,15 @@ class _LoginMobileState extends State<LoginMobile> {
   }
 
   void _handleLogin() {
-    String email = _usernameController.text.trim();
-    String password = _passwordController.text;
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
-    context.read<AuthBloc>().add(
-      LoginRequested(email: email, password: password),
+    LoginActions.handleLogin(
+      context,
+      email: _usernameController.text.trim(),
+      password: _passwordController.text,
     );
   }
 
   void _handleGoogleLogin() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please register first if you don\'t have an account'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    // Google Sign-In for login will fetch existing user from database
-    // Role selection is only needed during registration
-    context.read<AuthBloc>().add(
-      GoogleSignInRequested(
-        role: 'student',
-      ), // Default, will be ignored if user exists
-    );
+    LoginActions.handleGoogleLogin(context);
   }
 
   @override
@@ -188,97 +165,73 @@ class _LoginMobileState extends State<LoginMobile> {
                         const SizedBox(height: 24),
 
                         // Login Button with loading state
-                        BlocConsumer<AuthBloc, AuthState>(
-                          listener: (context, state) {
-                            if (state is AuthAuthenticated) {
-                              // Navigate based on user role
-                              if (state.user.role == 'student') {
-                                context.go('/student/home');
-                              } else {
-                                context.go('/teacher/home');
-                              }
-                            } else if (state is AuthFailure) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(state.message)),
-                              );
-                            }
-                          },
-                          builder: (context, state) {
-                            if (state is AuthLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.darkAzure,
-                                ),
-                              );
-                            }
-                            return Column(
-                              children: [
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: _handleLogin,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.darkAzure,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                        LoginListener(
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _handleLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.darkAzure,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
                                     ),
-                                    child: const Text(
-                                      'Login',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.pureWhite,
-                                      ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.pureWhite,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                              ),
+                              const SizedBox(height: 12),
 
-                                // Google Login Button
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: _handleGoogleLogin,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.pureWhite,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                              // Google Login Button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _handleGoogleLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.pureWhite,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        // Google Icon
-                                        Image.asset(
-                                          "assets/icons/google_icon.png",
-                                          height: 20,
-                                          width: 20,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        // Button Text
-                                        const Text(
-                                          'Sign in with Google',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.darkAzure,
-                                          ),
-                                        ),
-                                      ],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // Google Icon
+                                      Image.asset(
+                                        "assets/icons/google_icon.png",
+                                        height: 20,
+                                        width: 20,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      // Button Text
+                                      const Text(
+                                        'Sign in with Google',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.darkAzure,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            );
-                          },
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -287,7 +240,7 @@ class _LoginMobileState extends State<LoginMobile> {
 
                   // Register Link
                   GestureDetector(
-                    onTap: () => context.push('/register'),
+                    onTap: () => context.go('/register'),
                     child: const Text(
                       "Don't have an account? Register",
                       style: TextStyle(

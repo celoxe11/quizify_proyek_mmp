@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'home_mobile.dart';
-import 'home_desktop.dart';
+import 'quiz_mobile.dart';
+import 'quiz_desktop.dart';
 
-class TeacherHomePage extends StatelessWidget {
-  const TeacherHomePage({super.key});
+class TeacherQuizPage extends StatelessWidget {
+  const TeacherQuizPage({super.key});
 
   static const double _kMobileBreakpoint = 600;
 
@@ -13,9 +13,9 @@ class TeacherHomePage extends StatelessWidget {
     final isMobile = width < _kMobileBreakpoint;
 
     if (isMobile) {
-      return const TeacherHomeMobile();
+      return const TeacherQuizMobile();
     } else {
-      return const TeacherHomeDesktop();
+      return const TeacherQuizDesktop();
     }
   }
 }
