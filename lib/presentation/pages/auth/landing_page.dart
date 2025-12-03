@@ -58,34 +58,42 @@ class LandingPage extends StatelessWidget {
           Widget leftContent = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IntrinsicWidth(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.dirtyCyan,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.question_mark_rounded,
-                        size: 16,
-                        color: AppColors.darkAzure,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
+              // responsive badge: fills available width on small screens and
+              // stays compact on larger screens without causing overflow.
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.dirtyCyan,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 6.0,
+                ),
+                constraints: BoxConstraints(
+                  maxWidth: isNarrow ? double.infinity : 520,
+                ),
+                child: Row(
+                  mainAxisSize: isNarrow ? MainAxisSize.max : MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.question_mark_rounded,
+                      size: 16,
+                      color: AppColors.darkAzure,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: Text(
                         'Playful Quizzes for Teachers and Student in all platforms',
                         style: textTheme.bodyMedium!.copyWith(
                           color: AppColors.darkAzure,
                           fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -151,7 +159,7 @@ class LandingPage extends StatelessWidget {
                               width: 2,
                             ),
                           ),
-                          onPressed: () => context.push('/register'),
+                          onPressed: () => context.go('/register'),
                           child: const Text(
                             'Already Have an Account',
                             style: TextStyle(
@@ -364,35 +372,66 @@ class LandingPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Column(
+          // Responsive header + action: stacks vertically on small screens
+          LayoutBuilder(
+            builder: (context, headerConstraints) {
+              final bool isNarrowHeader = headerConstraints.maxWidth < 700;
+              final title = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     "Explore public quizzes",
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: isNarrowHeader ? 20 : 32,
                       fontWeight: FontWeight.w900,
                       color: AppColors.darkAzure,
                     ),
                   ),
+                  const SizedBox(height: 6),
                   Text(
                     "Browse community-created quizzes and try a sample game.",
-                    style: TextStyle(fontSize: 16, color: AppColors.darkAzure),
+                    style: TextStyle(
+                      fontSize: isNarrowHeader ? 14 : 16,
+                      color: AppColors.darkAzure,
+                    ),
                   ),
                 ],
-              ),
-              FilledButton(
-                onPressed: () {},
-                child: Text(
-                  "Login to Play",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              );
+
+              final actionButton = FilledButton(
+                onPressed: () => context.push('/login'),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: isNarrowHeader ? 12 : 8,
+                    horizontal: isNarrowHeader ? 0 : 12,
+                  ),
+                  child: Text(
+                    "Login to Play",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isNarrowHeader ? 16 : 18,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              );
+
+              if (isNarrowHeader) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    title,
+                    const SizedBox(height: 12),
+                    SizedBox(width: double.infinity, child: actionButton),
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [title, actionButton],
+              );
+            },
           ),
           SizedBox(height: 24), // Add spacing between title and content
           // Compute column count and card width so cards fill the available width evenly

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../blocs/auth/auth_bloc.dart';
-import '../../../blocs/auth/auth_event.dart';
-import '../../../blocs/auth/auth_state.dart';
+import '../register/register_common.dart';
 
 class RegisterMobile extends StatefulWidget {
   const RegisterMobile({super.key});
@@ -31,50 +28,19 @@ class _RegisterMobileState extends State<RegisterMobile> {
   }
 
   Future<void> _handleRegister() async {
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-
-    if (name.isEmpty ||
-        email.isEmpty ||
-        username.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
-      return;
-    }
-
-    if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters')),
-      );
-      return;
-    }
-
-    context.read<AuthBloc>().add(
-      RegisterRequested(
-        name: name,
-        username: username,
-        email: email,
-        password: password,
-        role: _selectedRole,
-      ),
+    await RegisterActions.handleRegisterSubmit(
+      context,
+      name: _nameController.text.trim(),
+      username: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      confirmPassword: _confirmPasswordController.text,
+      role: _selectedRole,
     );
   }
 
   void _handleGoogleSignIn() {
-    context.read<AuthBloc>().add(GoogleSignInRequested(role: _selectedRole));
+    RegisterActions.handleGoogleSignIn(context, role: _selectedRole);
   }
 
   @override
@@ -120,133 +86,103 @@ class _RegisterMobileState extends State<RegisterMobile> {
                           ),
                           const SizedBox(height: 24),
                           _buildInputField('Name', _nameController),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           _buildInputField('Email', _emailController),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           _buildInputField('Username', _usernameController),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           _buildInputField(
                             'Password',
                             _passwordController,
                             isPassword: true,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           _buildInputField(
                             'Confirm Password',
                             _confirmPasswordController,
                             isPassword: true,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           _buildRoleSelector(),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 8),
                           Divider(
                             color: Colors.white.withOpacity(0.2),
                             thickness: 1,
                           ),
-                          const SizedBox(height: 20),
-                          BlocConsumer<AuthBloc, AuthState>(
-                            listener: (context, state) {
-                              if (state is AuthAuthenticated) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Registration successful!'),
-                                  ),
-                                );
-                                // Use role from returned user to decide navigation
-                                final role = state.user.role;
-                                // Navigate based on role
-                                if (role == 'student') {
-                                  context.go('/student/home');
-                                } else {
-                                  context.go('/teacher/home');
-                                }
-                              } else if (state is AuthFailure) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(state.message)),
-                                );
-                              }
-                            },
-                            builder: (context, state) {
-                              if (state is AuthLoading) {
-                                return const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Color(0xFF7DD3C0),
-                                  ),
-                                );
-                              }
-                              return Column(
-                                children: [
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 50,
-                                    child: ElevatedButton(
-                                      onPressed: _handleRegister,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF7DD3C0,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
+                          const SizedBox(height: 8),
+                          RegisterListener(
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: ElevatedButton(
+                                    onPressed: _handleRegister,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
                                       ),
-                                      child: const Text(
-                                        'Register',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF0F5A6B),
-                                        ),
+                                      backgroundColor: const Color(0xFF7DD3C0),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Register',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F5A6B),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 50,
-                                    child: ElevatedButton(
-                                      onPressed: _handleGoogleSignIn,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: ElevatedButton(
+                                    onPressed: _handleGoogleSignIn,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
                                       ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Image.asset(
-                                            'assets/icons/google_icon.png',
-                                            height: 24,
-                                            width: 24,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          const Text(
-                                            'Sign in with Google',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
+                                      backgroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Image.asset(
+                                          'assets/icons/google_icon.png',
+                                          height: 24,
+                                          width: 24,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Text(
+                                          'Sign in with Google',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ],
-                              );
-                            },
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
                     GestureDetector(
-                      onTap: () => context.push("/login"),
+                      onTap: () => context.go("/login"),
                       child: const Text(
                         'Already have an account? Login',
                         style: TextStyle(

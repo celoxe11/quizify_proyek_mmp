@@ -65,7 +65,8 @@ class TeacherShell extends StatelessWidget {
   const TeacherShell({required this.child, super.key});
 
   int _indexFromLocation(String loc) {
-    if (loc.startsWith('/teacher/manage')) return 1;
+    if (loc.startsWith('/teacher/quizzes')) return 1;
+    if (loc.startsWith('/teacher/profile')) return 2;
     return 0;
   }
 
@@ -76,28 +77,59 @@ class TeacherShell extends StatelessWidget {
 
     if (isDesktop) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Teacher')),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const DrawerHeader(child: Text('Teacher Menu')),
-              ListTile(
-                leading: const Icon(Icons.home),
-                title: const Text('Home'),
-                selected: currentIndex == 0,
-                onTap: () => context.go('/teacher/home'),
+        body: Row(
+          children: [
+            // Sidebar with NavigationRail
+            NavigationRail(
+              selectedIndex: currentIndex,
+              onDestinationSelected: (index) {
+                switch (index) {
+                  case 0:
+                    context.go('/teacher/home');
+                    break;
+                  case 1:
+                    context.go('/teacher/quizzes');
+                    break;
+                  case 2:
+                    context.go('/teacher/profile');
+                    break;
+                }
+              },
+              labelType: NavigationRailLabelType.all,
+              backgroundColor: const Color(0xFF0D6B7A),
+              selectedIconTheme: const IconThemeData(
+                color: Colors.white,
+                size: 28,
               ),
-              ListTile(
-                leading: const Icon(Icons.manage_accounts),
-                title: const Text('Manage'),
-                selected: currentIndex == 1,
-                onTap: () => context.go('/teacher/manage'),
+              selectedLabelTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
+              unselectedIconTheme: const IconThemeData(
+                color: Colors.white70,
+                size: 24,
+              ),
+              unselectedLabelTextStyle: const TextStyle(color: Colors.white70),
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.home),
+                  label: Text('Home'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.quiz),
+                  label: Text('Quizzes'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.person),
+                  label: Text('Profile'),
+                ),
+              ],
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            // Main content area
+            Expanded(child: child),
+          ],
         ),
-        body: child,
       );
     }
 
@@ -105,16 +137,26 @@ class TeacherShell extends StatelessWidget {
       body: child,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF0D6B7A),
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.manage_accounts),
-            label: 'Manage',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quizzes'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         onTap: (i) {
-          if (i == 0) context.go('/teacher/home');
-          if (i == 1) context.go('/teacher/manage');
+          switch (i) {
+            case 0:
+              context.go('/teacher/home');
+              break;
+            case 1:
+              context.go('/teacher/quizzes');
+              break;
+            case 2:
+              context.go('/teacher/profile');
+              break;
+          }
         },
       ),
     );

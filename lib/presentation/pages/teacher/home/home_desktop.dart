@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 
-class TeacherHomeMobile extends StatefulWidget {
-  const TeacherHomeMobile({super.key});
+class TeacherHomeDesktop extends StatefulWidget {
+  const TeacherHomeDesktop({super.key});
 
   @override
-  State<TeacherHomeMobile> createState() => _TeacherHomeMobileState();
+  State<TeacherHomeDesktop> createState() => _TeacherHomeDesktopState();
 }
 
-class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
+class _TeacherHomeDesktopState extends State<TeacherHomeDesktop> {
   final TextEditingController _searchController = TextEditingController();
 
   // Dummy data for recommended quizzes
@@ -88,6 +88,7 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
       appBar: AppBar(
         backgroundColor: AppColors.darkAzure,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Quizify',
           style: TextStyle(
@@ -103,97 +104,93 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
               // TODO: Navigate to shop
             },
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Recommended Quizzes Section
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Recommended Quizzes',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Recommended Quizzes Section
+              const Text(
+                'Recommended Quizzes',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkAzure,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _recommendedQuizzes.length,
+                  itemBuilder: (context, index) {
+                    final quiz = _recommendedQuizzes[index];
+                    return _buildRecommendedCard(quiz);
+                  },
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // All Quizzes Section
+              const Text(
+                'All Quizzes',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkAzure,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Search Bar
+              SizedBox(
+                width: 600,
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search quizzes...',
+                    prefixIcon: const Icon(
+                      Icons.search,
                       color: AppColors.darkAzure,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 180,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _recommendedQuizzes.length,
-                      itemBuilder: (context, index) {
-                        final quiz = _recommendedQuizzes[index];
-                        return _buildRecommendedCard(quiz);
-                      },
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 24),
 
-            const SizedBox(height: 8),
-
-            // All Quizzes Section with Search
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'All Quizzes',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkAzure,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Search Bar
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search quizzes...',
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AppColors.darkAzure,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Quiz Cards List
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _allQuizzes.length,
-                    itemBuilder: (context, index) {
-                      final quiz = _allQuizzes[index];
-                      return _buildQuizCard(quiz);
-                    },
-                  ),
-                ],
+              // Quiz Grid
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 20,
+                  childAspectRatio: 1.5,
+                ),
+                itemCount: _allQuizzes.length,
+                itemBuilder: (context, index) {
+                  final quiz = _allQuizzes[index];
+                  return _buildQuizCard(quiz);
+                },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -201,21 +198,21 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
 
   Widget _buildRecommendedCard(Map<String, dynamic> quiz) {
     return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 16),
+      width: 320,
+      margin: const EdgeInsets.only(right: 20),
       decoration: BoxDecoration(
         color: quiz['color'],
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -226,16 +223,16 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
                 Text(
                   quiz['title'],
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   quiz['description'],
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: Colors.white.withOpacity(0.9),
                   ),
                 ),
@@ -246,26 +243,28 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.quiz, color: Colors.white, size: 18),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.quiz, color: Colors.white, size: 20),
+                    const SizedBox(width: 6),
                     Text(
-                      '${quiz['questions']} Q',
+                      '${quiz['questions']} Questions',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
                 Row(
                   children: [
-                    const Icon(Icons.people, color: Colors.white, size: 18),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.people, color: Colors.white, size: 20),
+                    const SizedBox(width: 6),
                     Text(
                       '${quiz['participants']}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -295,20 +294,19 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -319,16 +317,19 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
                   child: Text(
                     quiz['title'],
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.darkAzure,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
                     color: difficultyColor.withOpacity(0.1),
@@ -350,13 +351,10 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
               quiz['subject'],
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
-            const SizedBox(height: 12),
+            const Spacer(),
             Row(
               children: [
-                _buildQuizInfo(
-                  Icons.quiz_outlined,
-                  '${quiz['questions']} questions',
-                ),
+                _buildQuizInfo(Icons.quiz_outlined, '${quiz['questions']} Q'),
                 const SizedBox(width: 16),
                 _buildQuizInfo(Icons.access_time, quiz['duration']),
               ],
@@ -372,7 +370,7 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
       children: [
         Icon(icon, size: 16, color: Colors.grey[600]),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(text, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
       ],
     );
   }
