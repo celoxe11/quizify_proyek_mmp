@@ -33,171 +33,120 @@ class LandingPage extends StatelessWidget {
         horizontal: isMobileWidth ? 16.0 : 32.0,
         vertical: isMobileWidth ? 28.0 : 72.0,
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isNarrow = constraints.maxWidth < 800;
-
-          Widget mediaBlock = AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: AppColors.darkGrayAzure,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  color: AppColors.surfaceLight,
-                  size: 72,
-                ),
-              ),
-            ),
-          );
-
-          Widget leftContent = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // responsive badge: fills available width on small screens and
-              // stays compact on larger screens without causing overflow.
+              // Badge centered
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.dirtyCyan,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 8.0,
-                  vertical: 6.0,
-                ),
-                constraints: BoxConstraints(
-                  maxWidth: isNarrow ? double.infinity : 520,
+                  horizontal: 12.0,
+                  vertical: 8.0,
                 ),
                 child: Row(
-                  mainAxisSize: isNarrow ? MainAxisSize.max : MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.question_mark_rounded,
-                      size: 16,
+                      size: 18,
                       color: AppColors.darkAzure,
                     ),
                     const SizedBox(width: 8),
                     Flexible(
-                      fit: FlexFit.loose,
                       child: Text(
-                        'Playful Quizzes for Teachers and Student in all platforms',
+                        'Playful Quizzes for Teachers and Students in all platforms',
                         style: textTheme.bodyMedium!.copyWith(
                           color: AppColors.darkAzure,
                           fontWeight: FontWeight.w600,
                         ),
+                        textAlign: TextAlign.center,
                         softWrap: true,
-                        overflow: TextOverflow.visible,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
+              // Main heading centered
               Text(
                 'Engage your class with live, multiplayer quizzes',
                 style: textTheme.headlineLarge!.copyWith(
                   fontWeight: FontWeight.w900,
                   color: AppColors.darkAzure,
-                  fontSize: isNarrow ? 28.0 : 52.0,
+                  fontSize: isMobileWidth ? 32.0 : 56.0,
                   height: 1.1,
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(height: 16),
+
+              // Description centered
               Text(
                 'Create stunning quizzes, host them live, and invite students with a simple code. Public or private — your call.',
                 style: textTheme.titleMedium!.copyWith(
                   color: AppColors.darkTurquoise,
+                  fontSize: isMobileWidth ? 16.0 : 18.0,
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
 
-              LayoutBuilder(
-                builder: (context, buttonConstraints) {
-                  final btnNarrow =
-                      buttonConstraints.maxWidth < 520 || isNarrow;
-                  return Wrap(
-                    spacing: 16,
-                    runSpacing: 12,
-                    children: [
-                      SizedBox(
-                        width: btnNarrow ? buttonConstraints.maxWidth : null,
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 24,
-                            ),
-                          ),
-                          onPressed: () => context.push('/login'),
-                          child: const Text(
-                            'Get Started for Free',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
+              const SizedBox(height: 32),
 
-                      SizedBox(
-                        width: btnNarrow ? buttonConstraints.maxWidth : null,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 24,
-                            ),
-                            foregroundColor: AppColors.primaryBlue,
-                            side: BorderSide(
-                              color: AppColors.primaryBlue,
-                              width: 2,
-                            ),
-                          ),
-                          onPressed: () => context.go('/register'),
-                          child: const Text(
-                            'Already Have an Account',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+              // Buttons centered
+              Wrap(
+                spacing: 16,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 32,
                       ),
-                    ],
-                  );
-                },
+                    ),
+                    onPressed: () => context.push('/login'),
+                    child: const Text(
+                      'Get Started for Free',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 32,
+                      ),
+                      foregroundColor: AppColors.primaryBlue,
+                      side: BorderSide(color: AppColors.primaryBlue, width: 2),
+                    ),
+                    onPressed: () => context.go('/register'),
+                    child: const Text(
+                      'Already Have an Account',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          );
-
-          if (isNarrow) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [leftContent, const SizedBox(height: 20), mediaBlock],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 6, child: leftContent),
-              const SizedBox(width: 32),
-              Expanded(
-                flex: 5,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [mediaBlock],
-                ),
-              ),
-            ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }

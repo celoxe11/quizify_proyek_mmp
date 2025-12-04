@@ -5,6 +5,22 @@ import '../../core/services/auth_api_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
+// Exception thrown when Google user needs to select a role
+class NeedsRoleSelectionException implements Exception {
+  final String firebaseUid;
+  final String name;
+  final String email;
+
+  NeedsRoleSelectionException({
+    required this.firebaseUid,
+    required this.name,
+    required this.email,
+  });
+
+  @override
+  String toString() => 'User needs to select a role';
+}
+
 class AuthenticationRepositoryImpl implements AuthenticationRepository {
   final AuthService _firebaseAuthService;
   final AuthApiService _apiService;
@@ -47,14 +63,22 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   @override
   User get currentUser => _currentUser;
 
+  Future<void> _refreshAuthToken() async {
+    // Passing 'true' forces the token to be refreshed from Firebase
+    await _firebaseAuthService.currentUser?.getIdTokenResult(true);
+  }
+
   @override
-  Future<User> logIn({required String email, required String password}) async {
+  Future<User> login({required String email, required String password}) async {
     try {
       // 1. Authenticate with Firebase
       await _firebaseAuthService.signInWithEmailPassword(
         email: email,
         password: password,
       );
+
+      // REFRESH TOKEN to get any custom claims
+      await _refreshAuthToken();
 
       // 2. Fetch MySQL Data (The stream listener above will also trigger,
       // but returning it here allows the UI to await the specific login action)
@@ -89,6 +113,9 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
         role: role,
       );
 
+      //REFRESH TOKEN to get the newly set custom claims
+      await _refreshAuthToken();
+
       // 3. Update Firebase Display Name
       await _firebaseAuthService.updateProfile(displayName: name);
 
@@ -103,11 +130,11 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   }
 
   @override
-  Future<User> signInWithGoogle({required String role}) async {
+  Future<User> signInWithGoogle({String? role}) async {
     try {
-      // 1. Sign in with Google via Firebase
+      // 1. Sign in with Google via Firebase FIRST (no role needed yet)
       final credential = await _firebaseAuthService.signInWithGoogle(
-        role: role,
+        role: role ?? '', // Pass empty string if no role
       );
 
       if (credential == null) {
@@ -116,26 +143,31 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
 
       final firebaseUser = credential.user!;
 
-      // 2. Try to fetch from backend, if user doesn't exist, return Firebase data
-      // The authStateChanges listener will handle syncing with backend
-      try {
-        final userModel = await _apiService.getUserProfile();
-        return userModel;
-      } catch (_) {
-        // User doesn't exist in backend yet, return basic User from Firebase
-        // Note: This user won't have full profile data until backend is synced
-        return User(
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName ?? 'User',
-          username: firebaseUser.email?.split('@')[0] ?? 'user',
-          email: firebaseUser.email ?? '',
-          firebaseUid: firebaseUser.uid,
-          role: role,
-          subscriptionId: 1,
-          isActive: true,
-        );
+      // REFRESH TOKEN to get any custom claims
+      await _refreshAuthToken();
+
+      // 2. Check if user exists in MySQL
+      final existingUser = await _apiService.checkGoogleUserExists(
+        firebaseUser.uid,
+      );
+
+      if (existingUser != null) {
+        // User exists - return them directly (existing user logging in)
+        return existingUser;
       }
+
+      // 3. New user - they need to select a role
+      // Throw a special exception that the bloc will catch
+      throw NeedsRoleSelectionException(
+        firebaseUid: firebaseUser.uid,
+        name: firebaseUser.displayName ?? 'User',
+        email: firebaseUser.email ?? '',
+      );
     } catch (e) {
+      // Don't rollback if user needs role selection
+      if (e is NeedsRoleSelectionException) {
+        rethrow;
+      }
       // Rollback: Sign out from Firebase if it fails
       try {
         await _firebaseAuthService.signOut();
@@ -144,8 +176,33 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     }
   }
 
+  // New method for completing Google sign-in with role (called from role selection)
+  Future<User> completeGoogleSignInWithRole({
+    required String firebaseUid,
+    required String name,
+    required String email,
+    required String role,
+  }) async {
+    try {
+      // User already authenticated with Firebase, just create in MySQL
+      final userModel = await _apiService.googleSignIn(
+        name: name,
+        email: email,
+        firebaseUid: firebaseUid,
+        role: role,
+      );
+
+      // REFRESH TOKEN to get the newly set custom claims
+      await _refreshAuthToken();
+
+      return userModel;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   @override
-  Future<void> logOut() async {
+  Future<void> logout() async {
     await _firebaseAuthService.signOut();
     _controller.add(User.empty);
   }
