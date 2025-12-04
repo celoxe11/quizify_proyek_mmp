@@ -34,22 +34,36 @@ class LoginRequested extends AuthEvent {
   final String email;
   final String password;
 
-  const LoginRequested({
-    required this.email,
-    required this.password,
-  });
+  const LoginRequested({required this.email, required this.password});
 
   @override
   List<Object?> get props => [email, password];
 }
 
 class GoogleSignInRequested extends AuthEvent {
-  final String role;
+  final String? role;
 
-  const GoogleSignInRequested({required this.role});
+  const GoogleSignInRequested({this.role});
 
   @override
   List<Object?> get props => [role];
+}
+
+class CompleteGoogleSignInRequested extends AuthEvent {
+  final String firebaseUid;
+  final String name;
+  final String email;
+  final String role;
+
+  const CompleteGoogleSignInRequested({
+    required this.firebaseUid,
+    required this.name,
+    required this.email,
+    required this.role,
+  });
+
+  @override
+  List<Object?> get props => [firebaseUid, name, email, role];
 }
 
 class LogoutRequested extends AuthEvent {

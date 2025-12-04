@@ -26,19 +26,9 @@ class LoginActions {
   }
 
   static void handleGoogleLogin(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please register first if you don\'t have an account'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    // Google Sign-In for login will fetch existing user from database
-    // Role selection is only needed during registration
-    context.read<AuthBloc>().add(
-      GoogleSignInRequested(
-        role: 'student',
-      ), // Default, will be ignored if user exists
-    );
+    // For login, check if user exists first
+    // If user doesn't exist, they'll need to register
+    context.read<AuthBloc>().add(GoogleSignInRequested());
   }
 }
 
@@ -59,6 +49,17 @@ class LoginListener extends StatelessWidget {
           } else {
             context.go('/teacher/home');
           }
+        } else if (state is AuthRequiresRoleSelection) {
+          // New Google user from login - navigate to role selection
+          context.go(
+            '/role-selection',
+            extra: {
+              'isGoogleSignIn': true,
+              'firebaseUid': state.firebaseUid,
+              'name': state.name,
+              'email': state.email,
+            },
+          );
         } else if (state is AuthFailure) {
           ScaffoldMessenger.of(
             context,

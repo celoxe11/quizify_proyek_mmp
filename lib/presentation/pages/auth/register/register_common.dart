@@ -8,6 +8,7 @@ import '../../../blocs/auth/auth_state.dart';
 
 /// Shared registration actions and listener used by mobile/desktop implementations
 class RegisterActions {
+  /// Navigate to role selection with user data (for email/password registration)
   static Future<void> handleRegisterSubmit(
     BuildContext context, {
     required String name,
@@ -15,7 +16,6 @@ class RegisterActions {
     required String email,
     required String password,
     required String confirmPassword,
-    required String role,
   }) async {
     // Basic validation (match mobile behaviour)
     if (name.isEmpty ||
@@ -43,20 +43,22 @@ class RegisterActions {
       return;
     }
 
-    // Dispatch register event
-    context.read<AuthBloc>().add(
-      RegisterRequested(
-        name: name,
-        username: username,
-        email: email,
-        password: password,
-        role: role,
-      ),
+    // Navigate to role selection with user data
+    context.push(
+      '/role-selection',
+      extra: {
+        'name': name,
+        'username': username,
+        'email': email,
+        'password': password,
+      },
     );
   }
 
-  static void handleGoogleSignIn(BuildContext context, {required String role}) {
-    context.read<AuthBloc>().add(GoogleSignInRequested(role: role));
+  /// Trigger Google Sign-In directly (will check if user exists)
+  static void handleGoogleSignIn(BuildContext context) {
+    // Dispatch Google sign-in without role - bloc will check if user exists
+    context.read<AuthBloc>().add(const GoogleSignInRequested());
   }
 }
 
@@ -80,6 +82,17 @@ class RegisterListener extends StatelessWidget {
           } else {
             context.go('/teacher/home');
           }
+        } else if (state is AuthRequiresRoleSelection) {
+          // New Google user - navigate to role selection
+          context.go(
+            '/role-selection',
+            extra: {
+              'isGoogleSignIn': true,
+              'firebaseUid': state.firebaseUid,
+              'name': state.name,
+              'email': state.email,
+            },
+          );
         } else if (state is AuthFailure) {
           ScaffoldMessenger.of(
             context,
