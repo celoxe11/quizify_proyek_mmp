@@ -56,8 +56,14 @@ Catatan: Untuk build production gunakan fingerprint dari release keystore. Jika 
 4. Jalankan backend, pull dari https://github.com/celoxe11/Quizify-Web-Service-Proyek-WS-
 ```bash
 npm i
+```
+
+Lalu taruh `serviceAccountKey.json` ke project root backend
+
+```bash
 node seeder
 ```
+Lakukan command ini untuk sinkronasi user yang di firebase ke MySQL
 
 ``` bash
 npm run dev 
