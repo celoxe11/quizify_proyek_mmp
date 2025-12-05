@@ -72,7 +72,7 @@ class _EnterQuizNamePageState extends State<EnterQuizNamePage> {
                     ),
                   ),
                   child: Text(
-                    'Submit',
+                    'Create New Quiz',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

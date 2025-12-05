@@ -15,8 +15,10 @@ import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_s
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher_shell.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/student_shell.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/admin_shell.dart';
 
 // import repository
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
@@ -30,6 +32,9 @@ final _studentShellNavigatorKey = GlobalKey<NavigatorState>(
 );
 final _teacherShellNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'teacherShell',
+);
+final _adminShellNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'adminShell',
 );
 
 void main() async {
@@ -108,6 +113,42 @@ class MyApp extends StatelessWidget {
               builder: (context, state) => const Scaffold(
                 body: Center(child: Text('Teacher Profile Page')),
               ),
+            ),
+          ],
+        ),
+
+        // ------------------------------------------------
+        // Admin Shell Route
+        // ------------------------------------------------
+        ShellRoute(
+          navigatorKey: _adminShellNavigatorKey,
+          builder: (context, state, child) => AdminShell(child: child),
+          routes: [
+            GoRoute(
+              path: '/admin',
+              redirect: (context, state) => '/admin/dashboard',
+            ),
+            GoRoute(
+              path: '/admin/dashboard',
+              builder: (context, state) => const AdminHomePage(),
+            ),
+            GoRoute(
+              path: '/admin/users',
+              builder: (context, state) =>
+                  // TODO: Replace with actual Users Management Page
+                  const Scaffold(body: Center(child: Text('Users Management'))),
+            ),
+            GoRoute(
+              path: '/admin/analytics',
+              builder: (context, state) =>
+                  // TODO: Replace with actual Analytics Page
+                  const Scaffold(body: Center(child: Text('Analytics'))),
+            ),
+            GoRoute(
+              path: '/admin/settings',
+              builder: (context, state) =>
+                  // TODO: Replace with actual Settings Page
+                  const Scaffold(body: Center(child: Text('Settings'))),
             ),
           ],
         ),
