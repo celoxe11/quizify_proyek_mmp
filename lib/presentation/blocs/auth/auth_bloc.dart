@@ -17,6 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<RegisterRequested>(_onRegisterRequested);
     on<LogoutRequested>(_onLogoutRequested);
     on<GoogleSignInRequested>(_onGoogleSignInRequested);
+    on<CompleteGoogleSignInRequested>(_onCompleteGoogleSignInRequested);
     on<UpdateProfileRequested>(_onUpdateProfileRequested);
     on<PasswordResetRequested>(_onPasswordResetRequested);
   }
@@ -61,7 +62,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      final user = await _authRepository.logIn(
+      final user = await _authRepository.login(
         email: event.email,
         password: event.password,
       );
@@ -78,7 +79,40 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
+      // Call Google sign-in - it will check if user exists
       final user = await _authRepository.signInWithGoogle(role: event.role);
+      emit(AuthAuthenticated(user));
+    } catch (e) {
+      // Check if user needs role selection (new Google user)
+      if (e is NeedsRoleSelectionException) {
+        // Emit state requiring role selection with user data
+        emit(
+          AuthRequiresRoleSelection(
+            firebaseUid: e.firebaseUid,
+            name: e.name,
+            email: e.email,
+          ),
+        );
+      } else {
+        emit(AuthFailure(e.toString()));
+        emit(const AuthUnauthenticated());
+      }
+    }
+  }
+
+  Future<void> _onCompleteGoogleSignInRequested(
+    CompleteGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      // Complete Google sign-in by creating user with selected role
+      final user = await _authRepository.completeGoogleSignInWithRole(
+        firebaseUid: event.firebaseUid,
+        name: event.name,
+        email: event.email,
+        role: event.role,
+      );
       emit(AuthAuthenticated(user));
     } catch (e) {
       emit(AuthFailure(e.toString()));
@@ -92,7 +126,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      await _authRepository.logOut();
+      await _authRepository.logout();
       emit(const AuthUnauthenticated());
     } catch (e) {
       emit(AuthFailure(e.toString()));

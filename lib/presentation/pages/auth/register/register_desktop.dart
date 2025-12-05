@@ -17,7 +17,6 @@ class _RegisterDesktopState extends State<RegisterDesktop> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String _selectedRole = 'student'; // Default role
 
   @override
   void dispose() {
@@ -37,12 +36,11 @@ class _RegisterDesktopState extends State<RegisterDesktop> {
       email: _emailController.text.trim(),
       password: _passwordController.text,
       confirmPassword: _confirmPasswordController.text,
-      role: _selectedRole,
     );
   }
 
   void _handleGoogleSignIn() {
-    RegisterActions.handleGoogleSignIn(context, role: _selectedRole);
+    RegisterActions.handleGoogleSignIn(context);
   }
 
   @override
@@ -133,10 +131,7 @@ class _RegisterDesktopState extends State<RegisterDesktop> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          const SizedBox(height: 8),
-                          _buildRoleSelector(),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 16),
                           Divider(
                             color: Colors.white.withOpacity(0.2),
                             thickness: 1,
@@ -271,6 +266,7 @@ class _RegisterDesktopState extends State<RegisterDesktop> {
               ? TextInputType.emailAddress
               : TextInputType.text,
           decoration: InputDecoration(
+            hintText: 'Enter your $label',
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
@@ -280,45 +276,6 @@ class _RegisterDesktopState extends State<RegisterDesktop> {
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoleSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'I am a',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedRole,
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(value: 'student', child: Text('Student')),
-                DropdownMenuItem(value: 'teacher', child: Text('Teacher')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedRole = value!;
-                });
-              },
             ),
           ),
         ),

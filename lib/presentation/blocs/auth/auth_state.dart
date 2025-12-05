@@ -38,6 +38,22 @@ class AuthFailure extends AuthState {
   List<Object?> get props => [message];
 }
 
+// New state: Google user authenticated but needs to select role
+class AuthRequiresRoleSelection extends AuthState {
+  final String firebaseUid;
+  final String name;
+  final String email;
+
+  const AuthRequiresRoleSelection({
+    required this.firebaseUid,
+    required this.name,
+    required this.email,
+  });
+
+  @override
+  List<Object?> get props => [firebaseUid, name, email];
+}
+
 class PasswordResetSent extends AuthState {
   const PasswordResetSent();
 }

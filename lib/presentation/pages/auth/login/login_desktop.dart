@@ -11,20 +11,20 @@ class LoginDesktop extends StatefulWidget {
 }
 
 class _LoginDesktopState extends State<LoginDesktop> {
-  late TextEditingController _usernameController;
+  late TextEditingController _emailController;
   late TextEditingController _passwordController;
   bool _isPasswordVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _usernameController = TextEditingController();
+    _emailController = TextEditingController();
     _passwordController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -32,7 +32,7 @@ class _LoginDesktopState extends State<LoginDesktop> {
   void _handleLogin() {
     LoginActions.handleLogin(
       context,
-      email: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
       password: _passwordController.text,
     );
   }
@@ -101,7 +101,7 @@ class _LoginDesktopState extends State<LoginDesktop> {
                       children: [
                         // Username field
                         Text(
-                          'Username',
+                          'Email',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -109,7 +109,7 @@ class _LoginDesktopState extends State<LoginDesktop> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        _buildTextField(_usernameController, 'Enter username'),
+                        _buildTextField(_emailController, 'Enter your email'),
                         const SizedBox(height: 24),
                         // Password field
                         Text(
@@ -121,7 +121,7 @@ class _LoginDesktopState extends State<LoginDesktop> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        _buildPasswordField(),
+                        _buildPasswordField('Enter your password'),
                         const SizedBox(height: 32),
                         // Buttons row
                         LoginListener(
@@ -243,12 +243,12 @@ class _LoginDesktopState extends State<LoginDesktop> {
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(String hint) {
     return TextField(
       controller: _passwordController,
       obscureText: !_isPasswordVisible,
       decoration: InputDecoration(
-        hintText: 'Enter password',
+        hintText: hint,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
