@@ -13,6 +13,8 @@ import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_selection_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
@@ -107,6 +109,14 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: '/teacher/quizzes',
               builder: (context, state) => const TeacherQuizPage(),
+            ),
+            GoRoute(
+              path: "/teacher/new-quiz",
+              builder: (context, state) => const TeacherEnterQuizNamePage(),
+            ),
+            GoRoute(
+              path: "/teacher/create-quiz",
+              builder: (context, state) => const TeacherCreateQuizPage(),
             ),
             GoRoute(
               path: '/teacher/profile',

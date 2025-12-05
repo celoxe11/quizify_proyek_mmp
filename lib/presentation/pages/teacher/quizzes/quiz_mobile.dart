@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 
 class TeacherQuizMobile extends StatefulWidget {
@@ -94,11 +95,7 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
             child: ElevatedButton.icon(
               onPressed: () {
                 // TODO: Navigate to create quiz page
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Create new quiz functionality coming soon!'),
-                  ),
-                );
+                context.go("/teacher/new-quiz");
               },
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
