@@ -11,20 +11,20 @@ class LoginMobile extends StatefulWidget {
 }
 
 class _LoginMobileState extends State<LoginMobile> {
-  late TextEditingController _usernameController;
+  late TextEditingController _emailController;
   late TextEditingController _passwordController;
   bool _isPasswordVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _usernameController = TextEditingController();
+    _emailController = TextEditingController();
     _passwordController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -32,7 +32,7 @@ class _LoginMobileState extends State<LoginMobile> {
   void _handleLogin() {
     LoginActions.handleLogin(
       context,
-      email: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
       password: _passwordController.text,
     );
   }
@@ -100,7 +100,7 @@ class _LoginMobileState extends State<LoginMobile> {
                         ),
                         const SizedBox(height: 8),
                         TextField(
-                          controller: _usernameController,
+                          controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'Enter your email',

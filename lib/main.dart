@@ -7,13 +7,16 @@ import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
 
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_selection_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
-import 'package:quizify_proyek_mmp/presentation/widgets/shells.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/teacher_shell.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/student_shell.dart';
 
 // import repository
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
@@ -55,6 +58,11 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegisterPage(),
+        ),
+        GoRoute(
+          path: '/role-selection',
+          builder: (context, state) =>
+              RoleSelectionPage(userData: state.extra as Map<String, dynamic>?),
         ),
 
         // ------------------------------------------------
@@ -125,10 +133,18 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ],
-        child: MaterialApp.router(
-          title: 'Quizify',
-          theme: AppTheme.mainTheme,
-          routerConfig: router,
+        child: BlocListener<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthUnauthenticated) {
+              // Navigate to login when logged out
+              router.go('/login');
+            }
+          },
+          child: MaterialApp.router(
+            title: 'Quizify',
+            theme: AppTheme.mainTheme,
+            routerConfig: router,
+          ),
         ),
       ),
     );
