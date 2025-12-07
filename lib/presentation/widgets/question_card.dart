@@ -24,7 +24,7 @@ class QuestionCard extends StatefulWidget {
 class _QuestionCardState extends State<QuestionCard> {
   late TextEditingController _questionController;
   late TextEditingController _correctAnswerController;
-  late List<TextEditingController> _incorrectControllers;
+  late List<TextEditingController> _incorrectControllers = [];
 
   @override
   void initState() {
@@ -35,13 +35,29 @@ class _QuestionCardState extends State<QuestionCard> {
     _correctAnswerController = TextEditingController(
       text: widget.question.correctAnswer,
     );
-    // Extract incorrect answers from options (all options except correct answer)
+
     final incorrectAnswers = widget.question.options
         .where((opt) => opt != widget.question.correctAnswer)
         .toList();
+
+    final int targetCount = widget.question.type == 'boolean' ? 1 : 3;
+
+    while (incorrectAnswers.length < targetCount) {
+      incorrectAnswers.add('');
+    }
+
+    if (incorrectAnswers.length > targetCount) {
+      incorrectAnswers.removeRange(targetCount, incorrectAnswers.length);
+    }
+
     _incorrectControllers = incorrectAnswers
         .map((ans) => TextEditingController(text: ans))
         .toList();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final allOptions = [_correctAnswerController.text, ...incorrectAnswers];
+      widget.onUpdate(widget.question.copyWith(options: allOptions));
+    });
   }
 
   @override
@@ -58,7 +74,7 @@ class _QuestionCardState extends State<QuestionCard> {
     // Combine correct answer with incorrect answers to create options list
     final incorrectAnswers = _incorrectControllers.map((c) => c.text).toList();
     final allOptions = [_correctAnswerController.text, ...incorrectAnswers];
-    
+
     widget.onUpdate(
       widget.question.copyWith(
         questionText: _questionController.text,
@@ -118,7 +134,10 @@ class _QuestionCardState extends State<QuestionCard> {
                       final incorrectAnswers = value == 'boolean'
                           ? [''] // Only 1 incorrect answer for boolean
                           : ['', '', '']; // 3 incorrect answers for multiple
-                      final allOptions = [_correctAnswerController.text, ...incorrectAnswers];
+                      final allOptions = [
+                        _correctAnswerController.text,
+                        ...incorrectAnswers,
+                      ];
                       widget.onUpdate(
                         widget.question.copyWith(
                           type: value,
