@@ -8,11 +8,14 @@ import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/create_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_selection_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
@@ -54,7 +57,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initialRoute = kIsWeb ? '/' : '/login';
+    // final initialRoute = kIsWeb ? '/' : '/login';
+    final initialRoute = '/admin/dashboard';
 
     final router = GoRouter(
       initialLocation: initialRoute,
@@ -87,6 +91,10 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: '/student/home',
               builder: (context, state) => const StudentHomePage(),
+            ),
+            GoRoute(
+              path: '/student/join-quiz',
+              builder: (context, state) => const JoinQuizPage(),
             ),
           ],
         ),
@@ -147,6 +155,14 @@ class MyApp extends StatelessWidget {
               builder: (context, state) =>
                   // TODO: Replace with actual Users Management Page
                   const Scaffold(body: Center(child: Text('Users Management'))),
+            ),
+            GoRoute(
+              path: '/admin/quizzes',
+              builder: (context, state) => const AdminQuizPage(),
+            ),
+            GoRoute(
+              path: '/admin/quizz/create',
+              builder: (context, state) => const AdminCreateQuizPage(),
             ),
             GoRoute(
               path: '/admin/analytics',
