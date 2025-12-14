@@ -1,59 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_state.dart';
 
-class TeacherQuizMobile extends StatefulWidget {
+/// Mobile layout for the Quizzes page.
+///
+/// Uses BLoC pattern for state management.
+/// Data flows from [QuizzesBloc] via [QuizzesState].
+class TeacherQuizMobile extends StatelessWidget {
   const TeacherQuizMobile({super.key});
-
-  @override
-  State<TeacherQuizMobile> createState() => _TeacherQuizMobileState();
-}
-
-class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
-  // Dummy quiz data using QuizModel
-  final List<QuizModel> _quizzes = [
-    QuizModel(
-      id: '1',
-      title: 'Math Quiz 101',
-      description: 'Basic algebra and geometry questions',
-      status: 'public',
-      category: 'Mathematics',
-      createdAt: DateTime(2024, 11, 15),
-    ),
-    QuizModel(
-      id: '2',
-      title: 'Science Challenge',
-      description: 'Physics and Chemistry fundamentals',
-      status: 'public',
-      category: 'Science',
-      createdAt: DateTime(2024, 11, 20),
-    ),
-    QuizModel(
-      id: '3',
-      title: 'History Trivia',
-      description: 'World War II historical events',
-      status: 'private',
-      category: 'History',
-      createdAt: DateTime(2024, 11, 22),
-    ),
-    QuizModel(
-      id: '4',
-      title: 'English Grammar',
-      description: 'Advanced grammar rules and usage',
-      status: 'public',
-      category: 'English',
-      createdAt: DateTime(2024, 11, 25),
-    ),
-    QuizModel(
-      id: '5',
-      title: 'Programming Basics',
-      description: 'Introduction to programming concepts',
-      status: 'public',
-      category: 'Technology',
-      createdAt: DateTime(2024, 11, 28),
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -71,34 +30,78 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          // Refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () {
+              context.read<QuizzesBloc>().add(RefreshQuizzesEvent());
+            },
+            tooltip: 'Refresh',
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           context.go('/teacher/new-quiz');
         },
-        child: const Icon(Icons.add),
+        backgroundColor: AppColors.darkAzure,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: Column(
-        children: [
-          // Quiz List
-          Expanded(
-            child: _quizzes.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _quizzes.length,
-                    itemBuilder: (context, index) {
-                      final quiz = _quizzes[index];
-                      return _buildQuizCard(quiz);
-                    },
-                  ),
-          ),
-        ],
+      body: BlocBuilder<QuizzesBloc, QuizzesState>(
+        builder: (context, state) {
+          if (state is QuizzesLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
+            );
+          }
+
+          if (state is QuizzesError) {
+            return _buildErrorState(context, state.message);
+          }
+
+          if (state is QuizzesLoaded) {
+            return _buildContent(context, state);
+          }
+
+          // Initial state
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildContent(BuildContext context, QuizzesLoaded state) {
+    if (state.filteredQuizzes.isEmpty) {
+      return _buildEmptyState(context, state);
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<QuizzesBloc>().add(RefreshQuizzesEvent());
+        // Wait a bit for the refresh to complete
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      color: AppColors.darkAzure,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: state.filteredQuizzes.length,
+        itemBuilder: (context, index) {
+          final quiz = state.filteredQuizzes[index];
+          return _buildQuizCard(context, quiz);
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, QuizzesLoaded state) {
+    final hasFilters =
+        state.searchQuery != null ||
+        state.statusFilter != null ||
+        state.categoryFilter != null;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -106,7 +109,7 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
           Icon(Icons.quiz_outlined, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No quizzes yet',
+            hasFilters ? 'No quizzes match your filters' : 'No quizzes yet',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -115,15 +118,72 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Create your first quiz to get started',
+            hasFilters
+                ? 'Try adjusting your filters'
+                : 'Create your first quiz to get started',
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          if (hasFilters) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () {
+                context.read<QuizzesBloc>().add(const FilterQuizzesEvent(null));
+                context.read<QuizzesBloc>().add(
+                  const FilterByCategoryEvent(null),
+                );
+                context.read<QuizzesBloc>().add(const SearchQuizzesEvent(''));
+              },
+              icon: const Icon(Icons.clear),
+              label: const Text('Clear Filters'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load quizzes',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<QuizzesBloc>().add(LoadQuizzesEvent());
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.darkAzure,
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuizCard(QuizModel quiz) {
+  Widget _buildQuizCard(BuildContext context, QuizModel quiz) {
     final isPublic = quiz.status.toLowerCase() == 'public';
     Color statusColor = isPublic ? Colors.green : Colors.orange;
 
@@ -255,16 +315,5 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
-  Widget _buildQuizInfo(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-      ],
-    );
   }
 }
