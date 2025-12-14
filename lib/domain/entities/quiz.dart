@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'question.dart';
 
 class Quiz extends Equatable {
   final String id;

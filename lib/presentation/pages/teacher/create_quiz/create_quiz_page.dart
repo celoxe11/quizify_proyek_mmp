@@ -22,6 +22,7 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _codeController;
+  late final TextEditingController _categoryController;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
     _codeController = TextEditingController(text: _generateQuizCode());
+    _categoryController = TextEditingController();
   }
 
   @override
@@ -36,19 +38,22 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _codeController.dispose();
+    _categoryController.dispose();
     super.dispose();
   }
 
   void _addQuestion() {
     setState(() {
-      _questions.add(QuestionModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        type: 'multiple',
-        difficulty: 'easy',
-        questionText: '',
-        correctAnswer: '',
-        options: ['', '', '', ''],
-      ));
+      _questions.add(
+        QuestionModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          type: 'multiple',
+          difficulty: 'easy',
+          questionText: '',
+          correctAnswer: '',
+          options: ['', '', '', ''],
+        ),
+      );
     });
   }
 
@@ -98,7 +103,7 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.dirtyCyan,
       appBar: AppBar(
         backgroundColor: AppColors.darkAzure,
         elevation: 0,
@@ -146,7 +151,7 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                          // Quiz Title and Public Switch
+                        // Quiz Title and Public Switch
                         Row(
                           children: [
                             Expanded(
@@ -218,6 +223,37 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
                         ),
 
                         const SizedBox(height: 20.0),
+                        const Divider(),
+                        const SizedBox(height: 16.0),
+
+                        // Category Field
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.category,
+                              color: AppColors.darkAzure,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _categoryController,
+                                decoration: const InputDecoration(
+                                  hintText:
+                                      'Category (e.g., Science, Math, History)',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.darkAzure,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16.0),
                         const Divider(),
                         const SizedBox(height: 16.0),
 

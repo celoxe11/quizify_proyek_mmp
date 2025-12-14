@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import '../../domain/entities/quiz.dart';
 
 class QuizModel extends Quiz {
