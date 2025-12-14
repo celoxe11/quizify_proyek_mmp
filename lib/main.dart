@@ -3,11 +3,17 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
 import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
+import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/edit_quiz/edit_quiz_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_event.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
@@ -117,19 +123,43 @@ class MyApp extends StatelessWidget {
               path: '/teacher/home',
               builder: (context, state) => const TeacherHomePage(),
             ),
+            // Quizzes Page with BLoC Provider
             GoRoute(
               path: '/teacher/quizzes',
-              builder: (context, state) => const TeacherQuizPage(),
+              builder: (context, state) {
+                return BlocProvider(
+                  create: (context) => QuizzesBloc()..add(LoadQuizzesEvent()),
+                  child: const TeacherQuizPage(),
+                );
+              },
             ),
+            // Quiz Detail Page with BLoC Provider
             GoRoute(
               path: '/teacher/quiz-detail',
-              builder: (context, state) =>
-                  TeacherQuizDetailPage(quiz: state.extra as QuizModel),
+              builder: (context, state) {
+                final quiz = state.extra as QuizModel;
+                return BlocProvider(
+                  create: (context) =>
+                      QuizDetailBloc()
+                        ..add(LoadQuizDetailEvent(quizId: quiz.id)),
+                  child: TeacherQuizDetailPage(quiz: quiz),
+                );
+              },
             ),
             GoRoute(
               path: "/teacher/quiz-detail/edit",
-              builder: (context, state) =>
-                  TeacherEditQuizPage(quiz: state.extra as QuizModel),
+              builder: (context, state) {
+                final data = state.extra as Map<String, dynamic>;
+                final quiz = data['quiz'] as QuizModel;
+                final questions = data['questions'] as List<QuestionModel>;
+                return BlocProvider(
+                  create: (context) => EditQuizBloc()
+                    ..add(
+                      InitializeEditQuizEvent(quiz: quiz, questions: questions),
+                    ),
+                  child: TeacherEditQuizPage(quiz: quiz, questions: questions),
+                );
+              },
             ),
             GoRoute(
               path: "/teacher/quiz-detail/answers",

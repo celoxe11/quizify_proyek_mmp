@@ -1,443 +1,106 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import "package:quizify_proyek_mmp/core/constants/app_colors.dart";
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/edit_quiz/edit_quiz_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/question_card.dart';
 
 /// Edit Quiz Page - Allows teachers to edit an existing quiz.
 ///
-/// This page receives a [QuizModel] and pre-fills all fields with existing data.
-/// Questions are loaded from the database based on the quiz ID.
+/// Uses BLoC pattern for state management:
+/// - [EditQuizBloc] handles all business logic
+/// - [EditQuizState] contains the current state
+/// - [EditQuizEvent] triggers state changes
 ///
-/// TODOs for backend integration:
-/// - Load questions from database in [_loadQuestions]
-/// - Implement [_saveQuiz] to update quiz in database
-/// - Implement [_deleteQuestion] to remove question from database
-/// - Add validation before saving
-class TeacherEditQuizPage extends StatefulWidget {
-  const TeacherEditQuizPage({super.key, required this.quiz});
+/// The page receives quiz and questions from the route and initializes
+/// the BLoC with this data via [InitializeEditQuizEvent].
+class TeacherEditQuizPage extends StatelessWidget {
+  const TeacherEditQuizPage({
+    super.key,
+    required this.quiz,
+    required this.questions,
+  });
 
-  /// The quiz to be edited. All fields will be pre-filled with this data.
+  /// The quiz to be edited. Used as initial data.
   final QuizModel quiz;
+
+  /// The initial questions for this quiz.
+  final List<QuestionModel> questions;
 
   static const double _kDesktopMaxWidth = 900;
   static const double _kMobileBreakpoint = 600;
 
   @override
-  State<TeacherEditQuizPage> createState() => _TeacherEditQuizPageState();
-}
-
-class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
-  // ============================================================
-  // State Variables
-  // ============================================================
-
-  /// List of questions for this quiz. Loaded from database on init.
-  final List<QuestionModel> _questions = [];
-
-  /// Whether the quiz is public or private.
-  late bool _isPublic;
-
-  /// Controller for quiz title input.
-  late final TextEditingController _titleController;
-
-  /// Controller for quiz description input.
-  late final TextEditingController _descriptionController;
-
-  /// Controller for quiz code display.
-  late final TextEditingController _codeController;
-
-  /// Controller for quiz category input.
-  late final TextEditingController _categoryController;
-
-  /// Loading state for questions.
-  bool _isLoadingQuestions = false;
-
-  /// Saving state for quiz updates.
-  bool _isSaving = false;
-
-  /// Track if there are unsaved changes.
-  bool _hasChanges = false;
-
-  // ============================================================
-  // Lifecycle Methods
-  // ============================================================
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeControllers();
-    _loadQuestions();
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _codeController.dispose();
-    _categoryController.dispose();
-    super.dispose();
-  }
-
-  /// Initialize all text controllers with existing quiz data.
-  void _initializeControllers() {
-    // Pre-fill title from existing quiz
-    _titleController = TextEditingController(text: widget.quiz.title);
-
-    // Pre-fill description from existing quiz
-    _descriptionController = TextEditingController(
-      text: widget.quiz.description ?? '',
-    );
-
-    // TODO: Replace with actual quiz code field when added to QuizModel
-    // For now, use first 8 characters of quiz ID as code
-    final quizCode = widget.quiz.id.length >= 8
-        ? widget.quiz.id.substring(0, 8).toUpperCase()
-        : widget.quiz.id.toUpperCase();
-    _codeController = TextEditingController(text: quizCode);
-
-    // Pre-fill category from existing quiz
-    _categoryController = TextEditingController(
-      text: widget.quiz.category ?? '',
-    );
-
-    // Pre-fill public status from existing quiz
-    _isPublic = widget.quiz.status.toLowerCase() == 'public';
-
-    // Add listeners to track changes
-    _titleController.addListener(_onFieldChanged);
-    _descriptionController.addListener(_onFieldChanged);
-    _categoryController.addListener(_onFieldChanged);
-  }
-
-  /// Called when any field changes to track unsaved changes.
-  void _onFieldChanged() {
-    if (!_hasChanges) {
-      setState(() {
-        _hasChanges = true;
-      });
-    }
-  }
-
-  // ============================================================
-  // Data Loading Methods
-  // ============================================================
-
-  /// Load questions from database for this quiz.
-  ///
-  /// TODO: Implement backend call to load questions
-  /// Example implementation:
-  /// ```dart
-  /// final questions = await questionRepository.getByQuizId(widget.quiz.id);
-  /// setState(() {
-  ///   _questions.addAll(questions);
-  ///   _isLoadingQuestions = false;
-  /// });
-  /// ```
-  Future<void> _loadQuestions() async {
-    setState(() {
-      _isLoadingQuestions = true;
-    });
-
-    // TODO: Replace with actual backend call
-    // final questions = await questionRepository.getByQuizId(widget.quiz.id);
-
-    // Simulate loading delay for development
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // TODO: Populate _questions with loaded data
-    // _questions.addAll(questions.cast<QuestionModel>());
-
-    // If quiz already has questions loaded, use them
-    if (widget.quiz.questions.isNotEmpty) {
-      _questions.addAll(widget.quiz.questions.cast<QuestionModel>());
-    }
-
-    setState(() {
-      _isLoadingQuestions = false;
-    });
-  }
-
-  // ============================================================
-  // Question Management Methods
-  // ============================================================
-
-  /// Add a new empty question to the quiz.
-  void _addQuestion() {
-    setState(() {
-      _questions.add(
-        QuestionModel(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          quizId: widget.quiz.id, // Link to current quiz
-          type: 'multiple',
-          difficulty: 'easy',
-          questionText: '',
-          correctAnswer: '',
-          options: ['', '', '', ''],
-        ),
-      );
-      _hasChanges = true;
-    });
-  }
-
-  /// Update a question at the specified index.
-  void _updateQuestion(int index, QuestionModel updatedQuestion) {
-    setState(() {
-      if (index >= 0 && index < _questions.length) {
-        _questions[index] = updatedQuestion;
-        _hasChanges = true;
-      }
-    });
-  }
-
-  /// Remove a question at the specified index.
-  ///
-  /// TODO: Implement backend call to delete question
-  /// If the question exists in the database (has a valid ID),
-  /// make an API call to delete it.
-  void _removeQuestion(int index) {
-    // TODO: Uncomment and use when implementing backend deletion
-    // final question = _questions[index];
-    // if (question.id != null) {
-    //   await questionRepository.delete(question.id);
-    // }
-
-    setState(() {
-      _questions.removeAt(index);
-      _hasChanges = true;
-    });
-  }
-
-  // ============================================================
-  // Save & Update Methods
-  // ============================================================
-
-  /// Save all changes to the quiz and questions.
-  ///
-  /// TODO: Implement backend calls to update quiz and questions
-  ///
-  /// Steps to implement:
-  /// 1. Validate all fields
-  /// 2. Update quiz in database
-  /// 3. Update/create/delete questions as needed
-  /// 4. Show success/error message
-  /// 5. Navigate back to quiz detail page
-  Future<void> _saveQuiz() async {
-    // Validate required fields
-    if (_titleController.text.trim().isEmpty) {
-      _showErrorSnackBar('Please enter a quiz title');
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      // TODO: Create updated quiz model
-      // final updatedQuiz = widget.quiz.copyWith(
-      //   title: _titleController.text.trim(),
-      //   description: _descriptionController.text.trim(),
-      //   category: _categoryController.text.trim().isEmpty
-      //       ? null
-      //       : _categoryController.text.trim(),
-      //   status: _isPublic ? 'public' : 'private',
-      //   updatedAt: DateTime.now(),
-      // );
-
-      // TODO: Update quiz in database
-      // await quizRepository.update(updatedQuiz);
-
-      // TODO: Update/create questions
-      // for (final question in _questions) {
-      //   if (question.id.startsWith('temp_')) {
-      //     // New question - create
-      //     await questionRepository.create(question.copyWith(quizId: widget.quiz.id));
-      //   } else {
-      //     // Existing question - update
-      //     await questionRepository.update(question);
-      //   }
-      // }
-
-      // Simulate save delay for development
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Quiz updated successfully!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
-
-        // Navigate back to quiz detail page
-        // TODO: Pass updated quiz data back
-        context.pop();
-      }
-    } catch (e) {
-      // TODO: Handle specific error types
-      _showErrorSnackBar('Failed to save quiz: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
-  }
-
-  /// Show error message in a snackbar.
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
-
-  // ============================================================
-  // Utility Methods
-  // ============================================================
-
-  /// Copy quiz code to clipboard.
-  void _copyCodeToClipboard() {
-    Clipboard.setData(ClipboardData(text: _codeController.text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Quiz code copied to clipboard!'),
-        backgroundColor: AppColors.darkAzure,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
-
-  /// Show confirmation dialog when user tries to leave with unsaved changes.
-  Future<bool> _onWillPop() async {
-    if (!_hasChanges) return true;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-            SizedBox(width: 12),
-            Text('Unsaved Changes'),
-          ],
-        ),
-        content: const Text(
-          'You have unsaved changes. Are you sure you want to leave without saving?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Leave'),
-          ),
-        ],
-      ),
-    );
-
-    return result ?? false;
-  }
-
-  // ============================================================
-  // Build Methods
-  // ============================================================
-
-  @override
   Widget build(BuildContext context) {
-    final isDesktop =
-        MediaQuery.of(context).size.width >=
-        TeacherEditQuizPage._kMobileBreakpoint;
+    final isDesktop = MediaQuery.of(context).size.width >= _kMobileBreakpoint;
     final screenWidth = MediaQuery.of(context).size.width;
-    final maxWidth = isDesktop
-        ? TeacherEditQuizPage._kDesktopMaxWidth
-        : double.infinity;
+    final maxWidth = isDesktop ? _kDesktopMaxWidth : double.infinity;
 
-    return PopScope(
-      canPop: !_hasChanges,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        final shouldPop = await _onWillPop();
-        if (shouldPop && mounted) {
-          context.pop();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.dirtyCyan,
-        appBar: _buildAppBar(),
-        body: Container(
-          decoration: const BoxDecoration(color: AppColors.dirtyCyan),
-          child: SingleChildScrollView(
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                width: screenWidth,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 16.0 : 8.0,
-                  vertical: 16.0,
-                ),
-                child: Column(
-                  children: [
-                    // Quiz Header Card
-                    _buildQuizHeaderCard(isDesktop),
-
-                    const SizedBox(height: 24.0),
-
-                    // Add Question Button
-                    _buildAddQuestionButton(),
-
-                    const SizedBox(height: 16.0),
-
-                    // Questions List
-                    _buildQuestionsList(),
-
-                    const SizedBox(height: 24.0),
-
-                    // Save Button
-                    _buildSaveButton(),
-
-                    const SizedBox(height: 16.0),
-                  ],
-                ),
+    return BlocConsumer<EditQuizBloc, EditQuizState>(
+      listener: (context, state) {
+        // Handle side effects
+        if (state is EditQuizSaved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Quiz updated successfully!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
+          );
+          // Navigate back to quiz detail
+          context.pop();
+        } else if (state is EditQuizError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        return PopScope(
+          canPop: state is! EditQuizReady || !state.hasChanges,
+          onPopInvokedWithResult: (didPop, result) async {
+            if (didPop) return;
+            final shouldPop = await _showUnsavedChangesDialog(context);
+            if (shouldPop && context.mounted) {
+              context.pop();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.dirtyCyan,
+            appBar: _buildAppBar(context, state),
+            body: _buildBody(context, state, isDesktop, screenWidth, maxWidth),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(BuildContext context, EditQuizState state) {
+    final hasChanges = state is EditQuizReady && state.hasChanges;
+    final isSaving = state is EditQuizReady && state.isSaving;
+
     return AppBar(
       backgroundColor: AppColors.darkAzure,
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
         onPressed: () async {
-          if (_hasChanges) {
-            final shouldPop = await _onWillPop();
-            if (shouldPop && mounted) {
+          if (hasChanges) {
+            final shouldPop = await _showUnsavedChangesDialog(context);
+            if (shouldPop && context.mounted) {
               context.pop();
             }
           } else {
@@ -457,7 +120,7 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (_hasChanges)
+          if (hasChanges)
             const Text(
               'Unsaved changes',
               style: TextStyle(
@@ -470,10 +133,12 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
       ),
       actions: [
         // Save button in app bar for quick access
-        if (_hasChanges)
+        if (hasChanges)
           TextButton.icon(
-            onPressed: _isSaving ? null : _saveQuiz,
-            icon: _isSaving
+            onPressed: isSaving
+                ? null
+                : () => context.read<EditQuizBloc>().add(SaveQuizEvent()),
+            icon: isSaving
                 ? const SizedBox(
                     width: 16,
                     height: 16,
@@ -484,7 +149,7 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
                   )
                 : const Icon(Icons.save, color: Colors.white),
             label: Text(
-              _isSaving ? 'Saving...' : 'Save',
+              isSaving ? 'Saving...' : 'Save',
               style: const TextStyle(color: Colors.white),
             ),
           ),
@@ -493,7 +158,68 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
     );
   }
 
-  Widget _buildQuizHeaderCard(bool isDesktop) {
+  Widget _buildBody(
+    BuildContext context,
+    EditQuizState state,
+    bool isDesktop,
+    double screenWidth,
+    double maxWidth,
+  ) {
+    if (state is EditQuizInitial || state is EditQuizLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.darkAzure),
+      );
+    }
+
+    if (state is! EditQuizReady) {
+      return const Center(child: Text('Something went wrong'));
+    }
+
+    return Container(
+      decoration: const BoxDecoration(color: AppColors.dirtyCyan),
+      child: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            width: screenWidth,
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 16.0 : 8.0,
+              vertical: 16.0,
+            ),
+            child: Column(
+              children: [
+                // Quiz Header Card
+                _buildQuizHeaderCard(context, state, isDesktop),
+
+                const SizedBox(height: 24.0),
+
+                // Add Question Button
+                _buildAddQuestionButton(context),
+
+                const SizedBox(height: 16.0),
+
+                // Questions List
+                _buildQuestionsList(context, state),
+
+                const SizedBox(height: 24.0),
+
+                // Save Button
+                _buildSaveButton(context, state),
+
+                const SizedBox(height: 16.0),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuizHeaderCard(
+    BuildContext context,
+    EditQuizReady state,
+    bool isDesktop,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -514,8 +240,8 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _titleController,
+                child: TextFormField(
+                  initialValue: state.title,
                   decoration: const InputDecoration(
                     hintText: 'Quiz Title',
                     border: InputBorder.none,
@@ -526,26 +252,35 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
                     fontWeight: FontWeight.bold,
                     color: AppColors.darkAzure,
                   ),
+                  onChanged: (value) {
+                    context.read<EditQuizBloc>().add(TitleChangedEvent(value));
+                  },
                 ),
               ),
-              if (isDesktop) _buildPublicSwitch(),
+              if (isDesktop) _buildPublicSwitch(context, state),
             ],
           ),
 
           // If mobile, show switch on separate line
-          if (!isDesktop) ...[const SizedBox(height: 12), _buildPublicSwitch()],
+          if (!isDesktop) ...[
+            const SizedBox(height: 12),
+            _buildPublicSwitch(context, state),
+          ],
 
           const SizedBox(height: 16.0),
 
           // Quiz Description
-          TextField(
-            controller: _descriptionController,
+          TextFormField(
+            initialValue: state.description,
             decoration: const InputDecoration(
               hintText: 'Quiz Description',
               border: InputBorder.none,
             ),
             style: const TextStyle(fontSize: 16, color: AppColors.darkAzure),
             maxLines: null,
+            onChanged: (value) {
+              context.read<EditQuizBloc>().add(DescriptionChangedEvent(value));
+            },
           ),
 
           const SizedBox(height: 20.0),
@@ -558,8 +293,8 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
               const Icon(Icons.category, color: AppColors.darkAzure, size: 20),
               const SizedBox(width: 12),
               Expanded(
-                child: TextField(
-                  controller: _categoryController,
+                child: TextFormField(
+                  initialValue: state.category,
                   decoration: const InputDecoration(
                     hintText: 'Category (e.g., Science, Math, History)',
                     border: InputBorder.none,
@@ -569,6 +304,11 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
                     fontSize: 14,
                     color: AppColors.darkAzure,
                   ),
+                  onChanged: (value) {
+                    context.read<EditQuizBloc>().add(
+                      CategoryChangedEvent(value),
+                    );
+                  },
                 ),
               ),
             ],
@@ -582,15 +322,11 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              const Row(
                 children: [
-                  const Icon(
-                    Icons.qr_code,
-                    color: AppColors.darkAzure,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
+                  Icon(Icons.qr_code, color: AppColors.darkAzure, size: 20),
+                  SizedBox(width: 12),
+                  Text(
                     "Quiz Code:",
                     style: TextStyle(
                       fontSize: 14,
@@ -612,7 +348,7 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      _codeController.text,
+                      state.code,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -623,7 +359,7 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy, size: 20),
-                    onPressed: _copyCodeToClipboard,
+                    onPressed: () => _copyCodeToClipboard(context, state.code),
                     tooltip: 'Copy Code',
                     color: AppColors.darkAzure,
                   ),
@@ -636,30 +372,27 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
     );
   }
 
-  Widget _buildPublicSwitch() {
+  Widget _buildPublicSwitch(BuildContext context, EditQuizReady state) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          _isPublic ? Icons.public : Icons.lock,
+          state.isPublic ? Icons.public : Icons.lock,
           size: 18,
-          color: _isPublic ? Colors.green : Colors.orange,
+          color: state.isPublic ? Colors.green : Colors.orange,
         ),
         const SizedBox(width: 8),
         Text(
-          _isPublic ? "Public" : "Private",
+          state.isPublic ? "Public" : "Private",
           style: TextStyle(
-            color: _isPublic ? Colors.green : Colors.orange,
+            color: state.isPublic ? Colors.green : Colors.orange,
             fontWeight: FontWeight.w500,
           ),
         ),
         Switch(
-          value: _isPublic,
+          value: state.isPublic,
           onChanged: (value) {
-            setState(() {
-              _isPublic = value;
-              _hasChanges = true;
-            });
+            context.read<EditQuizBloc>().add(TogglePublicEvent(value));
           },
           activeColor: Colors.green,
           inactiveThumbColor: Colors.orange,
@@ -668,11 +401,13 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
     );
   }
 
-  Widget _buildAddQuestionButton() {
+  Widget _buildAddQuestionButton(BuildContext context) {
     return Align(
       alignment: Alignment.centerLeft,
       child: ElevatedButton.icon(
-        onPressed: _addQuestion,
+        onPressed: () {
+          context.read<EditQuizBloc>().add(AddQuestionEvent());
+        },
         icon: const Icon(Icons.add),
         label: const Text("Add Question"),
         style: ElevatedButton.styleFrom(
@@ -687,30 +422,8 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
     );
   }
 
-  Widget _buildQuestionsList() {
-    if (_isLoadingQuestions) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(
-          child: Column(
-            children: [
-              CircularProgressIndicator(color: AppColors.darkAzure),
-              SizedBox(height: 16),
-              Text(
-                'Loading questions...',
-                style: TextStyle(color: AppColors.darkAzure),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_questions.isEmpty) {
+  Widget _buildQuestionsList(BuildContext context, EditQuizReady state) {
+    if (state.questions.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
@@ -756,26 +469,33 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _questions.length,
+      itemCount: state.questions.length,
       itemBuilder: (context, index) {
         return QuestionCard(
           index: index,
-          question: _questions[index],
-          onUpdate: (updatedQuestion) =>
-              _updateQuestion(index, updatedQuestion),
-          onRemove: () => _removeQuestion(index),
+          question: state.questions[index],
+          onUpdate: (updatedQuestion) {
+            context.read<EditQuizBloc>().add(
+              UpdateQuestionEvent(index: index, question: updatedQuestion),
+            );
+          },
+          onRemove: () {
+            context.read<EditQuizBloc>().add(RemoveQuestionEvent(index));
+          },
         );
       },
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(BuildContext context, EditQuizReady state) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _isSaving ? null : _saveQuiz,
+        onPressed: state.isSaving
+            ? null
+            : () => context.read<EditQuizBloc>().add(SaveQuizEvent()),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _hasChanges ? AppColors.darkAzure : Colors.grey,
+          backgroundColor: state.hasChanges ? AppColors.darkAzure : Colors.grey,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
@@ -783,7 +503,7 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
           ),
           disabledBackgroundColor: Colors.grey.shade400,
         ),
-        child: _isSaving
+        child: state.isSaving
             ? const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -803,7 +523,7 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
                 ],
               )
             : Text(
-                _hasChanges ? "Save Changes" : "No Changes",
+                state.hasChanges ? "Save Changes" : "No Changes",
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -811,5 +531,56 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
               ),
       ),
     );
+  }
+
+  // ============================================================
+  // Utility Methods
+  // ============================================================
+
+  void _copyCodeToClipboard(BuildContext context, String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Quiz code copied to clipboard!'),
+        backgroundColor: AppColors.darkAzure,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  Future<bool> _showUnsavedChangesDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            SizedBox(width: 12),
+            Text('Unsaved Changes'),
+          ],
+        ),
+        content: const Text(
+          'You have unsaved changes. Are you sure you want to leave without saving?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
   }
 }

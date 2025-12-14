@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_state.dart';
 
+/// Quiz Detail Page for Teachers
+///
+/// This page displays quiz information, questions, students who attended,
+/// and accuracy results (for premium users).
+///
+/// Uses BLoC pattern for state management:
+/// - [QuizDetailBloc] handles all business logic
+/// - [QuizDetailState] contains the current state
+/// - [QuizDetailEvent] triggers state changes
 class TeacherQuizDetailPage extends StatefulWidget {
   static const double _kMobileBreakpoint = 600;
   static const double _kDesktopMaxWidth = 900;
@@ -20,36 +32,14 @@ class TeacherQuizDetailPage extends StatefulWidget {
 
 class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
     with SingleTickerProviderStateMixin {
-  final List<QuestionModel> _questions = [];
-  bool _isLoading = false;
-
-  // Tab Controller
+  // Tab Controller for Questions/Students/Accuracy tabs
   late TabController _tabController;
-
-  // TODO: Get this from authenticated user data
-  // For now, set to true to show the Accuracy tab for testing
-  bool _isPremiumUser = true;
-
-  // Students who attended the quiz
-  // TODO: Load from backend using getQuizResult endpoint
-  final List<Map<String, dynamic>> _students = [];
-  bool _isLoadingStudents = false;
-
-  // Accuracy results (premium only)
-  // TODO: Load from backend using getQuizAccuracy endpoint
-  final List<Map<String, dynamic>> _accuracyResults = [];
-  bool _isLoadingAccuracy = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize TabController with dynamic length based on premium status
-    _tabController = TabController(length: _isPremiumUser ? 3 : 2, vsync: this);
-    _loadQuestions();
-    _loadStudents();
-    if (_isPremiumUser) {
-      _loadAccuracyResults();
-    }
+    // We'll update tab length when we know premium status from BLoC
+    _tabController = TabController(length: 3, vsync: this); // Max 3 tabs
   }
 
   @override
@@ -58,116 +48,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
     super.dispose();
   }
 
-  Future<void> _loadQuestions() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    // TODO: Implement backend call to load questions
-    // Example: final questions = await questionRepository.getByQuizId(widget.quiz.id);
-    // setState(() {
-    //   _questions.addAll(questions);
-    //   _isLoading = false;
-    // });
-
-    // Simulate loading delay for now
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _loadStudents() async {
-    setState(() {
-      _isLoadingStudents = true;
-    });
-
-    // TODO: Implement backend call to load students who attended the quiz
-    // Use the getQuizResult endpoint: GET /api/teacher/quiz/:quiz_id/result
-    // Example:
-    // final response = await http.get('/api/teacher/quiz/${widget.quiz.id}/result');
-    // setState(() {
-    //   _students.addAll(response.results);
-    //   _isLoadingStudents = false;
-    // });
-
-    // Simulate loading with dummy data for now
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      // Dummy data for testing
-      _students.addAll([
-        {
-          'student': 'John Doe',
-          'score': 85,
-          'started_at': '2024-12-10T10:00:00',
-          'ended_at': '2024-12-10T10:30:00',
-        },
-        {
-          'student': 'Jane Smith',
-          'score': 92,
-          'started_at': '2024-12-10T11:00:00',
-          'ended_at': '2024-12-10T11:25:00',
-        },
-        {
-          'student': 'Bob Johnson',
-          'score': 78,
-          'started_at': '2024-12-10T14:00:00',
-          'ended_at': '2024-12-10T14:35:00',
-        },
-      ]);
-      _isLoadingStudents = false;
-    });
-  }
-
-  Future<void> _loadAccuracyResults() async {
-    setState(() {
-      _isLoadingAccuracy = true;
-    });
-
-    // TODO: Implement backend call to load accuracy results (premium only)
-    // Use the getQuizAccuracy endpoint: GET /api/teacher/quiz/:quiz_id/accuracy
-    // Example:
-    // final response = await http.get('/api/teacher/quiz/${widget.quiz.id}/accuracy');
-    // setState(() {
-    //   _accuracyResults.addAll(response.question_stats);
-    //   _isLoadingAccuracy = false;
-    // });
-
-    // Simulate loading with dummy data for now
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      // Dummy data for testing
-      _accuracyResults.addAll([
-        {
-          'question_id': 'Q001',
-          'question': 'What is 2 + 2?',
-          'total_answered': 10,
-          'correct_answers': 9,
-          'accuracy': 90,
-        },
-        {
-          'question_id': 'Q002',
-          'question': 'What is the capital of France?',
-          'total_answered': 10,
-          'correct_answers': 7,
-          'accuracy': 70,
-        },
-        {
-          'question_id': 'Q003',
-          'question': 'What is H2O?',
-          'total_answered': 10,
-          'correct_answers': 10,
-          'accuracy': 100,
-        },
-      ]);
-      _isLoadingAccuracy = false;
-    });
-  }
-
-  void _copyCodeToClipboard() {
-    // For now, use the quiz ID as code since there's no dedicated code field
-    // TODO: Update this when quiz code field is added to QuizModel
-    final code = widget.quiz.id.substring(0, 8).toUpperCase();
+  void _copyCodeToClipboard(String code) {
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -217,67 +98,180 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
 
     return Scaffold(
       backgroundColor: AppColors.dirtyCyan,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkAzure,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.go("/teacher/quizzes"),
-        ),
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Quiz Details',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          // Edit button
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TeacherEditQuizPage(quiz: widget.quiz),
+      appBar: _buildAppBar(context),
+      body: BlocConsumer<QuizDetailBloc, QuizDetailState>(
+        listener: (context, state) {
+          // Handle side effects like navigation after delete
+          if (state is QuizDetailDeleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Quiz deleted successfully!'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              );
-            },
-            tooltip: 'Edit Quiz',
-          ),
-          // Delete button
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.white),
-            onPressed: () {
-              _showDeleteConfirmation();
-            },
-            tooltip: 'Delete Quiz',
-          ),
-          const SizedBox(width: 8),
-        ],
+              ),
+            );
+            context.go('/teacher/quizzes');
+          } else if (state is QuizDetailError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is QuizDetailLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
+            );
+          }
+
+          if (state is QuizDetailError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load quiz',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textDark.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      context.read<QuizDetailBloc>().add(
+                        LoadQuizDetailEvent(quizId: widget.quiz.id),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.darkAzure,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (state is QuizDetailLoaded) {
+            return _buildContent(
+              context,
+              state,
+              isDesktop,
+              screenWidth,
+              maxWidth,
+            );
+          }
+
+          // Initial state - show loading
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
       ),
-      body: Center(
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: AppColors.darkAzure,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => context.go("/teacher/quizzes"),
+      ),
+      automaticallyImplyLeading: false,
+      title: const Text(
+        'Quiz Details',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        // Edit button
+        BlocBuilder<QuizDetailBloc, QuizDetailState>(
+          builder: (context, state) {
+            if (state is! QuizDetailLoaded) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.edit, color: Colors.white),
+              onPressed: () {
+                // Navigate to edit page with quiz and questions
+                context.go(
+                  '/teacher/quiz-detail/edit',
+                  extra: {'quiz': state.quiz, 'questions': state.questions},
+                );
+              },
+              tooltip: 'Edit Quiz',
+            );
+          },
+        ),
+        // Delete button
+        IconButton(
+          icon: const Icon(Icons.delete, color: Colors.white),
+          onPressed: () => _showDeleteConfirmation(context),
+          tooltip: 'Delete Quiz',
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    QuizDetailLoaded state,
+    bool isDesktop,
+    double screenWidth,
+    double maxWidth,
+  ) {
+    // Determine number of tabs based on premium status
+    final tabCount = state.isPremiumUser ? 3 : 2;
+
+    // Update tab controller if needed
+    if (_tabController.length != tabCount) {
+      _tabController.dispose();
+      _tabController = TabController(length: tabCount, vsync: this);
+    }
+
+    return SingleChildScrollView(
+      child: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: maxWidth),
           width: screenWidth,
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 16.0 : 12.0,
+            vertical: 16.0,
+          ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Quiz Info Card (scrollable header)
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 16.0 : 12.0,
-                  vertical: 16.0,
-                ),
-                child: _buildQuizInfoCard(isDesktop),
-              ),
+              // Quiz Info Card
+              _buildQuizInfoCard(context, state, isDesktop),
+
+              const SizedBox(height: 24.0),
 
               // Tab Bar
               Container(
-                margin: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 16.0 : 12.0,
-                ),
                 decoration: BoxDecoration(
                   color: AppColors.pureWhite,
                   borderRadius: BorderRadius.circular(12),
@@ -299,6 +293,11 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
+                  onTap: (index) {
+                    context.read<QuizDetailBloc>().add(
+                      ChangeTabEvent(tabIndex: index),
+                    );
+                  },
                   tabs: [
                     const Tab(
                       icon: Icon(Icons.quiz_outlined),
@@ -308,7 +307,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                       icon: Icon(Icons.people_outline),
                       text: 'Students',
                     ),
-                    if (_isPremiumUser)
+                    if (state.isPremiumUser)
                       const Tab(
                         icon: Icon(Icons.analytics_outlined),
                         text: 'Accuracy',
@@ -317,431 +316,53 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 24.0),
 
-              // Tab Bar View
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // Questions Tab
-                    SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isDesktop ? 16.0 : 12.0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildQuestionsList(isDesktop),
-                          const SizedBox(height: 16.0),
-                        ],
-                      ),
-                    ),
+              // Tab Content (based on selected tab from BLoC state)
+              _buildTabContent(context, state, isDesktop),
 
-                    // Students Tab
-                    SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isDesktop ? 16.0 : 12.0,
-                      ),
-                      child: _buildStudentsTab(isDesktop),
-                    ),
-
-                    // Accuracy Tab (only for premium users)
-                    if (_isPremiumUser)
-                      SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isDesktop ? 16.0 : 12.0,
-                        ),
-                        child: _buildAccuracyTab(isDesktop),
-                      ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 16.0),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildTabContent(
+    BuildContext context,
+    QuizDetailLoaded state,
+    bool isDesktop,
+  ) {
+    switch (state.selectedTabIndex) {
+      case 0:
+        return _buildQuestionsTab(context, state, isDesktop);
+      case 1:
+        return _buildStudentsTab(context, state, isDesktop);
+      case 2:
+        if (state.isPremiumUser) {
+          return _buildAccuracyTab(context, state, isDesktop);
+        }
+        return const SizedBox.shrink();
+      default:
+        return _buildQuestionsTab(context, state, isDesktop);
+    }
   }
 
   // ============================================================
-  // Students Tab
+  // Quiz Info Card
   // ============================================================
-  Widget _buildStudentsTab(bool isDesktop) {
-    if (_isLoadingStudents) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        child: const Center(
-          child: CircularProgressIndicator(color: AppColors.darkAzure),
-        ),
-      );
-    }
-
-    if (_students.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.people_outline,
-                size: 64,
-                color: AppColors.darkAzure.withOpacity(0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No students have taken this quiz yet',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textDark.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${_students.length} Students Attended',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.darkAzure,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _students.length,
-          itemBuilder: (context, index) {
-            final student = _students[index];
-            return _buildStudentCard(student, index);
-          },
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildStudentCard(Map<String, dynamic> student, int index) {
-    final score = student['score'] as int;
-    final scoreColor = score >= 80
-        ? Colors.green
-        : (score >= 60 ? Colors.orange : Colors.red);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Rank Badge
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.darkAzure,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                '${index + 1}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Student Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  student['student'] ?? 'Unknown',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Completed on ${_formatDateTime(student['ended_at'])}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textDark.withOpacity(0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Score Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: scoreColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: scoreColor, width: 1.5),
-            ),
-            child: Text(
-              '$score%',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: scoreColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // Accuracy Tab (Premium Only)
-  // ============================================================
-  Widget _buildAccuracyTab(bool isDesktop) {
-    if (_isLoadingAccuracy) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        child: const Center(
-          child: CircularProgressIndicator(color: AppColors.darkAzure),
-        ),
-      );
-    }
-
-    if (_accuracyResults.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.analytics_outlined,
-                size: 64,
-                color: AppColors.darkAzure.withOpacity(0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No accuracy data available yet',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textDark.withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Accuracy data will appear after students complete the quiz',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textDark.withOpacity(0.4),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Premium Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Colors.amber, Colors.orange],
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.star, color: Colors.white, size: 16),
-              SizedBox(width: 6),
-              Text(
-                'Premium Feature',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Question Accuracy Analysis',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.darkAzure,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _accuracyResults.length,
-          itemBuilder: (context, index) {
-            final result = _accuracyResults[index];
-            return _buildAccuracyCard(result, index);
-          },
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildAccuracyCard(Map<String, dynamic> result, int index) {
-    final accuracy = result['accuracy'] as int;
-    final correctAnswers = result['correct_answers'] as int;
-    final totalAnswered = result['total_answered'] as int;
-    final accuracyColor = accuracy >= 80
-        ? Colors.green
-        : (accuracy >= 60 ? Colors.orange : Colors.red);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Question Number
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.darkAzure,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Question Text
-              Expanded(
-                child: Text(
-                  result['question'] ?? 'Unknown question',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Accuracy Progress Bar
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '$correctAnswers / $totalAnswered correct',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textDark.withOpacity(0.6),
-                    ),
-                  ),
-                  Text(
-                    '$accuracy%',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: accuracyColor,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: accuracy / 100,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(accuracyColor),
-                  minHeight: 8,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDateTime(String? dateTimeStr) {
-    if (dateTimeStr == null) return 'Unknown';
-    try {
-      final dateTime = DateTime.parse(dateTimeStr);
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return dateTimeStr;
-    }
-  }
-
-  Widget _buildQuizInfoCard(bool isDesktop) {
-    final quizCode = widget.quiz.id.length >= 8
-        ? widget.quiz.id.substring(0, 8).toUpperCase()
-        : widget.quiz.id.toUpperCase();
+  Widget _buildQuizInfoCard(
+    BuildContext context,
+    QuizDetailLoaded state,
+    bool isDesktop,
+  ) {
+    final quiz = state.quiz;
+    final quizCode =
+        quiz.code ??
+        (quiz.id.length >= 8
+            ? quiz.id.substring(0, 8).toUpperCase()
+            : quiz.id.toUpperCase());
 
     return Container(
       padding: const EdgeInsets.all(24.0),
@@ -768,7 +389,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.quiz.title,
+                      quiz.title,
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -783,12 +404,10 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(
-                          widget.quiz.status,
-                        ).withOpacity(0.15),
+                        color: _getStatusColor(quiz.status).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: _getStatusColor(widget.quiz.status),
+                          color: _getStatusColor(quiz.status),
                           width: 1.5,
                         ),
                       ),
@@ -796,19 +415,19 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            widget.quiz.status.toLowerCase() == 'public'
+                            quiz.status.toLowerCase() == 'public'
                                 ? Icons.public
                                 : Icons.lock,
                             size: 16,
-                            color: _getStatusColor(widget.quiz.status),
+                            color: _getStatusColor(quiz.status),
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            _getStatusLabel(widget.quiz.status),
+                            _getStatusLabel(quiz.status),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: _getStatusColor(widget.quiz.status),
+                              color: _getStatusColor(quiz.status),
                             ),
                           ),
                         ],
@@ -817,15 +436,12 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                   ],
                 ),
               ),
-              // Edit Button in Header Card
+              // Edit Button in Header
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          TeacherEditQuizPage(quiz: widget.quiz),
-                    ),
+                  context.go(
+                    '/teacher/quiz-detail/edit',
+                    extra: {'quiz': state.quiz, 'questions': state.questions},
                   );
                 },
                 icon: const Icon(Icons.edit, size: 18),
@@ -845,33 +461,31 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
             ],
           ),
 
-          const SizedBox(height: 20.0),
-
           // Description
-          if (widget.quiz.description != null &&
-              widget.quiz.description!.isNotEmpty) ...[
+          if (quiz.description != null && quiz.description!.isNotEmpty) ...[
+            const SizedBox(height: 20.0),
             Text(
-              widget.quiz.description!,
+              quiz.description!,
               style: TextStyle(
                 fontSize: 16,
                 color: AppColors.textDark.withOpacity(0.8),
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 20.0),
           ],
 
+          const SizedBox(height: 20.0),
           const Divider(height: 1, color: AppColors.lightCyan),
           const SizedBox(height: 20.0),
 
           // Quiz Details Grid
           if (isDesktop)
-            _buildDesktopDetailsGrid(quizCode)
+            _buildDesktopDetailsGrid(state, quizCode)
           else
-            _buildMobileDetailsColumn(quizCode),
+            _buildMobileDetailsColumn(state, quizCode),
 
           // Created/Updated Date
-          if (widget.quiz.createdAt != null) ...[
+          if (quiz.createdAt != null) ...[
             const SizedBox(height: 20.0),
             const Divider(height: 1, color: AppColors.lightCyan),
             const SizedBox(height: 16.0),
@@ -884,13 +498,13 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Created: ${_formatDate(widget.quiz.createdAt!)}',
+                  'Created: ${_formatDate(quiz.createdAt!)}',
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.textDark.withOpacity(0.5),
                   ),
                 ),
-                if (widget.quiz.updatedAt != null) ...[
+                if (quiz.updatedAt != null) ...[
                   const SizedBox(width: 16),
                   Text(
                     '•',
@@ -900,7 +514,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                   ),
                   const SizedBox(width: 16),
                   Text(
-                    'Updated: ${_formatDate(widget.quiz.updatedAt!)}',
+                    'Updated: ${_formatDate(quiz.updatedAt!)}',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textDark.withOpacity(0.5),
@@ -915,48 +529,45 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
     );
   }
 
-  Widget _buildDesktopDetailsGrid(String quizCode) {
+  Widget _buildDesktopDetailsGrid(QuizDetailLoaded state, String quizCode) {
     return Row(
       children: [
-        // Quiz Code
         Expanded(
           child: _buildDetailItem(
             icon: Icons.qr_code,
             label: 'Quiz Code',
             value: quizCode,
-            onCopy: _copyCodeToClipboard,
+            onCopy: () => _copyCodeToClipboard(quizCode),
           ),
         ),
         const SizedBox(width: 16),
-        // Category
         Expanded(
           child: _buildDetailItem(
             icon: Icons.category,
             label: 'Category',
-            value: widget.quiz.category ?? 'Uncategorized',
+            value: state.quiz.category ?? 'Uncategorized',
           ),
         ),
         const SizedBox(width: 16),
-        // Total Questions
         Expanded(
           child: _buildDetailItem(
             icon: Icons.quiz,
             label: 'Questions',
-            value: '${_questions.length}',
+            value: '${state.questions.length}',
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMobileDetailsColumn(String quizCode) {
+  Widget _buildMobileDetailsColumn(QuizDetailLoaded state, String quizCode) {
     return Column(
       children: [
         _buildDetailItem(
           icon: Icons.qr_code,
           label: 'Quiz Code',
           value: quizCode,
-          onCopy: _copyCodeToClipboard,
+          onCopy: () => _copyCodeToClipboard(quizCode),
         ),
         const SizedBox(height: 16),
         Row(
@@ -965,7 +576,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
               child: _buildDetailItem(
                 icon: Icons.category,
                 label: 'Category',
-                value: widget.quiz.category ?? 'Uncategorized',
+                value: state.quiz.category ?? 'Uncategorized',
               ),
             ),
             const SizedBox(width: 16),
@@ -973,7 +584,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
               child: _buildDetailItem(
                 icon: Icons.quiz,
                 label: 'Questions',
-                value: '${_questions.length}',
+                value: '${state.questions.length}',
               ),
             ),
           ],
@@ -1041,30 +652,45 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
     );
   }
 
-  Widget _buildQuestionsList(bool isDesktop) {
-    if (_isLoading) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Center(
-          child: Column(
-            children: [
-              CircularProgressIndicator(color: AppColors.darkAzure),
-              SizedBox(height: 16),
-              Text(
-                'Loading questions...',
-                style: TextStyle(color: AppColors.darkAzure),
+  // ============================================================
+  // Questions Tab
+  // ============================================================
+  Widget _buildQuestionsTab(
+    BuildContext context,
+    QuizDetailLoaded state,
+    bool isDesktop,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Questions',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.darkAzure,
               ),
-            ],
-          ),
+            ),
+            Text(
+              '${state.questions.length} total',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textDark.withOpacity(0.6),
+              ),
+            ),
+          ],
         ),
-      );
-    }
+        const SizedBox(height: 16),
+        _buildQuestionsList(state.questions, isDesktop),
+      ],
+    );
+  }
 
-    if (_questions.isEmpty) {
+  Widget _buildQuestionsList(List<QuestionModel> questions, bool isDesktop) {
+    if (questions.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
@@ -1097,7 +723,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
               ),
               const SizedBox(height: 8),
               Text(
-                'Click "Add Question" to create your first question',
+                'Edit the quiz to add questions',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textDark.withOpacity(0.4),
@@ -1112,10 +738,9 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _questions.length,
+      itemCount: questions.length,
       itemBuilder: (context, index) {
-        final question = _questions[index];
-        return _buildQuestionCard(question, index);
+        return _buildQuestionCard(questions[index], index);
       },
     );
   }
@@ -1217,9 +842,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
                               color: Colors.white,
                             )
                           : Text(
-                              String.fromCharCode(
-                                65 + optionIndex,
-                              ), // A, B, C, D
+                              String.fromCharCode(65 + optionIndex),
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.darkAzure.withOpacity(0.7),
@@ -1265,32 +888,6 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
               ),
             );
           }),
-          const SizedBox(height: 8),
-          // Action buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: () {
-                  // TODO: Edit question
-                },
-                icon: const Icon(Icons.edit, size: 18),
-                label: const Text('Edit'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.darkAzure,
-                ),
-              ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: () {
-                  // TODO: Delete question
-                },
-                icon: const Icon(Icons.delete, size: 18),
-                label: const Text('Delete'),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -1340,10 +937,378 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
     );
   }
 
-  void _showDeleteConfirmation() {
+  // ============================================================
+  // Students Tab
+  // ============================================================
+  Widget _buildStudentsTab(
+    BuildContext context,
+    QuizDetailLoaded state,
+    bool isDesktop,
+  ) {
+    if (state.isLoadingStudents) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.darkAzure),
+        ),
+      );
+    }
+
+    if (state.students.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: AppColors.pureWhite,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.people_outline,
+                size: 64,
+                color: AppColors.darkAzure.withOpacity(0.3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No students have taken this quiz yet',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textDark.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${state.students.length} Students Attended',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.darkAzure,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: state.students.length,
+          itemBuilder: (context, index) {
+            return _buildStudentCard(state.students[index], index);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStudentCard(Map<String, dynamic> student, int index) {
+    final score = student['score'] as int;
+    final scoreColor = score >= 80
+        ? Colors.green
+        : (score >= 60 ? Colors.orange : Colors.red);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Rank Badge
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.darkAzure,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Student Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  student['student'] ?? 'Unknown',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Completed on ${_formatDateTime(student['ended_at'])}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textDark.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Score Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: scoreColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: scoreColor, width: 1.5),
+            ),
+            child: Text(
+              '$score%',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: scoreColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // Accuracy Tab (Premium Only)
+  // ============================================================
+  Widget _buildAccuracyTab(
+    BuildContext context,
+    QuizDetailLoaded state,
+    bool isDesktop,
+  ) {
+    if (state.isLoadingAccuracy) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.darkAzure),
+        ),
+      );
+    }
+
+    if (state.accuracyResults.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: AppColors.pureWhite,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.analytics_outlined,
+                size: 64,
+                color: AppColors.darkAzure.withOpacity(0.3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No accuracy data available yet',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textDark.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Accuracy data will appear after students complete the quiz',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textDark.withOpacity(0.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Premium Badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Colors.amber, Colors.orange],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star, color: Colors.white, size: 16),
+              SizedBox(width: 6),
+              Text(
+                'Premium Feature',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Question Accuracy Analysis',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.darkAzure,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: state.accuracyResults.length,
+          itemBuilder: (context, index) {
+            return _buildAccuracyCard(state.accuracyResults[index], index);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAccuracyCard(Map<String, dynamic> result, int index) {
+    final accuracy = result['accuracy'] as int;
+    final correctAnswers = result['correct_answers'] as int;
+    final totalAnswered = result['total_answered'] as int;
+    final accuracyColor = accuracy >= 80
+        ? Colors.green
+        : (accuracy >= 60 ? Colors.orange : Colors.red);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.darkAzure,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  result['question'] ?? 'Unknown question',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '$correctAnswers / $totalAnswered correct',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textDark.withOpacity(0.6),
+                    ),
+                  ),
+                  Text(
+                    '$accuracy%',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: accuracyColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: accuracy / 100,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(accuracyColor),
+                  minHeight: 8,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // Delete Confirmation Dialog
+  // ============================================================
+  void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
@@ -1357,14 +1322,15 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: Implement delete logic
-              Navigator.pop(context);
-              context.go('/teacher/quizzes');
+              Navigator.pop(dialogContext);
+              context.read<QuizDetailBloc>().add(
+                DeleteQuizEvent(quizId: widget.quiz.id),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -1377,6 +1343,9 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
     );
   }
 
+  // ============================================================
+  // Utility Methods
+  // ============================================================
   String _formatDate(DateTime date) {
     final months = [
       'Jan',
@@ -1393,5 +1362,17 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
       'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  String _formatDateTime(String? dateTimeStr) {
+    if (dateTimeStr == null) return 'Unknown';
+    try {
+      final dateTime = DateTime.parse(dateTimeStr);
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} '
+          '${dateTime.hour.toString().padLeft(2, '0')}:'
+          '${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateTimeStr;
+    }
   }
 }
