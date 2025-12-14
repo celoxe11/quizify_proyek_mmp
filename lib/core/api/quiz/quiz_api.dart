@@ -20,13 +20,14 @@ class QuizApi {
     throw ApiException('Unexpected object response format from API');
   }
 
-  static const String _basePath = '/admin/quiz';
+  static const String _adminPath = '/admin/quiz';
+  static const String _studentPath = '/student';
 
   QuizApi(this._client);
 
   /// GET /admin/quiz
   Future<List<QuizModel>> getAllQuizzes() async {
-    final raw = await _client.get('$_basePath' + 'zes');
+    final raw = await _client.get('$_adminPath' + 'zes');
     final listJson = _unwrapList(raw);
     return listJson
         .map((e) => QuizModel.fromJson(e as Map<String, dynamic>))
@@ -35,7 +36,24 @@ class QuizApi {
 
   /// GET /admin/quiz/:id
   Future<QuizModel> getQuizById(String id) async {
-    final raw = await _client.get('$_basePath/$id');
+    final raw = await _client.get('$_adminPath/$id');
+    final map = _unwrapObject(raw);
+    return QuizModel.fromJson(map);
+  }
+
+  /// POST /student/startquizbycode/:code
+  /// Returns session_id when quiz session is successfully created
+  Future<Map<String, dynamic>> startQuizByCode(String code) async {
+    final raw = await _client.post('$_studentPath/startquizbycode/$code', {});
+    if (raw is Map<String, dynamic>) {
+      return raw;
+    }
+    throw ApiException('Unexpected response format from startQuizByCode');
+  }
+
+  /// GET /student/quiz/code/:code (if you need to just get quiz info without starting)
+  Future<QuizModel> getQuizByCode(String code) async {
+    final raw = await _client.get('$_studentPath/quiz/code/$code');
     final map = _unwrapObject(raw);
     return QuizModel.fromJson(map);
   }
@@ -51,7 +69,7 @@ class QuizApi {
       ..remove('updated_at')
       ..remove('questions');
 
-    final raw = await _client.post(_basePath, payload);
+    final raw = await _client.post(_adminPath, payload);
     final map = _unwrapObject(raw);
     return QuizModel.fromJson(map);
   }
@@ -66,13 +84,13 @@ class QuizApi {
       ..remove('updated_at')
       ..remove('questions');
 
-    final raw = await _client.put('$_basePath/$id', payload);
+    final raw = await _client.put('$_adminPath/$id', payload);
     final map = _unwrapObject(raw);
     return QuizModel.fromJson(map);
   }
 
   /// DELETE /admin/quiz/:id
   Future<void> deleteQuiz(String id) async {
-    await _client.delete('$_basePath/$id');
+    await _client.delete('$_adminPath/$id');
   }
 }

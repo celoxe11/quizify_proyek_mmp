@@ -72,7 +72,7 @@ class StudentShell extends StatelessWidget {
                     context.go('/student/home');
                     break;
                   case 1:
-                    context.go('/student/quizzes');
+                    context.go('/student/join-quiz');
                     break;
                   case 2:
                     context.go('/student/profile');
