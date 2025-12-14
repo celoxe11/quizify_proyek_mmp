@@ -36,8 +36,8 @@ import 'package:quizify_proyek_mmp/presentation/widgets/admin_shell.dart';
 
 // import repository
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
-import 'package:quizify_proyek_mmp/core/services/auth_service.dart';
-import 'package:quizify_proyek_mmp/core/services/auth_api_service.dart';
+import 'package:quizify_proyek_mmp/core/services/auth/auth_service.dart';
+import 'package:quizify_proyek_mmp/core/services/auth/auth_api_service.dart';
 
 // --- Global Navigator Keys (REQUIRED for ShellRoute) ---
 final _rootNavigatorKey = GlobalKey<NavigatorState>();

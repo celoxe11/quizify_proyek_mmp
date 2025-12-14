@@ -33,5 +33,5 @@ export 'student/student_services.dart';
 export 'admin/admin_services.dart';
 
 // Legacy services (using http ApiClient) - keep for backward compatibility
-export 'auth_service.dart';
-export 'auth_api_service.dart';
+export 'auth/auth_service.dart';
+export 'auth/auth_api_service.dart';

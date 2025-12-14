@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../../core/services/auth_service.dart';
-import '../../core/services/auth_api_service.dart';
+import '../../core/services/auth/auth_service.dart';
+import '../../core/services/auth/auth_api_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
