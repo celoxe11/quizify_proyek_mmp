@@ -24,7 +24,7 @@ class _TeacherEnterQuizNamePageState extends State<TeacherEnterQuizNamePage> {
     final isDesktop = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.dirtyCyan,
       appBar: AppBar(
         backgroundColor: AppColors.darkAzure,
         elevation: 0,
@@ -63,22 +63,6 @@ class _TeacherEnterQuizNamePageState extends State<TeacherEnterQuizNamePage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Icon with background
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: AppColors.pureWhite,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.quiz_outlined,
-                                size: 40,
-                                color: AppColors.darkAzure,
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-
                             // Title
                             Text(
                               'Create New Quiz',
@@ -205,7 +189,10 @@ class _TeacherEnterQuizNamePageState extends State<TeacherEnterQuizNamePage> {
                                           return;
                                         }
                                         final quizName = _nameController.text;
-                                        context.go("/teacher/create-quiz", extra: quizName);
+                                        context.go(
+                                          "/teacher/create-quiz",
+                                          extra: quizName,
+                                        );
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.darkAzure,
@@ -248,7 +235,7 @@ class _TeacherEnterQuizNamePageState extends State<TeacherEnterQuizNamePage> {
                               style: TextStyle(
                                 fontSize: 13,
                                 color: AppColors.darkAzure,
-                                fontWeight: FontWeight.w400
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ],

@@ -9,77 +9,121 @@ class QuestionCard extends StatefulWidget {
   final Function(QuestionModel) onUpdate;
   final VoidCallback onRemove;
 
-  const QuestionCard({
-    super.key,
+  QuestionCard({
+    Key? key,
     required this.index,
     required this.question,
     required this.onUpdate,
     required this.onRemove,
-  });
+  }) : super(key: key);
 
   @override
   State<QuestionCard> createState() => _QuestionCardState();
 }
 
+enum RadioType { fillColor, backgroundColor, side, innerRadius }
+
 class _QuestionCardState extends State<QuestionCard> {
-  late TextEditingController _questionController;
-  late TextEditingController _correctAnswerController;
-  late List<TextEditingController> _incorrectControllers = [];
+  late TextEditingController _questionTextController;
+  late List<TextEditingController> _optionControllers;
+  int _selectedOptionIndex = -1;
 
   @override
   void initState() {
     super.initState();
-    _questionController = TextEditingController(
+    _questionTextController = TextEditingController(
       text: widget.question.questionText,
     );
-    _correctAnswerController = TextEditingController(
-      text: widget.question.correctAnswer,
-    );
 
-    final incorrectAnswers = widget.question.options
-        .where((opt) => opt != widget.question.correctAnswer)
-        .toList();
-
-    final int targetCount = widget.question.type == 'boolean' ? 1 : 3;
-
-    while (incorrectAnswers.length < targetCount) {
-      incorrectAnswers.add('');
+    // Initialize option controllers based on question type
+    if (widget.question.type == 'boolean') {
+      _optionControllers = [
+        'True',
+        'False',
+      ].map((text) => TextEditingController(text: text)).toList();
+      // Set initial selected index for boolean
+      if (widget.question.correctAnswer == 'True') {
+        _selectedOptionIndex = 0;
+      } else if (widget.question.correctAnswer == 'False') {
+        _selectedOptionIndex = 1;
+      }
+    } else {
+      _optionControllers = widget.question.options
+          .map((option) => TextEditingController(text: option))
+          .toList();
+      // Set initial selected index for multiple choice
+      _selectedOptionIndex = widget.question.options.indexOf(
+        widget.question.correctAnswer,
+      );
     }
-
-    if (incorrectAnswers.length > targetCount) {
-      incorrectAnswers.removeRange(targetCount, incorrectAnswers.length);
-    }
-
-    _incorrectControllers = incorrectAnswers
-        .map((ans) => TextEditingController(text: ans))
-        .toList();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final allOptions = [_correctAnswerController.text, ...incorrectAnswers];
-      widget.onUpdate(widget.question.copyWith(options: allOptions));
-    });
   }
 
   @override
   void dispose() {
-    _questionController.dispose();
-    _correctAnswerController.dispose();
-    for (var controller in _incorrectControllers) {
+    _questionTextController.dispose();
+    for (var controller in _optionControllers) {
       controller.dispose();
     }
     super.dispose();
   }
 
   void _updateQuestion() {
-    // Combine correct answer with incorrect answers to create options list
-    final incorrectAnswers = _incorrectControllers.map((c) => c.text).toList();
-    final allOptions = [_correctAnswerController.text, ...incorrectAnswers];
+    final updatedOptions = _optionControllers
+        .map((controller) => controller.text)
+        .toList();
 
     widget.onUpdate(
       widget.question.copyWith(
-        questionText: _questionController.text,
-        correctAnswer: _correctAnswerController.text,
-        options: allOptions,
+        questionText: _questionTextController.text,
+        options: updatedOptions,
+      ),
+    );
+  }
+
+  void _updateCorrectAnswer(int index) {
+    setState(() {
+      _selectedOptionIndex = index;
+    });
+    final answer = _optionControllers[index].text;
+    widget.onUpdate(widget.question.copyWith(correctAnswer: answer));
+  }
+
+  void _addOption() {
+    setState(() {
+      _optionControllers.add(TextEditingController(text: ''));
+    });
+    final updatedOptions = _optionControllers.map((c) => c.text).toList();
+    widget.onUpdate(
+      widget.question.copyWith(
+        questionText: _questionTextController.text,
+        options: updatedOptions,
+      ),
+    );
+  }
+
+  void _removeOption(int index) {
+    if (_optionControllers.length <= 2) return; // Minimum 2 options
+    setState(() {
+      _optionControllers[index].dispose();
+      _optionControllers.removeAt(index);
+      // Adjust selected index if needed
+      if (_selectedOptionIndex == index) {
+        _selectedOptionIndex = -1;
+      } else if (_selectedOptionIndex > index) {
+        _selectedOptionIndex--;
+      }
+    });
+    final updatedOptions = _optionControllers.map((c) => c.text).toList();
+    final newCorrectAnswer =
+        _selectedOptionIndex >= 0 &&
+            _selectedOptionIndex < updatedOptions.length
+        ? updatedOptions[_selectedOptionIndex]
+        : '';
+    widget.onUpdate(
+      widget.question.copyWith(
+        questionText: _questionTextController.text,
+        options: updatedOptions,
+        correctAnswer: newCorrectAnswer,
       ),
     );
   }
@@ -131,24 +175,7 @@ class _QuestionCardState extends State<QuestionCard> {
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      final incorrectAnswers = value == 'boolean'
-                          ? [''] // Only 1 incorrect answer for boolean
-                          : ['', '', '']; // 3 incorrect answers for multiple
-                      final allOptions = [
-                        _correctAnswerController.text,
-                        ...incorrectAnswers,
-                      ];
-                      widget.onUpdate(
-                        widget.question.copyWith(
-                          type: value,
-                          options: allOptions,
-                        ),
-                      );
-                      setState(() {
-                        _incorrectControllers = incorrectAnswers
-                            .map((ans) => TextEditingController(text: ans))
-                            .toList();
-                      });
+                      widget.onUpdate(widget.question.copyWith(type: value));
                     }
                   },
                 ),
@@ -175,7 +202,7 @@ class _QuestionCardState extends State<QuestionCard> {
 
             // Question text
             TextField(
-              controller: _questionController,
+              controller: _questionTextController,
               decoration: const InputDecoration(
                 labelText: 'Question Text',
                 border: OutlineInputBorder(),
@@ -185,38 +212,120 @@ class _QuestionCardState extends State<QuestionCard> {
             ),
             const SizedBox(height: 12),
 
-            // Correct answer
-            TextField(
-              controller: _correctAnswerController,
-              decoration: InputDecoration(
-                labelText: widget.question.type == 'boolean'
-                    ? 'Correct Answer (True/False)'
-                    : 'Correct Answer',
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (_) => _updateQuestion(),
-            ),
-            const SizedBox(height: 12),
-
-            // Incorrect answers
+            // Options
             Text(
-              'Incorrect Answers:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              'Options (Select the correct answer):',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            ...List.generate(_incorrectControllers.length, (i) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: TextField(
-                  controller: _incorrectControllers[i],
-                  decoration: InputDecoration(
-                    labelText: 'Wrong Answer ${i + 1}',
-                    border: const OutlineInputBorder(),
+            SizedBox(height: 8),
+            if (widget.question.type == 'multiple') ...[
+              Column(
+                children: _optionControllers.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final controller = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Radio<int>(
+                          value: idx,
+                          groupValue: _selectedOptionIndex,
+                          onChanged: (value) {
+                            if (value != null) {
+                              _updateCorrectAnswer(value);
+                            }
+                          },
+                        ),
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              labelText: 'Option ${idx + 1}',
+                              border: const OutlineInputBorder(),
+                            ),
+                            controller: controller,
+                            onChanged: (text) {
+                              // Update the correct answer if this option is selected
+                              String newCorrectAnswer =
+                                  _selectedOptionIndex == idx
+                                  ? text
+                                  : (_selectedOptionIndex >= 0 &&
+                                            _selectedOptionIndex <
+                                                _optionControllers.length
+                                        ? _optionControllers[_selectedOptionIndex]
+                                              .text
+                                        : '');
+
+                              final updatedOptions = _optionControllers
+                                  .map((c) => c.text)
+                                  .toList();
+
+                              widget.onUpdate(
+                                widget.question.copyWith(
+                                  questionText: _questionTextController.text,
+                                  options: updatedOptions,
+                                  correctAnswer: newCorrectAnswer,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        if (_optionControllers.length > 2)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              color: Colors.red,
+                            ),
+                            onPressed: () => _removeOption(idx),
+                            tooltip: 'Remove option',
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _addOption,
+                  icon: const Icon(Icons.add, color: AppColors.darkAzure),
+                  label: const Text(
+                    'Add Option',
+                    style: TextStyle(color: AppColors.darkAzure),
                   ),
-                  onChanged: (_) => _updateQuestion(),
                 ),
-              );
-            }),
+              ),
+            ] else ...[
+              // if the option is boolean only display two option without an add option button
+              Column(
+                children: [
+                  RadioListTile(
+                    value: 'true',
+                    groupValue: widget.question.correctAnswer,
+                    onChanged: (value) {
+                      if (value != null) {
+                        widget.onUpdate(
+                          widget.question.copyWith(correctAnswer: value),
+                        );
+                      }
+                    },
+                    title: const Text('True'),
+                  ),
+                  RadioListTile(
+                    value: 'false',
+                    groupValue: widget.question.correctAnswer,
+                    onChanged: (value) {
+                      if (value != null) {
+                        widget.onUpdate(
+                          widget.question.copyWith(correctAnswer: value),
+                        );
+                      }
+                    },
+                    title: const Text('False'),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

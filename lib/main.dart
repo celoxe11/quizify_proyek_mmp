@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
 import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
+import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
@@ -19,6 +19,9 @@ import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_pag
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/answer_detail_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_detail.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher_shell.dart';
@@ -58,7 +61,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // final initialRoute = kIsWeb ? '/' : '/login';
-    final initialRoute = '/student/home';
+    final initialRoute = '/teacher/home';
 
     final router = GoRouter(
       initialLocation: initialRoute,
@@ -117,6 +120,21 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: '/teacher/quizzes',
               builder: (context, state) => const TeacherQuizPage(),
+            ),
+            GoRoute(
+              path: '/teacher/quiz-detail',
+              builder: (context, state) =>
+                  TeacherQuizDetailPage(quiz: state.extra as QuizModel),
+            ),
+            GoRoute(
+              path: "/teacher/quiz-detail/edit",
+              builder: (context, state) =>
+                  TeacherEditQuizPage(quiz: state.extra as QuizModel),
+            ),
+            GoRoute(
+              path: "/teacher/quiz-detail/answers",
+              builder: (context, state) =>
+                  TeacherAnswerDetailPage(quiz: state.extra as QuizModel),
             ),
             GoRoute(
               path: "/teacher/new-quiz",
