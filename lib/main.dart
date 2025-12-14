@@ -58,7 +58,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // final initialRoute = kIsWeb ? '/' : '/login';
-    final initialRoute = '/admin/dashboard';
+    final initialRoute = '/student/home';
 
     final router = GoRouter(
       initialLocation: initialRoute,
