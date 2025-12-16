@@ -9,6 +9,7 @@ class UserModel extends User {
     super.firebaseUid,
     required super.role,
     required super.subscriptionId,
+    super.subscriptionStatus,
     super.isActive = true,
     super.createdAt,
     super.updatedAt,
@@ -25,6 +26,7 @@ class UserModel extends User {
       subscriptionId: json['subscription_id'] is int 
           ? json['subscription_id'] 
           : int.tryParse(json['subscription_id'].toString()) ?? 1,
+      subscriptionStatus: json['subscription_status'] as String? ?? 'Free', 
       isActive: json['is_active'] == 1 || json['is_active'] == true,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
