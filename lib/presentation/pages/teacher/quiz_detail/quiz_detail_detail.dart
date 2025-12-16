@@ -359,7 +359,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
   ) {
     final quiz = state.quiz;
     final quizCode =
-        quiz.code ??
+        quiz.quizCode ??
         (quiz.id.length >= 8
             ? quiz.id.substring(0, 8).toUpperCase()
             : quiz.id.toUpperCase());
