@@ -1,59 +1,20 @@
-import 'dart:convert';
-
 import '../../domain/entities/question.dart';
 
 class QuestionModel extends Question {
   const QuestionModel({
     required super.id,
     super.quizId,
-    required super.type,
-    required super.difficulty,
+    required super.type, // 'multiple' or 'boolean'
+    required super.difficulty, // 'easy', 'medium', 'hard'
     required super.questionText,
     required super.correctAnswer,
-    super.options = const [],
+    required super.options, // List<String>
     super.isGenerated = false,
     super.createdAt,
     super.updatedAt,
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
-    // parse options which may come as JSON string or List
-    final rawOptions = json['options'];
-    List<String> optionsList = [];
-    if (rawOptions == null) {
-      optionsList = [];
-    } else if (rawOptions is String) {
-      try {
-        final decoded = jsonDecode(rawOptions);
-        if (decoded is List) {
-          optionsList = decoded.map((e) => e.toString()).toList();
-        } else {
-          optionsList = [decoded.toString()];
-        }
-      } catch (_) {
-        optionsList = [rawOptions];
-      }
-    } else if (rawOptions is List) {
-      optionsList = rawOptions.map((e) => e.toString()).toList();
-    } else {
-      optionsList = [rawOptions.toString()];
-    }
-
-    final isGenerated =
-        json['is_generated'] == 1 ||
-        json['is_generated'] == '1' ||
-        json['is_generated'] == true;
-
-    DateTime? parseDate(Object? val) {
-      if (val == null) return null;
-      if (val is DateTime) return val;
-      try {
-        return DateTime.parse(val.toString());
-      } catch (_) {
-        return null;
-      }
-    }
-
     return QuestionModel(
       id: json['id'] as String,
       quizId: json['quiz_id'] as String?,
@@ -61,10 +22,17 @@ class QuestionModel extends Question {
       difficulty: json['difficulty'] as String,
       questionText: json['question_text'] as String,
       correctAnswer: json['correct_answer'] as String,
-      options: optionsList,
-      isGenerated: isGenerated,
-      createdAt: parseDate(json['created_at']),
-      updatedAt: parseDate(json['updated_at']),
+      // Handle JSON Array dari API
+      options: json['options'] != null
+          ? List<String>.from(json['options']) 
+          : [],
+      isGenerated: json['is_generated'] == 1 || json['is_generated'] == true,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
     );
   }
 
@@ -76,11 +44,26 @@ class QuestionModel extends Question {
       'difficulty': difficulty,
       'question_text': questionText,
       'correct_answer': correctAnswer,
-      'options': jsonEncode(options),
+      'options': options,
       'is_generated': isGenerated ? 1 : 0,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
-    }..removeWhere((key, value) => value == null);
+    };
+  }
+
+  factory QuestionModel.fromEntity(Question question) {
+    return QuestionModel(
+      id: question.id,
+      quizId: question.quizId,
+      type: question.type,
+      difficulty: question.difficulty,
+      questionText: question.questionText,
+      correctAnswer: question.correctAnswer,
+      options: question.options,
+      isGenerated: question.isGenerated,
+      createdAt: question.createdAt,
+      updatedAt: question.updatedAt,
+    );
   }
 
   // copy with method
