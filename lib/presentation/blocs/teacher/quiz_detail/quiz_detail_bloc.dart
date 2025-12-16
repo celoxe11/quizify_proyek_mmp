@@ -1,29 +1,19 @@
 import 'package:bloc/bloc.dart';
-import 'package:quizify_proyek_mmp/data/models/question_model.dart';
-import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/data/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_state.dart';
 
-/// BLoC for managing Quiz Detail page state
-///
-/// Handles loading quiz data, questions, students, and accuracy results.
-/// Also manages tab navigation and quiz deletion.
-///
-/// Usage:
-/// ```dart
-/// BlocProvider(
-///   create: (context) => QuizDetailBloc()
-///     ..add(LoadQuizDetailEvent(quizId: quiz.id)),
-///   child: QuizDetailPage(quiz: quiz),
-/// )
-/// ```
 class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
-  // TODO: Inject repositories when implementing backend integration
-  // final QuizRepository quizRepository;
-  // final QuestionRepository questionRepository;
-  // final AuthRepository authRepository;
+  final TeacherRepositoryImpl teacherRepository;
+  final AuthenticationRepositoryImpl authRepository;
 
-  QuizDetailBloc() : super(QuizDetailInitial()) {
+  QuizDetailBloc({
+    TeacherRepositoryImpl? teacherRepository,
+    AuthenticationRepositoryImpl? authRepository,
+  }) : teacherRepository = teacherRepository ?? TeacherRepositoryImpl(),
+       authRepository = authRepository ?? AuthenticationRepositoryImpl(),
+       super(QuizDetailInitial()) {
     on<LoadQuizDetailEvent>(_onLoadQuizDetail);
     on<LoadStudentsEvent>(_onLoadStudents);
     on<LoadAccuracyResultsEvent>(_onLoadAccuracyResults);
@@ -40,27 +30,17 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
     emit(QuizDetailLoading());
 
     try {
-      // TODO: Replace with actual backend calls
-      // final quiz = await quizRepository.getById(event.quizId);
-      // final questions = await questionRepository.getByQuizId(event.quizId);
-      // final isPremium = await authRepository.isPremiumUser();
+      final response = await teacherRepository.getQuizDetail(event.quizId);
+      print('Quiz detail response received: $response');
 
-      // Simulated delay for development
-      await Future.delayed(const Duration(milliseconds: 500));
+      final quiz = response.quiz;
+      print('Loaded quiz: ${quiz.title}');
 
-      // TODO: Replace with actual data
-      // For now, create a placeholder quiz (in real implementation, fetch from API)
-      final quiz = QuizModel(
-        id: event.quizId,
-        title: 'Sample Quiz',
-        description: 'This is a sample quiz description',
-        status: 'public',
-        category: 'General',
-        createdAt: DateTime.now(),
-      );
+      final questions = response.questions;
+      print('Loaded ${questions.length} questions for quiz ${quiz.id}');
 
-      final questions = <QuestionModel>[];
-      const isPremium = true; // TODO: Get from auth repository
+      final isPremium = authRepository.isPremiumUser();
+      print('Is Premium User: $isPremium');
 
       emit(
         QuizDetailLoaded(

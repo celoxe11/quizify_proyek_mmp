@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/data/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_state.dart';
 
@@ -15,16 +16,16 @@ import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_st
 /// )
 /// ```
 class QuizzesBloc extends Bloc<QuizzesEvent, QuizzesState> {
-  // TODO: Inject repositories when implementing backend integration
-  // final QuizRepository quizRepository;
+  final TeacherRepositoryImpl _teacherRepository;
 
-  QuizzesBloc() : super(QuizzesInitial()) {
+  QuizzesBloc({TeacherRepositoryImpl? teacherRepository})
+    : _teacherRepository = teacherRepository ?? TeacherRepositoryImpl(),
+      super(QuizzesInitial()) {
     on<LoadQuizzesEvent>(_onLoadQuizzes);
     on<RefreshQuizzesEvent>(_onRefreshQuizzes);
     on<SearchQuizzesEvent>(_onSearchQuizzes);
     on<FilterQuizzesEvent>(_onFilterQuizzes);
     on<FilterByCategoryEvent>(_onFilterByCategory);
-    on<DeleteQuizFromListEvent>(_onDeleteQuiz);
   }
 
   /// Load all quizzes
@@ -35,56 +36,7 @@ class QuizzesBloc extends Bloc<QuizzesEvent, QuizzesState> {
     emit(QuizzesLoading());
 
     try {
-      // TODO: Replace with actual backend call
-      // final quizzes = await quizRepository.getAll();
-
-      // Simulated delay for development
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // TODO: Replace with actual data from API
-      final quizzes = [
-        QuizModel(
-          id: '1',
-          title: 'Math Quiz 101',
-          description: 'Basic algebra and geometry questions',
-          status: 'public',
-          category: 'Mathematics',
-          createdAt: DateTime(2024, 11, 15),
-        ),
-        QuizModel(
-          id: '2',
-          title: 'Science Challenge',
-          description: 'Physics and Chemistry fundamentals',
-          status: 'public',
-          category: 'Science',
-          createdAt: DateTime(2024, 11, 20),
-        ),
-        QuizModel(
-          id: '3',
-          title: 'History Trivia',
-          description: 'World War II historical events',
-          status: 'private',
-          category: 'History',
-          createdAt: DateTime(2024, 11, 22),
-        ),
-        QuizModel(
-          id: '4',
-          title: 'English Grammar',
-          description: 'Advanced grammar rules and usage',
-          status: 'public',
-          category: 'English',
-          createdAt: DateTime(2024, 11, 25),
-        ),
-        QuizModel(
-          id: '5',
-          title: 'Programming Basics',
-          description: 'Introduction to programming concepts',
-          status: 'public',
-          category: 'Technology',
-          createdAt: DateTime(2024, 11, 28),
-        ),
-      ];
-
+      final quizzes = await _teacherRepository.getMyQuizzes();
       emit(QuizzesLoaded(quizzes: quizzes, filteredQuizzes: quizzes));
     } catch (e) {
       emit(QuizzesError('Failed to load quizzes: ${e.toString()}'));
@@ -102,10 +54,7 @@ class QuizzesBloc extends Bloc<QuizzesEvent, QuizzesState> {
     }
 
     try {
-      // TODO: Replace with actual backend call
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Re-fetch quizzes (in real app, this would be an API call)
+      await Future.delayed(const Duration(seconds: 1));
       add(LoadQuizzesEvent());
     } catch (e) {
       emit(QuizzesError('Failed to refresh quizzes: ${e.toString()}'));
@@ -187,40 +136,6 @@ class QuizzesBloc extends Bloc<QuizzesEvent, QuizzesState> {
         filteredQuizzes: filtered,
       ),
     );
-  }
-
-  /// Delete a quiz
-  Future<void> _onDeleteQuiz(
-    DeleteQuizFromListEvent event,
-    Emitter<QuizzesState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! QuizzesLoaded) return;
-
-    try {
-      // TODO: Replace with actual backend call
-      // await quizRepository.delete(event.quizId);
-
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // Remove from local list
-      final updatedQuizzes = currentState.quizzes
-          .where((q) => q.id != event.quizId)
-          .toList();
-
-      final updatedFiltered = currentState.filteredQuizzes
-          .where((q) => q.id != event.quizId)
-          .toList();
-
-      emit(
-        currentState.copyWith(
-          quizzes: updatedQuizzes,
-          filteredQuizzes: updatedFiltered,
-        ),
-      );
-    } catch (e) {
-      emit(QuizzesError('Failed to delete quiz: ${e.toString()}'));
-    }
   }
 
   /// Apply all filters to the quizzes list

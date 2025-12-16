@@ -20,4 +20,6 @@ abstract class AuthenticationRepository {
   Future<User> signInWithGoogle({required String role});
 
   Future<void> logout();
+
+  bool isPremiumUser();
 }
