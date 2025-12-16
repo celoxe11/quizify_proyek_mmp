@@ -49,7 +49,7 @@ class EditQuizBloc extends Bloc<EditQuizEvent, EditQuizState> {
 
     // Generate quiz code from ID if not available
     final quizCode =
-        quiz.code ??
+        quiz.quizCode ??
         (quiz.id.length >= 8
             ? quiz.id.substring(0, 8).toUpperCase()
             : quiz.id.toUpperCase());
