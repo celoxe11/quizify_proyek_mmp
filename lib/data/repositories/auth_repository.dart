@@ -209,4 +209,9 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
 
   // Important: Close the stream when the repo is disposed
   void dispose() => _controller.close();
+
+  @override
+  bool isPremiumUser() {
+    return _currentUser.subscriptionId == 1;
+  }
 }

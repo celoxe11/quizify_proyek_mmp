@@ -25,16 +25,15 @@ class TeacherQuizService {
 
   /// Get all quizzes for the authenticated teacher
   Future<List<QuizModel>> getMyQuizzes() async {
-    final response = await _client.get('/teacher/quiz');
-
+    final response = await _client.get('/teacher/myquiz');
     final List<dynamic> data = response.data['quizzes'] ?? response.data;
     return data.map((json) => QuizModel.fromJson(json)).toList();
   }
 
-  /// Get a specific quiz by ID
-  Future<QuizModel> getQuizById(String quizId) async {
-    final response = await _client.get('/teacher/quiz/$quizId');
-    return QuizModel.fromJson(response.data);
+  /// Get a specific quiz by ID with questions
+  Future<Map<String, dynamic>> getQuizDetail(String quizId) async {
+    final response = await _client.get('/teacher/quiz/detail/$quizId');
+    return response.data as Map<String, dynamic>;
   }
 
   /// Create a new quiz
