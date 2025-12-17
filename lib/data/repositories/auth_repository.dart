@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../../core/services/auth_service.dart';
-import '../../core/services/auth_api_service.dart';
+import '../../core/services/auth/auth_service.dart';
+import '../../core/services/auth/auth_api_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
@@ -209,4 +209,9 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
 
   // Important: Close the stream when the repo is disposed
   void dispose() => _controller.close();
+
+  @override
+  bool isPremiumUser() {
+    return _currentUser.subscriptionId == 1;
+  }
 }

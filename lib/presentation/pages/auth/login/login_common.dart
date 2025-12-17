@@ -43,11 +43,18 @@ class LoginListener extends StatelessWidget {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
+          print(state.user.role);
+
           // Navigate based on user role
           if (state.user.role == 'student') {
             context.go('/student/home');
-          } else {
+          } else if (state.user.role == 'teacher') {
             context.go('/teacher/home');
+          } else if (state.user.role == 'admin') {
+            context.go('/admin/dashboard');
+          } else {
+            // Default fallback
+            context.go('/student/home');
           }
         } else if (state is AuthRequiresRoleSelection) {
           // New Google user from login - navigate to role selection

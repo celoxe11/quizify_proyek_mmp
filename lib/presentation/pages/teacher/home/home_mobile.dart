@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 
 class TeacherHomeMobile extends StatefulWidget {
@@ -104,6 +105,12 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
             },
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.go('/teacher/new-quiz');
+        },
+        child: const Icon(Icons.add),
       ),
       body: SingleChildScrollView(
         child: Column(

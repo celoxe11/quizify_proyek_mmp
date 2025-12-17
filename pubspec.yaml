@@ -52,6 +52,8 @@ dependencies:
   
   # State Management
   provider: ^6.1.2
+  image_picker: ^1.2.1
+  dio: ^5.9.0
 
 dev_dependencies:
   flutter_test:

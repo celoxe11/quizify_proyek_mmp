@@ -4,7 +4,7 @@ class Quiz extends Equatable {
   final String id;
   final String title;
   final String? description;
-  final String? quizCode;
+  final String? quizCode; // Quiz code for joining
   final String status; // 'private' or 'public'
   final String? category;
   final String? createdBy;
@@ -24,7 +24,7 @@ class Quiz extends Equatable {
     this.createdAt,
     this.updatedAt,
   });
-
+  
   /// Empty quiz for initial states
   static const empty = Quiz(
     id: '',
