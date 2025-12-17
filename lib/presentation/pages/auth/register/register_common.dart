@@ -79,8 +79,13 @@ class RegisterListener extends StatelessWidget {
           final role = state.user.role;
           if (role == 'student') {
             context.go('/student/home');
-          } else {
+          } else if (role == 'teacher') {
             context.go('/teacher/home');
+          } else if (role == 'admin') {
+            context.go('/admin/dashboard');
+          } else {
+            // Default fallback
+            context.go('/student/home');
           }
         } else if (state is AuthRequiresRoleSelection) {
           // New Google user - navigate to role selection

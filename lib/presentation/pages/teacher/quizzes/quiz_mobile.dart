@@ -1,72 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
+import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_state.dart';
 
-class TeacherQuizMobile extends StatefulWidget {
+/// Mobile layout for the Quizzes page.
+///
+/// Uses BLoC pattern for state management.
+/// Data flows from [QuizzesBloc] via [QuizzesState].
+class TeacherQuizMobile extends StatelessWidget {
   const TeacherQuizMobile({super.key});
-
-  @override
-  State<TeacherQuizMobile> createState() => _TeacherQuizMobileState();
-}
-
-class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
-  // Dummy quiz data
-  final List<Map<String, dynamic>> _quizzes = [
-    {
-      'id': '1',
-      'title': 'Math Quiz 101',
-      'description': 'Basic algebra and geometry questions',
-      'questions': 20,
-      'duration': '30 min',
-      'difficulty': 'Easy',
-      'participants': 45,
-      'dateCreated': '2024-11-15',
-      'isPublished': true,
-    },
-    {
-      'id': '2',
-      'title': 'Science Challenge',
-      'description': 'Physics and Chemistry fundamentals',
-      'questions': 15,
-      'duration': '25 min',
-      'difficulty': 'Medium',
-      'participants': 32,
-      'dateCreated': '2024-11-20',
-      'isPublished': true,
-    },
-    {
-      'id': '3',
-      'title': 'History Trivia',
-      'description': 'World War II historical events',
-      'questions': 25,
-      'duration': '40 min',
-      'difficulty': 'Hard',
-      'participants': 28,
-      'dateCreated': '2024-11-22',
-      'isPublished': false,
-    },
-    {
-      'id': '4',
-      'title': 'English Grammar',
-      'description': 'Advanced grammar rules and usage',
-      'questions': 30,
-      'duration': '45 min',
-      'difficulty': 'Medium',
-      'participants': 52,
-      'dateCreated': '2024-11-25',
-      'isPublished': true,
-    },
-    {
-      'id': '5',
-      'title': 'Programming Basics',
-      'description': 'Introduction to programming concepts',
-      'questions': 18,
-      'duration': '35 min',
-      'difficulty': 'Easy',
-      'participants': 67,
-      'dateCreated': '2024-11-28',
-      'isPublished': true,
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -84,60 +30,78 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
             fontWeight: FontWeight.bold,
           ),
         ),
-      ),
-      body: Column(
-        children: [
-          // Add Quiz Button
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Navigate to create quiz page
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Create new quiz functionality coming soon!'),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Create New Quiz',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.darkAzure,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
-          // Quiz List
-          Expanded(
-            child: _quizzes.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _quizzes.length,
-                    itemBuilder: (context, index) {
-                      final quiz = _quizzes[index];
-                      return _buildQuizCard(quiz);
-                    },
-                  ),
+        actions: [
+          // Refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () {
+              context.read<QuizzesBloc>().add(RefreshQuizzesEvent());
+            },
+            tooltip: 'Refresh',
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.go('/teacher/new-quiz');
+        },
+        backgroundColor: AppColors.darkAzure,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: BlocBuilder<QuizzesBloc, QuizzesState>(
+        builder: (context, state) {
+          if (state is QuizzesLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
+            );
+          }
+
+          if (state is QuizzesError) {
+            return _buildErrorState(context, state.message);
+          }
+
+          if (state is QuizzesLoaded) {
+            return _buildContent(context, state);
+          }
+
+          // Initial state
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildContent(BuildContext context, QuizzesLoaded state) {
+    if (state.filteredQuizzes.isEmpty) {
+      return _buildEmptyState(context, state);
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<QuizzesBloc>().add(RefreshQuizzesEvent());
+        // Wait a bit for the refresh to complete
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      color: AppColors.darkAzure,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: state.filteredQuizzes.length,
+        itemBuilder: (context, index) {
+          final quiz = state.filteredQuizzes[index];
+          return _buildQuizCard(context, quiz);
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, QuizzesLoaded state) {
+    final hasFilters =
+        state.searchQuery != null ||
+        state.statusFilter != null ||
+        state.categoryFilter != null;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -145,7 +109,7 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
           Icon(Icons.quiz_outlined, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No quizzes yet',
+            hasFilters ? 'No quizzes match your filters' : 'No quizzes yet',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -154,29 +118,74 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Create your first quiz to get started',
+            hasFilters
+                ? 'Try adjusting your filters'
+                : 'Create your first quiz to get started',
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          if (hasFilters) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () {
+                context.read<QuizzesBloc>().add(const FilterQuizzesEvent(null));
+                context.read<QuizzesBloc>().add(
+                  const FilterByCategoryEvent(null),
+                );
+                context.read<QuizzesBloc>().add(const SearchQuizzesEvent(''));
+              },
+              icon: const Icon(Icons.clear),
+              label: const Text('Clear Filters'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load quizzes',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<QuizzesBloc>().add(LoadQuizzesEvent());
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.darkAzure,
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuizCard(Map<String, dynamic> quiz) {
-    Color difficultyColor;
-    switch (quiz['difficulty']) {
-      case 'Easy':
-        difficultyColor = Colors.green;
-        break;
-      case 'Medium':
-        difficultyColor = Colors.orange;
-        break;
-      case 'Hard':
-        difficultyColor = Colors.red;
-        break;
-      default:
-        difficultyColor = Colors.grey;
-    }
+  Widget _buildQuizCard(BuildContext context, QuizModel quiz) {
+    final isPublic = quiz.status.toLowerCase() == 'public';
+    Color statusColor = isPublic ? Colors.green : Colors.orange;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -196,10 +205,7 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            // TODO: Navigate to quiz details/edit page
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Edit quiz: ${quiz['title']}')),
-            );
+            context.go('/teacher/quiz-detail', extra: quiz);
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -214,7 +220,7 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            quiz['title'],
+                            quiz.title,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -223,7 +229,7 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            quiz['description'],
+                            quiz.description ?? 'No description',
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey[600],
@@ -237,72 +243,68 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
                     const SizedBox(width: 12),
                     Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: difficultyColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            quiz['difficulty'],
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: difficultyColor,
+                        // Category badge
+                        if (quiz.category != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.darkAzure.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              quiz.category!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.darkAzure,
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(height: 4),
+                        // Status badge
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: quiz['isPublished']
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.grey.withOpacity(0.1),
+                            color: statusColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
-                            quiz['isPublished'] ? 'Published' : 'Draft',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: quiz['isPublished']
-                                  ? Colors.green
-                                  : Colors.grey,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isPublic ? Icons.public : Icons.lock,
+                                size: 12,
+                                color: statusColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                isPublic ? 'Public' : 'Private',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 8,
-                  children: [
-                    _buildQuizInfo(
-                      Icons.quiz_outlined,
-                      '${quiz['questions']} Q',
-                    ),
-                    _buildQuizInfo(Icons.access_time, quiz['duration']),
-                    _buildQuizInfo(
-                      Icons.people,
-                      '${quiz['participants']} taken',
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 8),
-                Text(
-                  'Created: ${quiz['dateCreated']}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                ),
+                // Created date
+                if (quiz.createdAt != null)
+                  Text(
+                    'Created: ${_formatDate(quiz.createdAt!)}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
               ],
             ),
           ),
@@ -311,14 +313,7 @@ class _TeacherQuizMobileState extends State<TeacherQuizMobile> {
     );
   }
 
-  Widget _buildQuizInfo(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-      ],
-    );
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

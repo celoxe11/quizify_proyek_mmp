@@ -65,4 +65,31 @@ class QuestionModel extends Question {
       updatedAt: question.updatedAt,
     );
   }
+
+  // copy with method
+  QuestionModel copyWith({
+    String? id,
+    String? quizId,
+    String? type,
+    String? difficulty,
+    String? questionText,
+    String? correctAnswer,
+    List<String>? options,
+    bool? isGenerated,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return QuestionModel(
+      id: id ?? this.id,
+      quizId: quizId ?? this.quizId,
+      type: type ?? this.type,
+      difficulty: difficulty ?? this.difficulty,
+      questionText: questionText ?? this.questionText,
+      correctAnswer: correctAnswer ?? this.correctAnswer,
+      options: options ?? this.options,
+      isGenerated: isGenerated ?? this.isGenerated,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

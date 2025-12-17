@@ -41,15 +41,15 @@ class Question extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        quizId,
-        type,
-        difficulty,
-        questionText,
-        correctAnswer,
-        options,
-        isGenerated,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    quizId,
+    type,
+    difficulty,
+    questionText,
+    correctAnswer,
+    options,
+    isGenerated,
+    createdAt,
+    updatedAt,
+  ];
 }
