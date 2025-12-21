@@ -31,6 +31,9 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   // Cache the current user
   User _currentUser = User.empty;
 
+  // Timer for periodic token refresh
+  Timer? _tokenRefreshTimer;
+
   AuthenticationRepositoryImpl({
     AuthService? firebaseAuthService,
     AuthApiService? apiService,
@@ -40,10 +43,16 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     _firebaseAuthService.authStateChanges.listen((firebaseUser) async {
       if (firebaseUser != null) {
         try {
+          // Refresh token to get latest custom claims
+          await _refreshAuthToken();
+          
           // If firebase user exists, fetch full profile from MySQL (Node.js)
           final userModel = await _apiService.getUserProfile();
           _currentUser = userModel;
           _controller.add(userModel);
+          
+          // Start periodic token refresh (every 50 minutes)
+          _startTokenRefreshTimer();
         } catch (_) {
           // If API fetch fails but Firebase is logged in, you might want to
           // emit User.empty or a cached user.
@@ -53,6 +62,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
       } else {
         _currentUser = User.empty;
         _controller.add(User.empty);
+        _stopTokenRefreshTimer();
       }
     });
   }
@@ -207,8 +217,40 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     _controller.add(User.empty);
   }
 
+  // Start periodic token refresh (every 50 minutes)
+  void _startTokenRefreshTimer() {
+    _stopTokenRefreshTimer(); // Cancel existing timer if any
+    _tokenRefreshTimer = Timer.periodic(
+      const Duration(minutes: 50),
+      (timer) async {
+        if (_firebaseAuthService.currentUser != null) {
+          try {
+            await _refreshAuthToken();
+            // Optionally refresh user profile from backend
+            final userModel = await _apiService.getUserProfile();
+            _currentUser = userModel;
+            _controller.add(userModel);
+          } catch (_) {
+            // Silent fail - token refresh will retry next period
+          }
+        } else {
+          _stopTokenRefreshTimer();
+        }
+      },
+    );
+  }
+
+  // Stop token refresh timer
+  void _stopTokenRefreshTimer() {
+    _tokenRefreshTimer?.cancel();
+    _tokenRefreshTimer = null;
+  }
+
   // Important: Close the stream when the repo is disposed
-  void dispose() => _controller.close();
+  void dispose() {
+    _stopTokenRefreshTimer();
+    _controller.close();
+  }
 
   @override
   bool isPremiumUser() {
