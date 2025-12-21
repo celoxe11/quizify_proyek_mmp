@@ -30,7 +30,7 @@ export 'teacher/teacher_services.dart';
 export 'student/student_services.dart';
 
 // Admin services
-export 'admin/admin_services.dart';
+export 'admin/admin_api_service.dart';
 
 // Legacy services (using http ApiClient) - keep for backward compatibility
 export 'auth/auth_service.dart';

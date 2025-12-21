@@ -33,11 +33,16 @@ import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher_shell.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/student_shell.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/admin_shell.dart';
+import 'package:quizify_proyek_mmp/core/services/admin/admin_api_service.dart';
+import 'package:quizify_proyek_mmp/data/repositories/admin_repository.dart';
 
 // import repository
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/core/services/auth/auth_service.dart';
 import 'package:quizify_proyek_mmp/core/services/auth/auth_api_service.dart';
+
+import 'package:dio/dio.dart'; 
+
 
 // --- Global Navigator Keys (REQUIRED for ShellRoute) ---
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -200,10 +205,18 @@ class MyApp extends StatelessWidget {
             ),
             GoRoute(
               path: '/admin/users',
-              builder: (context, state) =>
-                  // TODO: Replace with actual Users Management Page
-                  const Scaffold(body: Center(child: Text('Users Management'))),
+              builder: (context, state) {
+                // Bungkus Page dengan BlocProvider agar Page bisa akses Bloc
+                return BlocProvider(
+                  create: (context) => AdminUsersBloc(
+                    // Ambil repository yang sudah di-inject di atas
+                    adminRepository: context.read<AdminRepositoryImpl>(),
+                  ),
+                  child: const AdminUsersPage(),
+                );
+              },
             ),
+
             GoRoute(
               path: '/admin/quizzes',
               builder: (context, state) => const AdminQuizPage(),
@@ -238,6 +251,18 @@ class MyApp extends StatelessWidget {
             apiService: AuthApiService(),
           ),
         ),
+        RepositoryProvider(
+          create: (context)  {
+             // Sebaiknya gunakan instance Dio yang sama dengan Auth (Singleton)
+             // Tapi untuk sekarang new Dio() dulu tidak apa-apa asalkan diatur BaseURL-nya
+             final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000')); 
+             
+             return AdminRepositoryImpl(
+               apiService: AdminApiService(dio),
+             );
+          },
+        ),
+
       ],
       child: MultiBlocProvider(
         providers: [
