@@ -24,7 +24,7 @@
 library services;
 
 // Teacher services
-export 'teacher/teacher_services.dart';
+export 'teacher/teacher_service.dart';
 
 // Student services
 export 'student/student_services.dart';
