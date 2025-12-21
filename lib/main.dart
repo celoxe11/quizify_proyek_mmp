@@ -29,7 +29,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/answer_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_quiz_page.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_detail.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher_shell.dart';
@@ -317,7 +317,7 @@ class _AppView extends StatelessWidget {
                   router.go('/admin/home');
                 }
               }
-            }
+              }
           },
           child: MaterialApp.router(
             title: 'Quizify',
