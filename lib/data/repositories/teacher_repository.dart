@@ -1,20 +1,17 @@
-import 'package:quizify_proyek_mmp/core/services/teacher/teacher_services.dart';
+import 'package:quizify_proyek_mmp/core/services/services.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/data/responses/quiz_detail_response.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 
 class TeacherRepositoryImpl extends TeacherRepository {
-  final TeacherQuizService _quizService;
-  final TeacherQuestionService _questionService;
+  final TeacherService _teacherService;
 
   // todo: provider lokal bisa ditambahin disini nanti
 
   TeacherRepositoryImpl({
-    TeacherQuizService? quizService,
-    TeacherQuestionService? questionService,
-  }) : _quizService = quizService ?? TeacherQuizService(),
-       _questionService = questionService ?? TeacherQuestionService();
+    TeacherService? teacherService
+  }) : _teacherService = teacherService ?? TeacherService();
 
   @override
   Future<void> endQuiz(String sessionId) {
@@ -41,8 +38,7 @@ class TeacherRepositoryImpl extends TeacherRepository {
 
   @override
   Future<List<QuizModel>> getMyQuizzes() {
-    // todo: ambil dari lokal dulu kalo ada, kalo ga ada baru dari api, nanti di sync
-    return _quizService.getMyQuizzes();
+    return _teacherService.getMyQuizzes();
   }
 
   @override
@@ -61,7 +57,7 @@ class TeacherRepositoryImpl extends TeacherRepository {
     // }
 
     // Fallback to API
-    final apiResponse = await _quizService.getQuizDetail(quizId);
+    final apiResponse = await _teacherService.getQuizDetail(quizId);
     return QuizDetailResponse.fromApi(apiResponse);
   }
 
