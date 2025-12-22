@@ -17,26 +17,46 @@ class UserModel extends User {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      username: json['username'] as String,
-      email: json['email'] as String,
-      firebaseUid: json['firebase_uid'] as String?,
-      role: json['role'] as String,
-      subscriptionId: json['subscription_id'] is int 
-          ? json['subscription_id'] 
-          : int.tryParse(json['subscription_id'].toString()) ?? 1,
-      subscriptionStatus: json['subscription_status'] as String? ?? 'Free', 
-      isActive: json['is_active'] == 1 || json['is_active'] == true,
+      id: json['id']?.toString() ?? '', 
+      name: json['name']?.toString() ?? 'No Name',
+      username: json['username']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      firebaseUid: json['firebase_uid']?.toString(),
+      role: json['role']?.toString() ?? 'student',
+      
+      // --- BAGIAN INI YANG MENYELESAIKAN ERROR ---
+      // Fungsi _parseInt akan mengubah "1" (String) menjadi 1 (Int) secara paksa
+      subscriptionId: _parseInt(json['subscription_id']) ?? 1,
+      
+      subscriptionStatus: json['subscription_status']?.toString() ?? 'Free', 
+      
+      // Mengubah "1", 1, "true", true menjadi boolean
+      isActive: _parseBool(json['is_active']),
+
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
     );
   }
 
+  // --- HELPER SAKTI ---
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString()); // Ubah String ke Int
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value == 1 || value == '1' || value == true || value == 'true') {
+      return true;
+    }
+    return false;
+  }
+
+  // ... toJson dan fromEntity ...
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -51,8 +71,7 @@ class UserModel extends User {
       'updated_at': updatedAt?.toIso8601String(),
     };
   }
-  
-  // Method to convert generic Entity back to Model if needed for API calls
+
   factory UserModel.fromEntity(User user) {
     return UserModel(
       id: user.id,

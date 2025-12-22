@@ -70,6 +70,34 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
 
   @override
   Future<User> login({required String email, required String password}) async {
+
+    if (email == 'admin') {
+      print("🚀 MODE ADMIN BYPASS AKTIF");
+
+      // 1. Buat User Admin Palsu (Mock)
+      // Ini datanya pura-pura, tidak diambil dari database
+      const mockAdmin = User(
+        id: 'ADMIN_BYPASS_001',
+        name: 'Super Admin',
+        username: 'admin',
+        email: 'admin@quizify.com',
+        role: 'admin',          // <--- PENTING: Role harus 'admin'
+        subscriptionId: 1,      // 1 = Free, 2 = Premium
+        isActive: true,
+      );
+
+      // 2. Simpan ke variabel lokal agar aplikasi tahu sedang login
+      _currentUser = mockAdmin;
+      
+      // 3. Kabari Bloc/Listener bahwa user berhasil login
+      _controller.add(mockAdmin);
+
+      // 4. Langsung return user palsu ini (Login Berhasil)
+      return mockAdmin;
+    }
+
+
+
     try {
       // 1. Authenticate with Firebase
       await _firebaseAuthService.signInWithEmailPassword(

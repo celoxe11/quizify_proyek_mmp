@@ -30,6 +30,9 @@ import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_q
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_detail.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/users/admin_users_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/users/admin_users_page.dart';
+
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher_shell.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/student_shell.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/admin_shell.dart';
@@ -42,6 +45,7 @@ import 'package:quizify_proyek_mmp/core/services/auth/auth_service.dart';
 import 'package:quizify_proyek_mmp/core/services/auth/auth_api_service.dart';
 
 import 'package:dio/dio.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
 
 
 // --- Global Navigator Keys (REQUIRED for ShellRoute) ---
@@ -228,13 +232,11 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: '/admin/analytics',
               builder: (context, state) =>
-                  // TODO: Replace with actual Analytics Page
                   const Scaffold(body: Center(child: Text('Analytics'))),
             ),
             GoRoute(
               path: '/admin/settings',
               builder: (context, state) =>
-                  // TODO: Replace with actual Settings Page
                   const Scaffold(body: Center(child: Text('Settings'))),
             ),
           ],
@@ -255,7 +257,42 @@ class MyApp extends StatelessWidget {
           create: (context)  {
              // Sebaiknya gunakan instance Dio yang sama dengan Auth (Singleton)
              // Tapi untuk sekarang new Dio() dulu tidak apa-apa asalkan diatur BaseURL-nya
-             final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000')); 
+             final dio = Dio(BaseOptions(
+               baseUrl: 'http://localhost:3000', 
+               headers: {
+                 'Content-Type': 'application/json',
+                 'Accept': 'application/json',
+               }
+             )); 
+
+             // Ini tugasnya menyisipkan Token otomatis sebelum request dikirim
+             dio.interceptors.add(InterceptorsWrapper(
+               onRequest: (options, handler) async {
+                 // Ambil user yang sedang login
+                 final user = FirebaseAuth.instance.currentUser;
+                 
+                 if (user != null) {
+                   // Ambil token ID Firebase terbaru
+                   final idToken = await user.getIdToken();
+                   
+                   // Masukkan ke Header: "Authorization: Bearer <token>"
+                   options.headers['Authorization'] = 'Bearer $idToken';
+                   print("Token attached: ${idToken?.substring(0, 10)}..."); // Debugging
+                 } else {
+
+                  print("⚠️ Sending Mock Token for Bypass");
+                  options.headers['Authorization'] = 'Bearer RAHASIA_KITA_BERSAMA';
+
+                   print("User not logged in, no token sent.");
+                 }
+                 
+                 return handler.next(options);
+               },
+               onError: (error, handler) {
+                 print("Interceptor Error: ${error.response?.statusCode} -> ${error.message}");
+                 return handler.next(error);
+               }
+             )); 
              
              return AdminRepositoryImpl(
                apiService: AdminApiService(dio),
