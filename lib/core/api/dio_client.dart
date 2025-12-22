@@ -69,9 +69,9 @@ class DioClient {
     _dio.interceptors.add(_authInterceptor);
 
     // 2. Logging Interceptor (only in debug mode)
-    // if (!PlatformConfig.isProduction) {
-    //   _dio.interceptors.add(_loggingInterceptor);
-    // }
+    if (!PlatformConfig.isProduction) {
+      _dio.interceptors.add(_loggingInterceptor);
+    }
 
     // 3. Error Handling Interceptor
     _dio.interceptors.add(_errorInterceptor);
@@ -150,12 +150,14 @@ class DioClient {
   /// GET request
   Future<Response> get(
     String path, {
+    dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
     try {
       return await _dio.get(
         path,
+        data: data,
         queryParameters: queryParameters,
         options: options,
       );
