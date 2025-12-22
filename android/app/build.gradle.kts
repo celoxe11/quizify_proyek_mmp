@@ -8,9 +8,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-kotlin {
-    jvmToolchain(17)
-}
+// kotlin {
+//     jvmToolchain(17)
+// }
 
 android {
     namespace = "io.github.celoxe11.quizify.quizify_proyek_mmp"

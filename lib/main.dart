@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
@@ -27,7 +29,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/answer_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_quiz_page.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_detail.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/users/admin_users_bloc.dart';
@@ -75,12 +77,59 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final initialRoute = kIsWeb ? '/' : '/login';
-    final initialRoute = '/teacher/home';
+    return BlocProvider(
+      create: (context) => AuthBloc(
+        authRepository: AuthenticationRepositoryImpl(
+          firebaseAuthService: AuthService(),
+          apiService: AuthApiService(),
+        ),
+      )..add(const AppStarted()), // Trigger auth check on app start
+      child: const _AppView(),
+    );
+  }
+}
+
+class _AppView extends StatelessWidget {
+  const _AppView();
+
+  @override
+  Widget build(BuildContext context) {
+    final initialRoute = kIsWeb ? '/' : '/login';
 
     final router = GoRouter(
       initialLocation: initialRoute,
       navigatorKey: _rootNavigatorKey,
+      // Redirect based on auth state
+      redirect: (context, state) {
+        final authState = context.read<AuthBloc>().state;
+        final isOnAuthPage =
+            state.matchedLocation == '/' ||
+            state.matchedLocation == '/login' ||
+            state.matchedLocation == '/register' ||
+            state.matchedLocation == '/role-selection';
+
+        // If user is authenticated
+        if (authState is AuthAuthenticated) {
+          // If on auth page, redirect to appropriate home based on role
+          if (isOnAuthPage) {
+            if (authState.user.role == 'teacher') {
+              return '/teacher/home';
+            } else if (authState.user.role == 'student') {
+              return '/student/home';
+            } else if (authState.user.role == 'admin') {
+              return '/admin/home';
+            }
+          }
+          return null; // Stay on current page
+        }
+
+        // If user is not authenticated and not on auth page, go to login
+        if (authState is AuthUnauthenticated && !isOnAuthPage) {
+          return '/login';
+        }
+
+        return null; // No redirect needed
+      },
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
         GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
@@ -313,9 +362,24 @@ class MyApp extends StatelessWidget {
         child: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthUnauthenticated) {
-              // Navigate to login when logged out
+              // Navigate to login page when logged out
               router.go('/login');
-            }
+            } else if (state is AuthAuthenticated) {
+              // Auto-navigate to appropriate home after login
+              final currentLocation = router.routeInformationProvider.value.uri
+                  .toString();
+              if (currentLocation == '/' ||
+                  currentLocation == '/login' ||
+                  currentLocation == '/register') {
+                if (state.user.role == 'teacher') {
+                  router.go('/teacher/home');
+                } else if (state.user.role == 'student') {
+                  router.go('/student/home');
+                } else if (state.user.role == 'admin') {
+                  router.go('/admin/home');
+                }
+              }
+              }
           },
           child: MaterialApp.router(
             title: 'Quizify',

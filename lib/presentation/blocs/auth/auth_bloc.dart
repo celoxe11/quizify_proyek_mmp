@@ -20,6 +20,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<CompleteGoogleSignInRequested>(_onCompleteGoogleSignInRequested);
     on<UpdateProfileRequested>(_onUpdateProfileRequested);
     on<PasswordResetRequested>(_onPasswordResetRequested);
+
+    // Listen to repository user stream for automatic state updates
+    // This handles token refresh and session persistence automatically
+    _authRepository.user.listen((user) {
+      if (user.isEmpty) {
+        emit(const AuthUnauthenticated());
+      } else {
+        emit(AuthAuthenticated(user));
+      }
+    });
   }
 
   Future<void> _onAppStarted(AppStarted event, Emitter<AuthState> emit) async {
