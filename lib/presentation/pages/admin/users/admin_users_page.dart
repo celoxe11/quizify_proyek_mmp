@@ -4,7 +4,7 @@ import 'package:quizify_proyek_mmp/presentation/blocs/admin/users/admin_users_bl
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/users/admin_users_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/users/admin_users_state.dart';
 import 'package:quizify_proyek_mmp/domain/entities/user.dart';
-import 'package:quizify_proyek_mmp/core/constants/app_colors.dart'; // Sesuaikan path
+import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 
 class AdminUsersPage extends StatefulWidget {
   const AdminUsersPage({super.key});
@@ -17,17 +17,23 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   @override
   void initState() {
     super.initState();
-    // Panggil event load saat halaman dibuka
+    // Load data saat halaman dibuka
     context.read<AdminUsersBloc>().add(FetchAllUsersEvent());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Manage Users'),
-        elevation: 0,
+        title: const Text(
+          'Manage Users',
+          style: TextStyle(
+              color: AppColors.darkAzure, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: AppColors.darkAzure),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -35,35 +41,83 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
               context.read<AdminUsersBloc>().add(FetchAllUsersEvent());
             },
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              "All Registered Users",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            // --- HEADER TITLE ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "All Registered Users",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.filter_list, size: 18),
+                  label: const Text("Filter"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.pureWhite,
+                    foregroundColor: AppColors.darkAzure,
+                    elevation: 0,
+                    side: const BorderSide(color: AppColors.darkAzure),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
+
+            // --- TABLE CARD ---
             Expanded(
               child: Card(
-                elevation: 2,
+                elevation: 0,
+                // [FIX 1] Clip.antiAlias membuat sudut header tabel ikut melengkung (rounded)
+                clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.grey.shade200),
                 ),
+                color: Colors.white,
                 child: BlocBuilder<AdminUsersBloc, AdminUsersState>(
                   builder: (context, state) {
                     if (state is AdminUsersLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.darkAzure));
                     } else if (state is AdminUsersError) {
-                      return Center(child: Text(state.message));
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline,
+                                size: 48, color: Colors.red),
+                            const SizedBox(height: 8),
+                            Text(state.message,
+                                style: const TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      );
                     } else if (state is AdminUsersLoaded) {
                       if (state.users.isEmpty) {
                         return const Center(child: Text("No users found"));
                       }
-                      return _buildUsersTable(state.users);
+                      
+                      // [FIX 2] LayoutBuilder digunakan untuk mengambil lebar Card
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          // Kirim lebar maksimal ke fungsi tabel
+                          return _buildUsersTable(state.users, constraints.maxWidth);
+                        },
+                      );
                     }
                     return const SizedBox();
                   },
@@ -76,104 +130,219 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     );
   }
 
-  Widget _buildUsersTable(List<User> users) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: MaterialStateProperty.all(Colors.grey[200]),
-          columns: const [
-            DataColumn(label: Text('ID', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('User Info', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Subscription', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-          ],
-          rows: users.map((user) {
-            final isBlocked = !user.isActive;
-            return DataRow(
-              cells: [
-                DataCell(Text(user.id, style: const TextStyle(fontWeight: FontWeight.bold))),
-                DataCell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text(user.email, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: user.role == 'teacher' ? Colors.blue[50] : Colors.green[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: user.role == 'teacher' ? Colors.blue : Colors.green,
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Text(
-                      user.role.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: user.role == 'teacher' ? Colors.blue[800] : Colors.green[800],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                DataCell(Text(user.subscriptionStatus ?? 'Free')), // Pakai field baru
-                DataCell(
-                  Row(
-                    children: [
-                      Icon(
-                        isBlocked ? Icons.block : Icons.check_circle,
-                        color: isBlocked ? Colors.red : Colors.green,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isBlocked ? 'Blocked' : 'Active',
-                        style: TextStyle(
-                          color: isBlocked ? Colors.red : Colors.green,
-                          fontWeight: FontWeight.w600,
+  Widget _buildUsersTable(List<User> users, double minWidth) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.grey.shade200,
+        dataTableTheme: DataTableThemeData(
+          headingRowColor: MaterialStateProperty.all(AppColors.darkAzure),
+          dataRowColor: MaterialStateProperty.resolveWith<Color?>((states) {
+            return Colors.white;
+          }),
+        ),
+      ),
+      child: Scrollbar(
+        thumbVisibility: true,
+        trackVisibility: true,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              // [FIX 3] Paksa lebar tabel minimal selebar layar/card
+              // Ini yang bikin background header hijau full ke kanan
+              constraints: BoxConstraints(minWidth: minWidth),
+              child: DataTable(
+                headingRowHeight: 56,
+                dataRowMinHeight: 60,
+                dataRowMaxHeight: 60,
+                columnSpacing: 24,
+                horizontalMargin: 24,
+                columns: const [
+                  DataColumn(
+                      label: Text('USER INFO',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold))),
+                  DataColumn(
+                      label: Text('ROLE',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold))),
+                  DataColumn(
+                      label: Text('SUBSCRIPTION',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold))),
+                  DataColumn(
+                      label: Text('STATUS',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold))),
+                  DataColumn(
+                      label: Text('ACTIONS',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold))),
+                ],
+                rows: users.map((user) {
+                  final isBlocked = !user.isActive;
+                  return DataRow(
+                    cells: [
+                      // CELL 1: USER INFO
+                      DataCell(
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor:
+                                  AppColors.dirtyCyan.withOpacity(0.2),
+                              child: Text(
+                                user.name.isNotEmpty
+                                    ? user.name[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                    color: AppColors.darkAzure,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(user.name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14)),
+                                Text(user.email,
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600])),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                DataCell(
-                  Row(
-                    children: [
-                      // Tombol Block / Unblock
-                      Tooltip(
-                        message: isBlocked ? "Unblock User" : "Block User",
-                        child: IconButton(
-                          icon: Icon(
-                            isBlocked ? Icons.lock_open : Icons.lock_outline,
-                            color: isBlocked ? Colors.green : Colors.red,
+                      
+                      // CELL 2: ROLE
+                      DataCell(
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: user.role == 'teacher'
+                                ? AppColors.darkAzure.withOpacity(0.1)
+                                : Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: user.role == 'teacher'
+                                  ? AppColors.darkAzure
+                                  : Colors.orange,
+                              width: 1,
+                            ),
                           ),
-                          onPressed: () => _showBlockConfirmation(context, user),
+                          child: Text(
+                            user.role.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: user.role == 'teacher'
+                                  ? AppColors.darkAzure
+                                  : Colors.orange[800],
+                            ),
+                          ),
                         ),
                       ),
-                      // Tombol Delete (Optional)
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                        onPressed: () {
-                          // Logic delete here
-                        },
+                      
+                      // CELL 3: SUBSCRIPTION
+                      DataCell(
+                        Text(
+                          user.subscriptionStatus ?? 'Free',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      
+                      // CELL 4: STATUS
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isBlocked
+                                    ? AppColors.accentRed
+                                    : Colors.green,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isBlocked ? 'Blocked' : 'Active',
+                              style: TextStyle(
+                                color: isBlocked
+                                    ? AppColors.accentRed
+                                    : Colors.green[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // CELL 5: ACTIONS
+                      DataCell(
+                        Row(
+                          children: [
+                            Tooltip(
+                              message: isBlocked ? "Unblock User" : "Block User",
+                              child: InkWell(
+                                onTap: () => _showBlockConfirmation(context, user),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isBlocked
+                                        ? Colors.green.withOpacity(0.1)
+                                        : AppColors.accentRed.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    isBlocked ? Icons.lock_open : Icons.block,
+                                    color: isBlocked
+                                        ? Colors.green
+                                        : AppColors.accentRed,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Tooltip(
+                              message: "Delete User",
+                              child: InkWell(
+                                onTap: () {}, // Tambahkan logic delete nanti
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.grey,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -184,30 +353,39 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isBlocked ? 'Unblock User?' : 'Block User?'),
-        content: Text(
-          isBlocked 
-            ? 'Are you sure you want to reactivate ${user.name}?' 
-            : 'Are you sure you want to block ${user.name}? They will not be able to login.'
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(isBlocked ? Icons.check_circle : Icons.warning_amber,
+                color: isBlocked ? Colors.green : AppColors.accentRed),
+            const SizedBox(width: 8),
+            Text(isBlocked ? 'Activate User' : 'Block User'),
+          ],
         ),
+        content: Text(isBlocked
+            ? 'Are you sure you want to reactivate ${user.name}? They will be able to access the system again.'
+            : 'Are you sure you want to block ${user.name}? They will lose access immediately.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isBlocked ? Colors.green : Colors.red,
+              backgroundColor: isBlocked ? Colors.green : AppColors.accentRed,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
               Navigator.pop(ctx);
-              // Dispatch Event ke Bloc
               context.read<AdminUsersBloc>().add(
-                ToggleUserStatusEvent(userId: user.id, currentStatus: user.isActive),
-              );
+                    ToggleUserStatusEvent(
+                        userId: user.id, currentStatus: user.isActive),
+                  );
             },
-            child: Text(isBlocked ? 'Unblock' : 'Block'),
+            child: Text(isBlocked ? 'Reactivate' : 'Block Access'),
           ),
         ],
       ),
