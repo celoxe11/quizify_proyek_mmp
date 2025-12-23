@@ -11,7 +11,16 @@ class AdminApiService {
       // Endpoint ini harus mereturn JSON dengan structure { data: [...] }
       // Query backend harus ada JOIN ke subscription untuk dapat status text
       final response = await _dio.get('/api/admin/users');
-      return response.data['data']; 
+
+      if (response.data is List) {
+        return response.data; 
+      } 
+      // Atau berupa Map dengan key 'data' (Kurung Kurawal {})
+      else if (response.data is Map && response.data['data'] != null) {
+        return response.data['data'];
+      }
+      
+      return [];
     } catch (e) {
       throw Exception("API Error Fetch Users: $e");
     }
