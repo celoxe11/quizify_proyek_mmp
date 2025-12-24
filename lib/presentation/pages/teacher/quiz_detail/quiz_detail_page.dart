@@ -31,7 +31,7 @@ class TeacherQuizDetailPage extends StatefulWidget {
 }
 
 class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Tab Controller for Questions/Students/Accuracy tabs
   late TabController _tabController;
 
