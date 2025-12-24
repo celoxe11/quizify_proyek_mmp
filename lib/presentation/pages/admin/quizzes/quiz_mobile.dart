@@ -95,7 +95,7 @@ class _AdminQuizMobilePageState extends State<AdminQuizMobilePage> {
                                     title: quiz.title,
                                     onTap: () {
                                       // contoh: ke halaman detail quiz
-                                      context.go('/admin/quizz/${quiz.id}');
+                                      context.go('/admin/quiz/${quiz.id}');
                                     },
                                   );
                                 },

@@ -1,10 +1,11 @@
-import 'dart:convert';
+import 'package:quizify_proyek_mmp/domain/entities/question.dart';
 
 import '../../domain/repositories/admin_repository.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/quiz.dart';
 import '../models/user_model.dart';
 import '../models/quiz_model.dart';
+import '../models/question_model.dart';
 import '../../core/services/admin/admin_api_service.dart';
 
 class AdminRepositoryImpl implements AdminRepository {
@@ -66,4 +67,19 @@ class AdminRepositoryImpl implements AdminRepository {
       throw Exception("Repository Error: $e");
     }
   }
+
+  @override
+  Future<List<Question>> fetchQuizDetail(String quizId) async { // <--- Future disini
+    try {
+      // 1. Request API (Async/Future)
+      final rawData = await apiService.getQuizDetail(quizId);
+      
+      // 2. Parsing JSON ke Model (Sync/Langsung)
+      // Tidak perlu 'await' di dalam map
+      return rawData.map((json) => QuestionModel.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception("Gagal ambil soal: $e");
+    }
+  }
+
 }

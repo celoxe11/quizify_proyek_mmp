@@ -44,16 +44,16 @@ class User extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        username,
-        email,
-        firebaseUid,
-        role,
-        subscriptionId,
-        subscriptionStatus, 
-        isActive,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    name,
+    username,
+    email,
+    firebaseUid,
+    role,
+    subscriptionId,
+    subscriptionStatus, 
+    isActive,
+    createdAt,
+    updatedAt,
+  ];
 }

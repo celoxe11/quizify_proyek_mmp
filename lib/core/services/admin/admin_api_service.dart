@@ -47,4 +47,17 @@ class AdminApiService {
       throw Exception("API Error Fetch Quizzes: $e");
     }
   }
+
+  Future<List<dynamic>> getQuizDetail(String quizId) async {
+    try {
+      // Endpoint sesuai request backend kamu: /quiz/detail/:quiz_id
+      final response = await _dio.get('/api/admin/quiz/detail/$quizId');
+      
+      // Backend return: { message: "...", questions: [...] }
+      return response.data['questions'];
+    } catch (e) {
+      throw Exception("API Error Get Quiz Detail: $e");
+    }
+  }
+
 }

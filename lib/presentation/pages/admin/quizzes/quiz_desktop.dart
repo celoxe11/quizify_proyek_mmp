@@ -125,7 +125,7 @@ class _AdminQuizDesktopPageState extends State<AdminQuizDesktopPage> {
                                   onTap: () {
                                     // contoh ke halaman detail
                                     // sesuaikan route kalau perlu
-                                    context.go('/admin/quizz/${quiz.id}');
+                                    context.go('/admin/quiz/${quiz.id}');
                                   },
                                 );
                               },
