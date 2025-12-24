@@ -6,6 +6,8 @@ import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
 import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+// Import App Database
+import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
@@ -59,6 +61,9 @@ void main() async {
 
   // Initialize Firebase
   await FirebaseConfig.initialize();
+
+  // Initialize local database
+  final appDatabase = AppDatabase.instance;
 
   runApp(const MyApp());
 }
