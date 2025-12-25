@@ -51,7 +51,7 @@ class LoginListener extends StatelessWidget {
           } else if (state.user.role == 'teacher') {
             context.go('/teacher/home');
           } else if (state.user.role == 'admin') {
-            context.go('/admin/dashboard');
+            context.go('/admin/home');
           } else {
             // Default fallback
             context.go('/student/home');

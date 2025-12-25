@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
+import 'package:quizify_proyek_mmp/data/repositories/admin_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/analytics/admin_analytics_bloc.dart';
 
 class AdminHomePage extends StatelessWidget {
   const AdminHomePage({super.key});
@@ -7,91 +12,145 @@ class AdminHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(title: const Text('Admin Dashboard'), elevation: 0),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Dashboard Overview',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+    // Inject Bloc & Load Data
+    return BlocProvider(
+      create: (context) => AdminAnalyticsBloc(
+        context.read<AdminRepositoryImpl>(),
+      )..add(LoadAnalytics()),
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+          elevation: 0,
+          backgroundColor: AppColors.darkAzure,
+        foregroundColor: Colors.white,
+          actions: [
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () => ctx.read<AdminAnalyticsBloc>().add(LoadAnalytics()),
               ),
-              const SizedBox(height: 24),
+            ),
+            const SizedBox(width: 16),
+          ],
+        ),
+        body: BlocBuilder<AdminAnalyticsBloc, AdminAnalyticsState>(
+          builder: (context, state) {
+            // 1. Loading
+            if (state is AnalyticsLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            
+            // 2. Error
+            if (state is AnalyticsError) {
+              return Center(child: Text("Error: ${state.message}"));
+            }
 
-              // Stats Cards
-              GridView.count(
-                crossAxisCount:
-                    MediaQuery.of(context).size.width > _kMobileBreakpoint
-                    ? 4
-                    : 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                children: [
-                  _StatCard(
-                    title: 'Total Users',
-                    value: '1,234',
-                    icon: Icons.people,
-                    color: Colors.blue,
-                  ),
-                  _StatCard(
-                    title: 'Active Teachers',
-                    value: '45',
-                    icon: Icons.school,
-                    color: Colors.green,
-                  ),
-                  _StatCard(
-                    title: 'Active Students',
-                    value: '1,189',
-                    icon: Icons.person,
-                    color: Colors.orange,
-                  ),
-                  _StatCard(
-                    title: 'Total Quizzes',
-                    value: '567',
-                    icon: Icons.quiz,
-                    color: Colors.purple,
-                  ),
-                ],
-              ),
+            // 3. Success (Data Asli)
+            if (state is AnalyticsLoaded) {
+              final data = state.analytics;
 
-              const SizedBox(height: 32),
-              const Text(
-                'Recent Activity',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
+              // Hitung Statistik
+              int totalQuizzes = 0;
+              for (var t in data.teacherTrends) {
+                totalQuizzes += (t.math + t.science + t.history + t.other).toInt();
+              }
+              int activeTeachers = data.teacherTrends.length;
+              int activeStudents = data.studentParticipation.active;
+              int totalStudents = data.studentParticipation.total;
 
-              // Activity List
-              Card(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: 5,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.event)),
-                      title: Text('Activity ${index + 1}'),
-                      subtitle: const Text('2 hours ago'),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    );
-                  },
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Dashboard Overview',
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // --- STATS CARDS (DESAIN GRADIENT ASLI) ---
+                      GridView.count(
+                        crossAxisCount: MediaQuery.of(context).size.width > _kMobileBreakpoint ? 4 : 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        children: [
+                          _StatCard(
+                            title: 'Total Students',
+                            value: '$totalStudents',
+                            icon: Icons.people,
+                            color: Colors.blue,
+                          ),
+                          _StatCard(
+                            title: 'Active Teachers',
+                            value: '$activeTeachers',
+                            icon: Icons.school,
+                            color: Colors.green,
+                          ),
+                          _StatCard(
+                            title: 'Active Students',
+                            value: '$activeStudents',
+                            icon: Icons.person,
+                            color: Colors.orange,
+                          ),
+                          _StatCard(
+                            title: 'Total Quizzes',
+                            value: '$totalQuizzes',
+                            icon: Icons.quiz,
+                            color: Colors.purple,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+                      
+                      // Shortcut ke Analytics Detail & Log
+                      const Text(
+                        'Quick Actions',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _ActionCard(
+                              title: "View Analytics",
+                              icon: Icons.bar_chart,
+                              color: AppColors.darkAzure,
+                              onTap: () => context.go('/admin/analytics'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _ActionCard(
+                              title: "View Activity Logs",
+                              icon: Icons.history,
+                              color: Colors.teal,
+                              // Nanti arahkan ke halaman log yang akan dibuat
+                              onTap: () => context.go('/admin/logs'), 
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              );
+            }
+            return const SizedBox();
+          },
         ),
       ),
     );
   }
 }
 
+// --- DESAIN KARTU ASLI (GRADIENT) ---
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -109,9 +168,11 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
+          // Gradient Background sesuai request
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -124,7 +185,7 @@ class _StatCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: 32),
+              Icon(icon, color: Colors.white, size: 32), // Icon Putih biar kontras
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -133,15 +194,43 @@ class _StatCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.white, // Teks Putih
                     ),
                   ),
                   Text(
                     title,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ],
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionCard({required this.title, required this.icon, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
             ],
           ),
         ),
