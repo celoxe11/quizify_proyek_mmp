@@ -18,6 +18,9 @@ import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_d
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/edit_quiz/edit_quiz_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/quiz_detail/admin_quiz_detail_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/analytic/analytic_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
@@ -286,12 +289,32 @@ class _AppView extends StatelessWidget {
             GoRoute(
               path: '/admin/analytics',
               builder: (context, state) =>
-                  const Scaffold(body: Center(child: Text('Analytics'))),
+                  const AnalyticPage(),
             ),
             GoRoute(
               path: '/admin/settings',
               builder: (context, state) =>
                   const Scaffold(body: Center(child: Text('Settings'))),
+            ),
+            GoRoute(
+              path: '/admin/quiz/:quizId', 
+              builder: (context, state) {
+                // Ambil ID dari URL
+                final quizId = state.pathParameters['quizId']!;
+                
+                // Ambil Title dari "extra" (dikirim saat navigasi) atau default
+                final quizTitle = state.extra as String? ?? "Quiz Detail";
+
+                return BlocProvider(
+                  create: (context) => AdminQuizDetailBloc(
+                    adminRepository: context.read<AdminRepositoryImpl>(),
+                  ),
+                  child: AdminQuizDetailPage(
+                    quizId: quizId,
+                    quizTitle: quizTitle,
+                  ),
+                );
+              },
             ),
           ],
         ),
