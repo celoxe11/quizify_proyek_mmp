@@ -60,4 +60,14 @@ class AdminApiService {
     }
   }
 
+  // GET DASHBOARD ANALYTICS
+  Future<dynamic> getAnalytics() async {
+    try {
+      final response = await _dio.get('/api/admin/analytics');
+      return response.data; // Mengembalikan seluruh JSON { message:..., data:... }
+    } catch (e) {
+      throw Exception("API Error Analytics: $e");
+    }
+  }
+
 }

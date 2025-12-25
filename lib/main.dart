@@ -284,7 +284,7 @@ class _AppView extends StatelessWidget {
             GoRoute(
               path: '/admin/analytics',
               builder: (context, state) =>
-                  const AnalyticPage(),
+                  const AnalyticPageWrapper(),
             ),
             GoRoute(
               path: '/admin/settings',

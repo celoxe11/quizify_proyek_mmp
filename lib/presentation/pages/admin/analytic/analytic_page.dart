@@ -1,6 +1,25 @@
-import 'package:fl_chart/fl_chart.dart'; // WAJIB: Pastikan sudah install fl_chart
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
+import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
+import 'package:quizify_proyek_mmp/data/repositories/admin_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/analytics/admin_analytics_bloc.dart'; // Import Bloc Baru
+
+class AnalyticPageWrapper extends StatelessWidget {
+  const AnalyticPageWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Inject Bloc disini agar Page lebih bersih
+    return BlocProvider(
+      create: (context) => AdminAnalyticsBloc(
+        context.read<AdminRepositoryImpl>(),
+      )..add(LoadAnalytics()),
+      child: const AnalyticPage(),
+    );
+  }
+}
 
 class AnalyticPage extends StatelessWidget {
   const AnalyticPage({super.key});
@@ -10,342 +29,167 @@ class AnalyticPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          'Analytics Overview',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Analytics Overview', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.darkAzure,
         elevation: 0.5,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context.read<AdminAnalyticsBloc>().add(LoadAnalytics()),
+          )
+        ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Cek apakah Desktop (> 900px)
-          bool isDesktop = constraints.maxWidth > 900;
+      body: BlocBuilder<AdminAnalyticsBloc, AdminAnalyticsState>(
+        builder: (context, state) {
+          if (state is AnalyticsLoading) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.darkAzure));
+          } else if (state is AnalyticsError) {
+            return Center(child: Text("Error: ${state.message}"));
+          } else if (state is AnalyticsLoaded) {
+            final data = state.analytics; // DATA ASLI DARI BACKEND
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- HEADER ---
-                const Text(
-                  "Platform Statistics",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Monitor teacher activity, user engagement, and student performance.",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 32),
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                bool isDesktop = constraints.maxWidth > 900;
 
-                // --- RESPONSIVE LAYOUT ---
-                if (isDesktop) ...[
-                  // [DESKTOP] Tampilkan Grafik Guru & Siswa berdampingan (Compact)
-                  Row(
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
+                      const Text("Platform Statistics",
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      const SizedBox(height: 8),
+                      Text("Real-time data from database.", style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                      const SizedBox(height: 32),
+
+                      if (isDesktop) ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _SectionHeader(
-                              title: "1. Teacher Activity",
-                              subtitle: "Created vs Attempted",
-                              icon: Icons.school,
-                              color: Colors.blue,
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  const _SectionHeader(title: "1. Teacher Category Trends", subtitle: "Top Subject Areas", icon: Icons.school, color: Colors.blue),
+                                  const SizedBox(height: 16),
+                                  // PASS DATA KE CHART
+                                  _TeacherCategoryChartCard(data: data.teacherTrends),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 16),
-                            const _TeacherActivityChartCard(),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  const _SectionHeader(title: "2. Student Participation", subtitle: "Submission rate", icon: Icons.assignment_turned_in, color: Colors.green),
+                                  const SizedBox(height: 16),
+                                  // PASS DATA KE CHART
+                                  _StudentPerformanceChartCard(data: data.studentParticipation),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            _SectionHeader(
-                              title: "3. Student Participation",
-                              subtitle: "Submission rate",
-                              icon: Icons.assignment_turned_in,
-                              color: Colors.green,
-                            ),
-                            const SizedBox(height: 16),
-                            const _StudentPerformanceChartCard(),
-                          ],
-                        ),
-                      ),
+                        const SizedBox(height: 40),
+                        const _SectionHeader(title: "3. Quiz Flow Analysis", subtitle: "Difficulty vs Student Failures", icon: Icons.graphic_eq, color: Colors.purple),
+                        const SizedBox(height: 16),
+                        SizedBox(height: 350, child: _QuizFlowChartCard(data: data.quizFlow)),
+                        const SizedBox(height: 40),
+                        const _SectionHeader(title: "4. User Activity", subtitle: "Registrations vs Active Logins", icon: Icons.ssid_chart, color: Colors.orange),
+                        const SizedBox(height: 16),
+                        SizedBox(height: 350, child: _UserActivityChartCard(data: data.userActivity)),
+                      ] else ...[
+                        const _SectionHeader(title: "1. Teacher Category Trends", subtitle: "Top Subject Areas", icon: Icons.school, color: Colors.blue),
+                        const SizedBox(height: 16),
+                        _TeacherCategoryChartCard(data: data.teacherTrends),
+                        const SizedBox(height: 40),
+                        const _SectionHeader(title: "2. Student Participation", subtitle: "Submission rate", icon: Icons.assignment_turned_in, color: Colors.green),
+                        const SizedBox(height: 16),
+                        _StudentPerformanceChartCard(data: data.studentParticipation),
+                        const SizedBox(height: 40),
+                        const _SectionHeader(title: "3. Quiz Flow Analysis", subtitle: "Difficulty vs Failures", icon: Icons.graphic_eq, color: Colors.purple),
+                        const SizedBox(height: 16),
+                        SizedBox(height: 300, child: _QuizFlowChartCard(data: data.quizFlow)),
+                        const SizedBox(height: 40),
+                        const _SectionHeader(title: "4. User Activity", subtitle: "Registrations vs Logins", icon: Icons.ssid_chart, color: Colors.orange),
+                        const SizedBox(height: 16),
+                        SizedBox(height: 300, child: _UserActivityChartCard(data: data.userActivity)),
+                      ],
+                      const SizedBox(height: 40),
                     ],
                   ),
-                  const SizedBox(height: 40),
-                  // Grafik Login User (Full Width di bawah)
-                  _SectionHeader(
-                    title: "2. User Engagement",
-                    subtitle: "Daily active users (Login History)",
-                    icon: Icons.person_pin_circle,
-                    color: Colors.orange,
-                  ),
-                  const SizedBox(height: 16),
-                  const SizedBox(
-                    height: 300, // Fixed height agar rapi di desktop
-                    child: _UserLoginChartCard(),
-                  ),
-                ] else ...[
-                  // [MOBILE] Tumpuk ke bawah (Vertical Stack)
-                  _SectionHeader(
-                    title: "1. Teacher Activity",
-                    subtitle: "Questions Created vs. Quizzes Attempted",
-                    icon: Icons.school,
-                    color: Colors.blue,
-                  ),
-                  const SizedBox(height: 16),
-                  const _TeacherActivityChartCard(),
-
-                  const SizedBox(height: 40),
-
-                  _SectionHeader(
-                    title: "2. User Engagement",
-                    subtitle: "Daily active users (Login History)",
-                    icon: Icons.person_pin_circle,
-                    color: Colors.orange,
-                  ),
-                  const SizedBox(height: 16),
-                  const SizedBox(
-                    height: 250,
-                    child: _UserLoginChartCard(),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  _SectionHeader(
-                    title: "3. Student Participation",
-                    subtitle: "Submission rate over time",
-                    icon: Icons.assignment_turned_in,
-                    color: Colors.green,
-                  ),
-                  const SizedBox(height: 16),
-                  const _StudentPerformanceChartCard(),
-                ],
-
-                const SizedBox(height: 40), // Bottom padding
-              ],
-            ),
-          );
+                );
+              },
+            );
+          }
+          return const SizedBox();
         },
       ),
     );
   }
 }
 
-// =============================================================================
-// WIDGETS KOMPONEN
-// =============================================================================
+// ================= WIDGETS (UPDATED WITH REAL DATA) =================
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-
-  const _SectionHeader({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
+class _TeacherCategoryChartCard extends StatelessWidget {
+  final List<TeacherTrend> data; // Menerima Data Asli
+  const _TeacherCategoryChartCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
-              ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
+    if (data.isEmpty) return const Card(child: Padding(padding: EdgeInsets.all(20), child: Text("No teacher data yet")));
 
-// --- 1. BAR CHART (MANUAL VISUAL) ---
-// --- 1. BAR CHART (INTERACTIVE WITH FL_CHART) ---
-class _TeacherActivityChartCard extends StatelessWidget {
-  const _TeacherActivityChartCard();
-
-  @override
-  Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
       color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // Legend / Keterangan Warna
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _LegendItem(color: Colors.blue, label: "Questions Created"),
-                const SizedBox(width: 16),
-                _LegendItem(color: Colors.purple, label: "Student Attempts"),
+                _LegendItem(color: Colors.blue, label: "Math"),
+                SizedBox(width: 12),
+                _LegendItem(color: Colors.orange, label: "Science"),
+                SizedBox(width: 12),
+                _LegendItem(color: Colors.teal, label: "History"),
               ],
             ),
             const SizedBox(height: 32),
-            
-            // Grafik Batang Interaktif
             SizedBox(
-              height: 250, // Tinggi Grafik
+              height: 250,
               child: BarChart(
                 BarChartData(
-                  // Mengatur interaksi sentuh/hover
-                  barTouchData: BarTouchData(
-                    enabled: true,
-                    touchTooltipData: BarTouchTooltipData(
-                      // Warna background tooltip (kotak hitam transparan)
-                      getTooltipColor: (group) => Colors.blueGrey.shade900.withOpacity(0.9),
-                      tooltipPadding: const EdgeInsets.all(8),
-                      tooltipMargin: 8,
-                      // Mengatur isi teks saat di-hover
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        String teacherName = _getTeacherName(groupIndex);
-                        
-                        // Batang Biru (Questions Created)
-                        if (rodIndex == 0) {
-                          return BarTooltipItem(
-                            '$teacherName\n',
-                            const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14,
-                            ),
-                            children: <TextSpan>[
-                              TextSpan(
-                                text: 'Created: ${rod.toY.toInt()} Qs',
-                                style: const TextStyle(
-                                  color: Colors.lightBlueAccent, fontSize: 12, fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          );
-                        } 
-                        // Batang Ungu (Attempts - Detail Benar/Salah)
-                        else {
-                          // Simulasi data detail (Nanti ambil dari API)
-                          // Anggaplah 70% Benar, 30% Salah dari total attempt
-                          int total = rod.toY.toInt();
-                          int correct = (total * 0.7).toInt();
-                          int wrong = total - correct;
-
-                          return BarTooltipItem(
-                            '$teacherName\n',
-                            const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14,
-                            ),
-                            children: <TextSpan>[
-                              const TextSpan(
-                                text: 'Total Attempts: ',
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
-                              ),
-                              TextSpan(
-                                text: '$total\n',
-                                style: const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold),
-                              ),
-                              const TextSpan(
-                                text: '✔ Correct: ',
-                                style: TextStyle(color: Colors.greenAccent, fontSize: 12),
-                              ),
-                              TextSpan(
-                                text: '$correct\n',
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
-                              ),
-                              const TextSpan(
-                                text: '✖ Wrong: ',
-                                style: TextStyle(color: Colors.redAccent, fontSize: 12),
-                              ),
-                              TextSpan(
-                                text: '$wrong',
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
-                              ),
-                            ],
-                          );
-                        }
-                      },
-                    ),
-                  ),
+                  alignment: BarChartAlignment.spaceAround,
+                  barGroups: List.generate(data.length, (index) {
+                    final item = data[index];
+                    // Mapping data model ke Batang Grafik
+                    return _makeStackedGroup(index, item.math, item.science, item.history);
+                  }),
                   titlesData: FlTitlesData(
                     show: true,
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    // Label Bawah (Nama Guru)
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        getTitlesWidget: (value, meta) => _bottomTitles(value, meta),
-                        reservedSize: 42,
-                      ),
-                    ),
-                    // Label Kiri (Angka)
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
-                        interval: 5, // Kelipatan angka di sumbu Y
                         getTitlesWidget: (value, meta) {
-                          if (value % 5 != 0) return const SizedBox.shrink();
-                          return Text(
-                            value.toInt().toString(),
-                            style: const TextStyle(color: Colors.grey, fontSize: 10),
+                          if (value.toInt() >= data.length) return const SizedBox();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(data[value.toInt()].name, // NAMA GURU ASLI
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
                           );
                         },
                       ),
                     ),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
+                  gridData: const FlGridData(show: false),
                   borderData: FlBorderData(show: false),
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: 5, // Garis bantu setiap kelipatan 5
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: Colors.grey.shade100,
-                      strokeWidth: 1,
-                    ),
-                  ),
-                  // DATA GRAFIK (Nanti diganti data API)
-                  barGroups: [
-                    _makeGroupData(0, 12, 18), // Guru A: 12 Soal, 18 Dikerjakan
-                    _makeGroupData(1, 8, 25),  // Guru B
-                    _makeGroupData(2, 15, 10), // Guru C
-                    _makeGroupData(3, 20, 30), // Guru D
-                    _makeGroupData(4, 10, 15), // Guru E
-                  ],
                 ),
               ),
             ),
@@ -355,166 +199,93 @@ class _TeacherActivityChartCard extends StatelessWidget {
     );
   }
 
-  // Fungsi Helper untuk membuat Data Batang
-  BarChartGroupData _makeGroupData(int x, double y1, double y2) {
+  BarChartGroupData _makeStackedGroup(int x, double y1, double y2, double y3) {
     return BarChartGroupData(
-      barsSpace: 4,
       x: x,
       barRods: [
         BarChartRodData(
-          toY: y1,
-          color: Colors.blue,
-          width: 12,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
-        ),
-        BarChartRodData(
-          toY: y2,
-          color: Colors.purple,
-          width: 12,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+          toY: y1 + y2 + y3,
+          width: 20,
+          borderRadius: BorderRadius.circular(4),
+          rodStackItems: [
+            BarChartRodStackItem(0, y1, Colors.blue),
+            BarChartRodStackItem(y1, y1 + y2, Colors.orange),
+            BarChartRodStackItem(y1 + y2, y1 + y2 + y3, Colors.teal),
+          ],
         ),
       ],
     );
   }
-
-  // Label Bawah (Nama Guru)
-  Widget _bottomTitles(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12,
-    );
-    
-    String text = _getTeacherName(value.toInt());
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Text(text, style: style),
-    );
-  }
-
-  // Helper mapping index ke nama guru
-  String _getTeacherName(int index) {
-    switch (index) {
-      case 0: return 'Mr. A';
-      case 1: return 'Mrs. B';
-      case 2: return 'Mr. C';
-      case 3: return 'Ms. D';
-      case 4: return 'Mr. E';
-      default: return '';
-    }
-  }
 }
 
-// --- 2. LINE CHART (REAL FL_CHART) ---
-class _UserLoginChartCard extends StatelessWidget {
-  const _UserLoginChartCard();
+class _QuizFlowChartCard extends StatelessWidget {
+  final List<QuizFlow> data;
+  const _QuizFlowChartCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    // Data Dummy untuk grafik (Senin - Minggu)
-    final List<FlSpot> spots = [
-      const FlSpot(0, 30), // Mon
-      const FlSpot(1, 50), // Tue
-      const FlSpot(2, 45), // Wed
-      const FlSpot(3, 80), // Thu
-      const FlSpot(4, 95), // Fri
-      const FlSpot(5, 60), // Sat
-      const FlSpot(6, 40), // Sun
-    ];
+    if (data.isEmpty) return const Card(child: Padding(padding: EdgeInsets.all(20), child: Text("No quiz flow data available")));
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
       color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 24, 10),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Info Header di dalam Card
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Login History (7 Days)",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                Text("+15% Increase",
-                    style: TextStyle(
-                        color: Colors.green, fontWeight: FontWeight.bold)),
+                Text("Difficulty & Failures", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                Row(
+                  children: [
+                    _LegendItem(color: Colors.purple, label: "Difficulty"),
+                    SizedBox(width: 16),
+                    _LegendItem(color: Colors.red, label: "Failures"),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 24),
-            
-            // --- FL CHART IMPLEMENTATION ---
+            const SizedBox(height: 32),
             Expanded(
               child: LineChart(
                 LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: 20,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: Colors.grey.shade100,
-                        strokeWidth: 1,
-                      );
-                    },
-                  ),
+                  gridData: FlGridData(show: true, drawVerticalLine: true, verticalInterval: 1, getDrawingVerticalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.1), strokeWidth: 1), getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.1))),
                   titlesData: FlTitlesData(
-                    show: true,
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 30,
                         interval: 1,
-                        // [FIX] Cukup masukkan nama fungsinya saja
-                        // Dart akan otomatis mencocokkan parameter (value, meta)
-                        getTitlesWidget: bottomTitleWidgets, 
+                        getTitlesWidget: (value, meta) {
+                          if (value.toInt() >= 0 && value.toInt() < data.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(data[value.toInt()].label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                            );
+                          }
+                          return const Text('');
+                        },
                       ),
                     ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 20,
-                        // [FIX] Sama, cukup nama fungsinya
-                        getTitlesWidget: leftTitleWidgets,
-                        reservedSize: 42,
-                      ),
-                    ),
+                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, reservedSize: 30, getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10, color: Colors.grey)))),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(
-                    show: false,
-                  ),
-                  minX: 0,
-                  maxX: 6,
-                  minY: 0,
-                  maxY: 100,
+                  borderData: FlBorderData(show: false),
+                  minX: 0, maxX: (data.length - 1).toDouble(),
+                  minY: 0, maxY: 100,
                   lineBarsData: [
+                    // DIFFICULTY LINE
                     LineChartBarData(
-                      spots: spots,
-                      isCurved: true,
-                      gradient: const LinearGradient(
-                        colors: [Colors.orange, Colors.orangeAccent],
-                      ),
-                      barWidth: 4,
-                      isStrokeCapRound: true,
-                      dotData: const FlDotData(show: true),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.orange.withOpacity(0.3),
-                            Colors.orange.withOpacity(0.0),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                      ),
+                      spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.difficulty)).toList(),
+                      isCurved: true, color: Colors.purple, barWidth: 3, dotData: const FlDotData(show: true),
+                    ),
+                    // FAILURES LINE
+                    LineChartBarData(
+                      spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.failures)).toList(),
+                      isCurved: true, color: Colors.red, barWidth: 3, dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.1)),
                     ),
                   ],
                 ),
@@ -525,91 +296,38 @@ class _UserLoginChartCard extends StatelessWidget {
       ),
     );
   }
-
-  // [FIX] Pastikan signature fungsi menerima (double value, TitleMeta meta)
-  Widget bottomTitleWidgets(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Colors.grey,
-      fontWeight: FontWeight.bold,
-      fontSize: 12,
-    );
-    Widget text;
-    switch (value.toInt()) {
-      case 0: text = const Text('Mon', style: style); break;
-      case 1: text = const Text('Tue', style: style); break;
-      case 2: text = const Text('Wed', style: style); break;
-      case 3: text = const Text('Thu', style: style); break;
-      case 4: text = const Text('Fri', style: style); break;
-      case 5: text = const Text('Sat', style: style); break;
-      case 6: text = const Text('Sun', style: style); break;
-      default: text = const Text('', style: style); break;
-    }
-    
-    // Gunakan SideTitleWidget untuk positioning yang pas
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0), 
-      child: text,
-    );
-
-  }
-
-  Widget leftTitleWidgets(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Colors.grey,
-      fontWeight: FontWeight.bold,
-      fontSize: 12,
-    );
-    String text;
-    if (value == 0) {
-      text = '0';
-    } else if (value == 100) {
-      text = '100+';
-    } else {
-      text = '${value.toInt()}';
-    }
-    
-    return Text(text, style: style, textAlign: TextAlign.left);
-  }
 }
-// --- 3. PROGRESS CHART ---
+
 class _StudentPerformanceChartCard extends StatelessWidget {
-  const _StudentPerformanceChartCard();
+  final StudentParticipation data;
+  const _StudentPerformanceChartCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
+    // Hitung persentase aktif
+    double rawPercent = data.total > 0 ? (data.active / data.total) : 0;
+    double percent = rawPercent > 1.0 ? 1.0 : rawPercent;
+
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
       color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Row(
           children: [
             SizedBox(
-              height: 120,
-              width: 120,
+              height: 120, width: 120,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  const CircularProgressIndicator(
-                    value: 0.75,
-                    strokeWidth: 12,
-                    backgroundColor: Color(0xFFE0E0E0),
-                    color: Colors.green,
-                  ),
+                  CircularProgressIndicator(value: percent, strokeWidth: 12, backgroundColor: const Color(0xFFE0E0E0), color: Colors.green),
                   Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("75%",
-                            style: TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold)),
-                        Text("Active",
-                            style: TextStyle(
-                                fontSize: 10, color: Colors.grey[600])),
+                        Text("${(percent * 100).toInt()}%", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        Text("Active", style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                       ],
                     ),
                   ),
@@ -621,15 +339,13 @@ class _StudentPerformanceChartCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Submission Rate",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text("Submission Rate", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  _StatRow(label: "Total Students", value: "1,204"),
+                  _StatRow(label: "Total Students", value: "${data.total}"),
                   const Divider(),
-                  _StatRow(label: "Quiz Submitted", value: "856"),
+                  _StatRow(label: "Active", value: "${data.active}"),
                   const Divider(),
-                  _StatRow(label: "Pending", value: "348"),
+                  _StatRow(label: "Pending", value: "${data.pending}"),
                 ],
               ),
             ),
@@ -640,84 +356,114 @@ class _StudentPerformanceChartCard extends StatelessWidget {
   }
 }
 
-// --- Helper Widgets Kecil ---
-
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _LegendItem({required this.color, required this.label});
+class _UserActivityChartCard extends StatelessWidget {
+  final List<UserActivity> data;
+  const _UserActivityChartCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
-        Text(label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-}
-
-class _BarItem extends StatelessWidget {
-  final String label;
-  final double value1; // 0.0 - 1.0
-  final double value2; // 0.0 - 1.0
-
-  const _BarItem(
-      {required this.label, required this.value1, required this.value2});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+    if (data.isEmpty) return const Card(child: Padding(padding: EdgeInsets.all(20), child: Text("No user activity data")));
+  
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
           children: [
-            Container(
-              width: 16,
-              height: 150 * value1,
-              decoration: BoxDecoration(
-                  color: Colors.blue, borderRadius: BorderRadius.circular(4)),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Weekly Activity", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                Row(
+                  children: [
+                    _LegendItem(color: Colors.blue, label: "New Register"),
+                    SizedBox(width: 16),
+                    _LegendItem(color: Colors.orange, label: "Active Login"),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
-            Container(
-              width: 16,
-              height: 150 * value2,
-              decoration: BoxDecoration(
-                  color: Colors.purple, borderRadius: BorderRadius.circular(4)),
+            const SizedBox(height: 32),
+            Expanded(
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 20, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade100)),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true, interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          if (value.toInt() >= 0 && value.toInt() < data.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(data[value.toInt()].day, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 5, reservedSize: 30, getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10, color: Colors.grey)))),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  minX: 0, maxX: (data.length - 1).toDouble(),
+                  minY: 0,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.registers)).toList(),
+                      isCurved: true, color: Colors.blue, barWidth: 3, dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.logins)).toList(),
+                      isCurved: true, color: Colors.orange, barWidth: 3, dotData: const FlDotData(show: true),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(label,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-      ],
+      ),
     );
   }
 }
 
-class _StatRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _StatRow({required this.label, required this.value});
+// --- Helper Kecil ---
+class _LegendItem extends StatelessWidget {
+  final Color color; final String label;
+  const _LegendItem({required this.color, required this.label});
+  @override Widget build(BuildContext context) => Row(children: [Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 6), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey))]);
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
+class _SectionHeader extends StatelessWidget {
+  final String title; final String subtitle; final IconData icon; final Color color;
+  const _SectionHeader({required this.title, required this.subtitle, required this.icon, required this.color});
+  @override Widget build(BuildContext context) => Row(children: [Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 24)), const SizedBox(width: 16), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)), Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[600]))])]);
+}
+
+class _StatRow extends StatelessWidget {
+  final String label; final String value;
+  const _StatRow(
+    {required this.label, required this.value}
+  );
+  @override Widget build(BuildContext context) => 
+    Padding(
+      padding: 
+        const EdgeInsets.symmetric(vertical: 4.0),  
+        child: 
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+            children: [
+              Text(
+                  label, 
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13)
+                  ), 
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold))
+            ]
+          )
     );
-  }
 }
