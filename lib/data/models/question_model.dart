@@ -1,3 +1,4 @@
+import 'dart:convert'; 
 import '../../domain/entities/question.dart';
 
 class QuestionModel extends Question {
@@ -12,28 +13,64 @@ class QuestionModel extends Question {
     super.isGenerated = false,
     super.createdAt,
     super.updatedAt,
+    super.correctCount,
+    super.incorrectCount,
+
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
     return QuestionModel(
-      id: json['id'] as String,
-      quizId: json['quiz_id'] as String?,
-      type: json['type'] as String,
-      difficulty: json['difficulty'] as String,
-      questionText: json['question_text'] as String,
-      correctAnswer: json['correct_answer'] as String,
-      // Handle JSON Array dari API
-      options: json['options'] != null
-          ? List<String>.from(json['options']) 
-          : [],
-      isGenerated: json['is_generated'] == 1 || json['is_generated'] == true,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
-          : null,
+      id: json['id']?.toString() ?? '',
+      // ... field lain sama ...
+      quizId: json['quiz_id']?.toString(),
+      type: json['type']?.toString() ?? 'multiple',
+      difficulty: json['difficulty']?.toString() ?? 'medium',
+      questionText: json['question_text']?.toString() ?? '',
+      correctAnswer: json['correct_answer']?.toString() ?? '',
+      options: _parseOptions(json['options']),
+      isGenerated: _parseBool(json['is_generated']),
+
+      // [TAMBAHAN BARU] Baca statistik (antisipasi null)
+      correctCount: int.tryParse(json['correct_answers']?.toString() ?? '0') ?? 0,
+      incorrectCount: int.tryParse(json['incorrect_answers']?.toString() ?? '0') ?? 0,
+
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null,
     );
+  }
+
+
+  static List<String> _parseOptions(dynamic value) {
+    if (value == null) return [];
+
+    // KASUS 1: Backend mengirim String "[...]" (Ini yang terjadi sekarang)
+    if (value is String) {
+      try {
+        // Kita ubah String JSON menjadi List asli
+        final decoded = jsonDecode(value); 
+        
+        if (decoded is List) {
+          return decoded.map((e) => e.toString()).toList();
+        }
+      } catch (e) {
+        print("Gagal decode options JSON: $e");
+        return [];
+      }
+    }
+
+    // KASUS 2: Backend mengirim List asli (Untuk jaga-jaga kalau backend diperbaiki)
+    if (value is List) {
+      return value.map((e) => e.toString()).toList();
+    }
+
+    return [];
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value == 1 || value == '1' || value == true || value == 'true') {
+      return true;
+    }
+    return false;
   }
 
   Map<String, dynamic> toJson() {
@@ -59,8 +96,8 @@ class QuestionModel extends Question {
       difficulty: question.difficulty,
       questionText: question.questionText,
       correctAnswer: question.correctAnswer,
-      options: question.options,
-      isGenerated: question.isGenerated,
+      options: _parseOptions(json['options']),
+      isGenerated: _parseBool(json['is_generated']),
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
     );
@@ -92,4 +129,8 @@ class QuestionModel extends Question {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+}
+
+extension on JsonCodec {
+  operator [](String other) {}
 }

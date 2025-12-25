@@ -11,6 +11,9 @@ class Question extends Equatable {
   final bool isGenerated;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final int correctCount;
+  final int incorrectCount;
+
 
   const Question({
     required this.id,
@@ -21,6 +24,8 @@ class Question extends Equatable {
     required this.correctAnswer,
     required this.options,
     this.isGenerated = false,
+    this.correctCount = 0, 
+    this.incorrectCount = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -51,5 +56,7 @@ class Question extends Equatable {
     isGenerated,
     createdAt,
     updatedAt,
+    correctCount, 
+    incorrectCount,
   ];
 }
