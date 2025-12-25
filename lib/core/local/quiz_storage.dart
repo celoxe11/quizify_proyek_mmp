@@ -7,15 +7,15 @@ class QuizStorage {
 
   QuizStorage(this._appDatabase);
 
-  /// Get all quizzes from local storage
-  Future<List<QuizModel>> getAllQuizzes() async {
+  // When fetching quizzes from local DB
+  Future<List<QuizModel>> getMyQuizzes(String userId) async {
     final db = await _appDatabase.database;
-    final List<Map<String, dynamic>> maps = await db.query(
+    final results = await db.query(
       AppDatabase.quizTable,
-      orderBy: 'created_at DESC',
+      where: 'created_by = ?',
+      whereArgs: [userId],
     );
-
-    return maps.map((map) => QuizModel.fromJson(map)).toList();
+    return results.map((e) => QuizModel.fromJson(e)).toList();
   }
 
   /// Get a specific quiz by ID
@@ -31,7 +31,7 @@ class QuizStorage {
     if (maps.isEmpty) return null;
     return QuizModel.fromJson(maps.first);
   }
-  
+
   /// Insert a new quiz
   Future<void> insertQuiz(QuizModel quiz) async {
     final db = await _appDatabase.database;
@@ -46,7 +46,7 @@ class QuizStorage {
   Future<void> insertQuizzes(List<QuizModel> quizzes) async {
     final db = await _appDatabase.database;
     final batch = db.batch();
-    
+
     for (final quiz in quizzes) {
       batch.insert(
         AppDatabase.quizTable,
@@ -54,7 +54,7 @@ class QuizStorage {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
-    
+
     await batch.commit(noResult: true);
   }
 
@@ -70,18 +70,27 @@ class QuizStorage {
   }
 
   /// Delete a quiz by ID
-  Future<int> deleteQuiz(String id) async {
+  Future<void> deleteQuiz(String id) async {
     final db = await _appDatabase.database;
-    return await db.delete(
+    await db.delete(
       AppDatabase.quizTable,
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  /// Delete all quizzes
-  Future<int> deleteAllQuizzes() async {
+  /// Delete all quizzes for a specific user
+  Future<int> deleteAllQuizzes({String? userId}) async {
     final db = await _appDatabase.database;
+    if (userId != null) {
+      // Only delete quizzes for this user
+      return await db.delete(
+        AppDatabase.quizTable,
+        where: 'created_by = ?',
+        whereArgs: [userId],
+      );
+    }
+    // Delete all quizzes (use carefully!)
     return await db.delete(AppDatabase.quizTable);
   }
 

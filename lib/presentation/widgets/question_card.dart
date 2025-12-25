@@ -1,7 +1,12 @@
 // lib/widgets/question_card.dart
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
+import 'package:quizify_proyek_mmp/domain/entities/question_image.dart';
 
 class QuestionCard extends StatefulWidget {
   final int index;
@@ -27,6 +32,8 @@ class _QuestionCardState extends State<QuestionCard> {
   late TextEditingController _questionTextController;
   late List<TextEditingController> _optionControllers;
   int _selectedOptionIndex = -1;
+  File? _selectedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -34,6 +41,16 @@ class _QuestionCardState extends State<QuestionCard> {
     _questionTextController = TextEditingController(
       text: widget.question.questionText,
     );
+
+    // Load existing image if available (local path stored in imageUrl for new uploads)
+    // Only load File on non-web platforms
+    if (!kIsWeb && 
+        widget.question.image != null && 
+        (widget.question.image!.imageUrl.startsWith('/') || 
+         widget.question.image!.imageUrl.contains(':'))) {
+      // Local file path
+      _selectedImage = File(widget.question.image!.imageUrl);
+    }
 
     // Initialize option controllers based on question type
     if (widget.question.type == 'boolean') {
@@ -127,6 +144,112 @@ class _QuestionCardState extends State<QuestionCard> {
       ),
     );
   }
+  
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        // For web, we need to read bytes and convert to base64
+        // For mobile, we store the file path
+        String imageData;
+        
+        if (kIsWeb) {
+          // Web: Read bytes and convert to base64
+          final bytes = await pickedFile.readAsBytes();
+          final base64Image = base64Encode(bytes);
+          imageData = 'data:image/png;base64,$base64Image';
+        } else {
+          // Mobile: Store file path
+          imageData = pickedFile.path;
+          setState(() {
+            _selectedImage = File(pickedFile.path);
+          });
+        }
+        
+        // Store as temporary QuestionImage with image data
+        final tempQuestionImage = QuestionImage(
+          id: 0, // Temporary ID, will be assigned by backend
+          userId: '', // Will be filled when uploading
+          questionId: widget.question.id,
+          imageUrl: imageData, // Store base64 for web or path for mobile
+          uploadedAt: DateTime.now(),
+        );
+        
+        widget.onUpdate(widget.question.copyWith(image: tempQuestionImage));
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image selected! Will be uploaded when saving quiz.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to pick image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImage = null;
+    });
+    widget.onUpdate(widget.question.copyWith(image: QuestionImage.empty));
+  }
+
+  Widget _buildWebImage() {
+    final imageUrl = widget.question.image?.imageUrl ?? '';
+    
+    // Check if it's a base64 encoded image
+    if (imageUrl.startsWith('data:image')) {
+      // Extract the base64 data
+      final base64Data = imageUrl.split(',').last;
+      final bytes = base64Decode(base64Data);
+      return Image.memory(
+        bytes,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
+    } else if (imageUrl.startsWith('http')) {
+      // It's a URL
+      return Image.network(
+        imageUrl,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 200,
+            color: Colors.grey.shade300,
+            child: const Center(
+              child: Text('Failed to load image'),
+            ),
+          );
+        },
+      );
+    } else {
+      // Fallback
+      return Container(
+        height: 200,
+        color: Colors.grey.shade300,
+        child: const Center(
+          child: Text('Image preview unavailable'),
+        ),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -209,6 +332,69 @@ class _QuestionCardState extends State<QuestionCard> {
               ),
               maxLines: 3,
               onChanged: (_) => _updateQuestion(),
+            ),
+            const SizedBox(height: 12),
+
+            // Image upload section
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Question Image (Optional)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(Icons.add_photo_alternate, size: 20),
+                        label: const Text('Upload Image'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.darkAzure,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_selectedImage != null || (kIsWeb && widget.question.image != null && widget.question.image!.imageUrl.isNotEmpty)) ...[
+                    const SizedBox(height: 12),
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: kIsWeb
+                              ? _buildWebImage()
+                              : Image.file(
+                                  _selectedImage!,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            onPressed: _removeImage,
+                            icon: const Icon(Icons.close),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -300,24 +486,30 @@ class _QuestionCardState extends State<QuestionCard> {
               Column(
                 children: [
                   RadioListTile(
-                    value: 'true',
+                    value: 'True',
                     groupValue: widget.question.correctAnswer,
                     onChanged: (value) {
                       if (value != null) {
                         widget.onUpdate(
-                          widget.question.copyWith(correctAnswer: value),
+                          widget.question.copyWith(
+                            correctAnswer: value,
+                            options: ['True', 'False'],
+                          ),
                         );
                       }
                     },
                     title: const Text('True'),
                   ),
                   RadioListTile(
-                    value: 'false',
+                    value: 'False',
                     groupValue: widget.question.correctAnswer,
                     onChanged: (value) {
                       if (value != null) {
                         widget.onUpdate(
-                          widget.question.copyWith(correctAnswer: value),
+                          widget.question.copyWith(
+                            correctAnswer: value,
+                            options: ['True', 'False'],
+                          ),
                         );
                       }
                     },

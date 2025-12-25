@@ -1,5 +1,7 @@
 import 'dart:convert'; 
 import '../../domain/entities/question.dart';
+import '../../domain/entities/question_image.dart';
+import 'question_image_model.dart';
 
 class QuestionModel extends Question {
   const QuestionModel({
@@ -15,10 +17,29 @@ class QuestionModel extends Question {
     super.updatedAt,
     super.correctCount,
     super.incorrectCount,
-
+    super.image,
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
+    // Parse question image if exists (backend includes questionimage relation)
+    QuestionImage? questionImage;
+    if (json['questionimage'] != null) {
+      try {
+        // Backend returns single object or array with 1 item
+        final imageData = json['questionimage'] is List 
+            ? (json['questionimage'] as List).isNotEmpty 
+                ? json['questionimage'][0] 
+                : null
+            : json['questionimage'];
+            
+        if (imageData != null) {
+          questionImage = QuestionImageModel.fromJson(imageData);
+        }
+      } catch (e) {
+        print('Error parsing questionimage: $e');
+      }
+    }
+    
     return QuestionModel(
       id: json['id']?.toString() ?? '',
       // ... field lain sama ...
@@ -36,6 +57,8 @@ class QuestionModel extends Question {
 
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null,
+      
+      image: questionImage,
     );
   }
 
@@ -115,6 +138,7 @@ class QuestionModel extends Question {
     bool? isGenerated,
     DateTime? createdAt,
     DateTime? updatedAt,
+    QuestionImage? image,
   }) {
     return QuestionModel(
       id: id ?? this.id,
@@ -127,6 +151,7 @@ class QuestionModel extends Question {
       isGenerated: isGenerated ?? this.isGenerated,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      image: image ?? this.image,
     );
   }
 }

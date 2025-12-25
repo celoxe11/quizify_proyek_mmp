@@ -179,10 +179,10 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
     Emitter<QuizDetailState> emit,
   ) async {
     try {
-      // TODO: Replace with actual backend call
-      // await quizRepository.delete(event.quizId);
+      emit(QuizDetailLoading());
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Delete quiz through repository
+      await teacherRepository.deleteQuiz(event.quizId);
 
       emit(QuizDetailDeleted());
     } catch (e) {
