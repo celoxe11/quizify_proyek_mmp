@@ -334,6 +334,35 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            Tooltip(
+                                message: "View Activity Logs",
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/admin/users/logs',
+                                      arguments: {
+                                        'userId': user.id,
+                                        'userName': user.name,
+                                      },
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.darkAzure.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.history,
+                                      color: AppColors.darkAzure,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
