@@ -1,3 +1,4 @@
+import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
 import 'package:quizify_proyek_mmp/domain/entities/question.dart';
 
 import '../../domain/repositories/admin_repository.dart';
@@ -45,6 +46,16 @@ class AdminRepositoryImpl implements AdminRepository {
     } catch (e, stackTrace) {
 
       throw Exception("Repository Error: $e");
+    }
+  }
+
+  @override
+  Future<AdminAnalyticsModel> fetchAnalytics() async {
+    try {
+      final rawResponse = await apiService.getAnalytics();
+      return AdminAnalyticsModel.fromJson(rawResponse);
+    } catch (e) {
+      throw Exception("Repo Error Analytics: $e");
     }
   }
 
