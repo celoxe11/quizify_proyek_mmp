@@ -17,3 +17,11 @@ class ToggleUserStatusEvent extends AdminUsersEvent {
     required this.currentStatus,
   });
 }
+
+class FilterUsersEvent extends AdminUsersEvent {
+  final String filterType; // 'All', 'Teacher', 'Student', 'Active', 'Blocked'
+  const FilterUsersEvent(this.filterType);
+
+  @override
+  List<Object> get props => [filterType];
+}

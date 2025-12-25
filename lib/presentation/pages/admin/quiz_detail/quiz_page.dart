@@ -37,8 +37,8 @@ class _AdminQuizDetailPageState extends State<AdminQuizDetailPage> {
           widget.quizTitle, 
           style: const TextStyle(fontWeight: FontWeight.bold)
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.darkAzure,
+        backgroundColor: AppColors.darkAzure,
+        foregroundColor: Colors.white,
         elevation: 0.5,
       ),
       body: BlocBuilder<AdminQuizDetailBloc, AdminQuizDetailState>(
@@ -59,10 +59,16 @@ class _AdminQuizDetailPageState extends State<AdminQuizDetailPage> {
               builder: (context, constraints) {
                 if (constraints.maxWidth > 900) {
                   // > 900px anggap Desktop/Tablet Landscape
-                  return AdminQuizDetailDesktop(questions: state.questions);
+                  return AdminQuizDetailDesktop(
+                    questions: state.questions,
+                    quizId: widget.quizId, 
+                  );
                 } else {
                   // < 900px anggap Mobile/Tablet Portrait
-                  return AdminQuizDetailMobile(questions: state.questions);
+                  return AdminQuizDetailMobile(
+                    questions: state.questions,
+                    quizId: widget.quizId,
+                  );
                 }
               },
             );

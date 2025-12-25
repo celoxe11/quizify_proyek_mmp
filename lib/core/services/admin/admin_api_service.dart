@@ -70,4 +70,29 @@ class AdminApiService {
     }
   }
 
+  // GET LOGS
+  Future<List<dynamic>> getLogs({String? userId}) async {
+    try {
+      // Dio otomatis menyusun query string: /logaccess?user_id=123
+      final response = await _dio.get(
+        '/api/admin/logaccess',
+        queryParameters: userId != null ? {'user_id': userId} : null, 
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception("API Error Logs: $e");
+    }
+  }
+
+  // DELETE QUESTION
+  Future<void> deleteQuestion(String questionId) async {
+    try {
+      // Endpoint: /api/admin/question/:question_id
+      await _dio.delete('/api/admin/question/$questionId');
+    } catch (e) {
+      throw Exception("API Error Delete Question: $e");
+    }
+  }
+
+
 }
