@@ -8,11 +8,13 @@ import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 // Import App Database
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
+import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/create_quiz/create_quiz_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/edit_quiz/edit_quiz_bloc.dart';
@@ -48,8 +50,10 @@ import 'package:quizify_proyek_mmp/data/repositories/admin_repository.dart';
 
 // import repository
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/data/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/core/services/auth/auth_service.dart';
 import 'package:quizify_proyek_mmp/core/services/auth/auth_api_service.dart';
+import 'package:quizify_proyek_mmp/core/config/platform_config.dart';
 
 import 'package:dio/dio.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -74,8 +78,10 @@ void main() async {
   // Initialize Firebase
   await FirebaseConfig.initialize();
 
-  // Initialize local database
-  final appDatabase = AppDatabase.instance;
+  // Initialize local database (only on mobile platforms, not web)
+  if (!kIsWeb) {
+    final appDatabase = AppDatabase.instance;
+  }
 
   runApp(const MyApp());
 }
@@ -238,7 +244,12 @@ class _AppView extends StatelessWidget {
             ),
             GoRoute(
               path: "/teacher/create-quiz",
-              builder: (context, state) => const TeacherCreateQuizPage(),
+              builder: (context, state) => BlocProvider(
+                create: (context) => CreateQuizBloc(
+                  teacherRepository: context.read<TeacherRepository>(),
+                ),
+                child: const TeacherCreateQuizPage(),
+              ),
             ),
             GoRoute(
               path: '/teacher/profile',
@@ -330,17 +341,20 @@ class _AppView extends StatelessWidget {
             apiService: AuthApiService(),
           ),
         ),
+        RepositoryProvider<TeacherRepository>(
+          create: (context) => TeacherRepositoryImpl(),
+        ),
         RepositoryProvider(
           create: (context)  {
              // Sebaiknya gunakan instance Dio yang sama dengan Auth (Singleton)
              // Tapi untuk sekarang new Dio() dulu tidak apa-apa asalkan diatur BaseURL-nya
              final dio = Dio(BaseOptions(
-               baseUrl: 'http://localhost:3000', 
+               baseUrl: PlatformConfig.getBaseUrl().replaceAll('/api', ''), 
                headers: {
                  'Content-Type': 'application/json',
                  'Accept': 'application/json',
                }
-             )); 
+             ));
 
              // Ini tugasnya menyisipkan Token otomatis sebelum request dikirim
              dio.interceptors.add(InterceptorsWrapper(

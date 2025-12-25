@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'question_image.dart';
 
 class Question extends Equatable {
   final String id;
@@ -13,6 +14,7 @@ class Question extends Equatable {
   final DateTime? updatedAt;
   final int correctCount;
   final int incorrectCount;
+  final QuestionImage? image; // Question image (stored separately in questionimage table)
 
 
   const Question({
@@ -28,6 +30,7 @@ class Question extends Equatable {
     this.incorrectCount = 0,
     this.createdAt,
     this.updatedAt,
+    this.image,
   });
 
   /// Empty question for initial states

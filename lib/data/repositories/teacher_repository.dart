@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/core/local/quiz_storage.dart';
 import 'package:quizify_proyek_mmp/core/services/services.dart';
+import 'package:quizify_proyek_mmp/core/services/auth/auth_api_service.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/data/responses/quiz_detail_response.dart';
@@ -9,20 +12,35 @@ import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 class TeacherRepositoryImpl extends TeacherRepository {
   final TeacherService _teacherService;
   final QuizStorage? _localDataSource;
-
-  // todo: provider lokal bisa ditambahin disini nanti
+  final AuthApiService _authApiService;
 
   TeacherRepositoryImpl({
     TeacherService? teacherService,
     QuizStorage? localDataSource,
+    AuthApiService? authApiService,
   }) : _teacherService = teacherService ?? TeacherService(),
-       _localDataSource = localDataSource ?? QuizStorage(AppDatabase.instance);
+       // Only use local database on mobile platforms (not web)
+       _localDataSource = localDataSource ?? (kIsWeb ? null : QuizStorage(AppDatabase.instance)),
+       _authApiService = authApiService ?? AuthApiService();
+
+  /// Get current user's teacher/student ID (not Firebase UID)
+  Future<String?> _getCurrentUserId() async {
+    try {
+      final userProfile = await _authApiService.getUserProfile();
+      return userProfile.id; // This is TE001, ST001, etc.
+    } catch (e) {
+      print('Failed to get user profile: $e');
+      return null;
+    }
+  }
 
   @override
   Future<void> endQuiz(String sessionId) {
     // TODO: implement endQuiz
     throw UnimplementedError();
   }
+
+  
 
   @override
   Future<QuestionModel> generateQuestion({
@@ -44,27 +62,41 @@ class TeacherRepositoryImpl extends TeacherRepository {
   @override
   Future<List<QuizModel>> getMyQuizzes() async {
     try {
-      // Try to get from local storage first (offline-first approach)
-      if (_localDataSource != null) {
-        final localQuizzes = await _localDataSource!.getAllQuizzes();
-        
-        // If we have local data, return it immediately
-        // and sync in the background
-        if (localQuizzes.isNotEmpty) {
-          _syncQuizzesInBackground();
-          return localQuizzes;
-        }
+      // Get current user's teacher ID (TE001, not Firebase UID)
+      final userId = await _getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User profile not found');
       }
+      
+      print('Fetching quizzes for teacher ID: $userId');
 
-      // If no local data, fetch from server and cache
-      final serverQuizzes = await _teacherService.getMyQuizzes();
-      await _cacheQuizzes(serverQuizzes);
-      return serverQuizzes;
-    } catch (e) {
-      // If server fails, return local data as fallback
-      if (_localDataSource != null) {
-        return await _localDataSource!.getAllQuizzes();
+      // Fetch from server first (server-first approach for quiz list)
+      // This ensures we always have fresh data when navigating back
+      try {
+        final serverQuizzes = await _teacherService.getMyQuizzes();
+        await _cacheQuizzes(serverQuizzes);
+        return serverQuizzes;
+      } catch (serverError) {
+        print('Server fetch failed: $serverError');
+        
+        // Fallback to local cache if server fails
+        if (_localDataSource != null) {
+          try {
+            final localQuizzes = await _localDataSource.getMyQuizzes(userId);
+            if (localQuizzes.isNotEmpty) {
+              print('Using cached quizzes (${localQuizzes.length} items)');
+              return localQuizzes;
+            }
+          } catch (localError) {
+            print('Local fallback also failed: $localError');
+          }
+        }
+        
+        // If both fail, rethrow the server error
+        rethrow;
       }
+    } catch (e) {
+      print('Error in getMyQuizzes: $e');
       rethrow;
     }
   }
@@ -90,12 +122,17 @@ class TeacherRepositoryImpl extends TeacherRepository {
 
   /// Cache quizzes to local storage
   Future<void> _cacheQuizzes(List<QuizModel> quizzes) async {
-    if (_localDataSource == null) return;
+    if (_localDataSource == null || quizzes.isEmpty) return;
     
     try {
-      // Clear old data and insert fresh data
-      await _localDataSource.deleteAllQuizzes();
+      // Get current user ID to only clear their quizzes
+      final userId = await _getCurrentUserId();
+      if (userId == null) return;
+      
+      // Clear only this user's old data and insert fresh data
+      await _localDataSource.deleteAllQuizzes(userId: userId);
       await _localDataSource.insertQuizzes(quizzes);
+      print('✓ Cached ${quizzes.length} quizzes for user $userId');
     } catch (e) {
       print('Cache failed: $e');
     }
@@ -187,10 +224,62 @@ class TeacherRepositoryImpl extends TeacherRepository {
     String? quizId,
     required String title,
     String? description,
+    String? category,
+    String? status,
     String? quizCode,
     required List<QuestionModel> questions,
-  }) {
-    // TODO: implement saveQuiz
-    throw UnimplementedError();
+  }) async {
+    try {
+      // Call the service to save quiz (images will be converted to base64 in service)
+      final response = await _teacherService.saveQuizWithQuestions(
+        quizId: quizId,
+        title: title.trim(),
+        description: description?.trim(),
+        category: category?.trim(),
+        status: status?.trim(),
+        quizCode: quizCode?.trim(),
+        questions: questions,
+      );
+
+      // Parse the response
+      final savedQuizId = response['quiz_id'] as String;
+      final savedQuizCode = response['quiz_code'] as String?;
+      final message = response['message'] as String;
+      
+      print('✓ $message');
+
+      // Fetch the updated quiz details
+      final quizDetailResponse = await _teacherService.getQuizDetail(savedQuizId);
+      final quizDetailParsed = QuizDetailResponse.fromApi(quizDetailResponse);
+      
+      // Cache the quiz
+      await _cacheQuiz(quizDetailParsed.quiz);
+      
+      // Also refresh the quiz list cache
+      _syncQuizzesInBackground();
+      
+      return quizDetailParsed.quiz;
+    } catch (e) {
+      print('Error saving quiz: $e');
+      rethrow;
+    }
+  }
+  
+  @override
+  Future<void> deleteQuiz(String quizId) async {
+    try {
+      // Delete from server
+      await _teacherService.deleteQuiz(quizId);
+      
+      // Sync with local database
+      if (_localDataSource != null) {
+        await _localDataSource.deleteQuiz(quizId);
+      }
+      
+      print('✓ Quiz $quizId deleted successfully');
+    } catch (e) {
+      print('Error deleting quiz: $e');
+      rethrow;
+    }
   }
 }

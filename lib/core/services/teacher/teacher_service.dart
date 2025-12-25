@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../data/models/quiz_model.dart';
+import '../../../data/models/question_model.dart';
 import '../../api/dio_client.dart';
 
 class TeacherService {
@@ -20,6 +24,93 @@ class TeacherService {
   }
 
   // endpoint for /teacher/quiz/save
+  /// Save or update quiz with questions
+  /// Backend expects:
+  /// {
+  ///   "quiz_id": "QU001", // optional, if present = update mode
+  ///   "title": "Quiz Title",
+  ///   "description": "Quiz Description",
+  ///   "quiz_code": "ABCD1234", // optional
+  ///   "questions": [
+  ///     {
+  ///       "type": "multiple",
+  ///       "difficulty": "easy",
+  ///       "question_text": "What is...",
+  ///       "correct_answer": "Option 1",
+  ///       "incorrect_answers": ["Option 2", "Option 3", "Option 4"],
+  ///       "question_image": "base64string" // optional
+  ///     }
+  ///   ]
+  /// }
+  Future<Map<String, dynamic>> saveQuizWithQuestions({
+    String? quizId,
+    required String title,
+    String? description,
+    String? category,
+    String? status,
+    String? quizCode,
+    required List<QuestionModel> questions,
+  }) async {
+    // Format questions according to backend requirements
+    final formattedQuestions = await Future.wait(questions.map((q) async {
+      // Separate correct answer from other options
+      final incorrectAnswers = q.options
+          .where((option) => option != q.correctAnswer)
+          .toList();
+
+      print("Incorrect answers for question '${q.questionText}': $incorrectAnswers");
+
+      final questionData = {
+        'type': q.type,
+        'difficulty': q.difficulty,
+        'question_text': q.questionText,
+        'correct_answer': q.correctAnswer,
+        'incorrect_answers': incorrectAnswers,
+      };
+
+      // Convert local image to base64 if exists
+      if (q.image != null && 
+          q.image!.isNotEmpty && 
+          q.image!.imageUrl.isNotEmpty) {
+        try {
+          // Check if it's already base64 encoded (from web upload)
+          if (q.image!.imageUrl.startsWith('data:image')) {
+            questionData['question_image'] = q.image!.imageUrl;
+            print('✓ Using pre-encoded base64 image for question: ${q.questionText}');
+          } else if (!kIsWeb && _isLocalPath(q.image!.imageUrl)) {
+            // Mobile: Read from file system
+            final imageFile = File(q.image!.imageUrl);
+            if (await imageFile.exists()) {
+              final bytes = await imageFile.readAsBytes();
+              final base64Image = base64Encode(bytes);
+              questionData['question_image'] = 'data:image/png;base64,$base64Image';
+              print('✓ Image converted to base64 for question: ${q.questionText}');
+            }
+          }
+        } catch (e) {
+          print('Error converting image to base64: $e');
+          // Continue without image if conversion fails
+        }
+      }
+
+      return questionData;
+    }));
+
+    final requestBody = {
+      if (quizId != null) 'quiz_id': quizId,
+      'title': title,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (category != null && category.isNotEmpty) 'category': category,
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (quizCode != null && quizCode.isNotEmpty) 'quiz_code': quizCode,
+      'questions': formattedQuestions,
+    };
+
+    final response = await _client.post('/teacher/quiz/save', data: requestBody);
+    return response.data as Map<String, dynamic>;
+  }
+
+  // endpoint for /teacher/quiz/save (old method, kept for backward compatibility)
   Future<void> saveQuiz(QuizModel quiz) async {
     await _client.post('/teacher/quiz/save', data: quiz.toJson());
   }
@@ -32,7 +123,7 @@ class TeacherService {
 
   // endpoint for /teacher/quiz/delete
   Future<void> deleteQuiz(String quizId) async {
-    await _client.post('/teacher/quiz/delete', data: {'quiz_id': quizId});
+    await _client.delete('/teacher/quiz/delete', data: {'id': quizId});
   }
 
   // endpoint for /teacher/quiz/answers
@@ -58,5 +149,12 @@ class TeacherService {
     await _client.post(
       '/teacher/quiz/endquiz/$quizId',
     );
+  }
+
+  /// Check if a path is a local file path (not a URL)
+  bool _isLocalPath(String path) {
+    return !path.startsWith('http://') && 
+           !path.startsWith('https://') && 
+           (path.startsWith('/') || path.contains(':'));
   }
 }

@@ -15,9 +15,13 @@ abstract class TeacherRepository {
     String? quizId,
     required String title,
     String? description,
+    String? category,
+    String? status,
     String? quizCode,
     required List<QuestionModel> questions,
   });
+
+  Future<void> deleteQuiz(String quizId);
 
   Future<void> endQuiz(String sessionId);
 

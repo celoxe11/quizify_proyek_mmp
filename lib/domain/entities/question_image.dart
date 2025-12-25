@@ -26,6 +26,22 @@ class QuestionImage extends Equatable {
   bool get isEmpty => this == QuestionImage.empty;
   bool get isNotEmpty => this != QuestionImage.empty;
 
+  QuestionImage copyWith({
+    int? id,
+    String? userId,
+    String? questionId,
+    String? imageUrl,
+    DateTime? uploadedAt,
+  }) {
+    return QuestionImage(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      questionId: questionId ?? this.questionId,
+      imageUrl: imageUrl ?? this.imageUrl,
+      uploadedAt: uploadedAt ?? this.uploadedAt,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,
