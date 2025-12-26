@@ -9,6 +9,7 @@ import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 // Import App Database
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
@@ -269,10 +270,10 @@ class _AppView extends StatelessWidget {
           routes: [
             GoRoute(
               path: '/admin',
-              redirect: (context, state) => '/admin/dashboard',
+              redirect: (context, state) => '/admin/home',
             ),
             GoRoute(
-              path: '/admin/dashboard',
+              path: '/admin/home',
               builder: (context, state) => const AdminHomePage(),
             ),
             GoRoute(
@@ -306,6 +307,15 @@ class _AppView extends StatelessWidget {
               path: '/admin/settings',
               builder: (context, state) =>
                   const Scaffold(body: Center(child: Text('Settings'))),
+            ),
+            GoRoute(
+              path: '/admin/logs',
+              builder: (context, state) {
+                final userId = state.uri.queryParameters['user_id'];
+                
+                // Masukkan ke Constructor Page
+                return AdminLogsPage(userId: userId);
+              },
             ),
             GoRoute(
               path: '/admin/quiz/:quizId', 

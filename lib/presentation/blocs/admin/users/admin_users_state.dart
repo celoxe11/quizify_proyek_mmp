@@ -12,10 +12,16 @@ class AdminUsersInitial extends AdminUsersState {}
 class AdminUsersLoading extends AdminUsersState {}
 
 class AdminUsersLoaded extends AdminUsersState {
-  final List<User> users; 
-  const AdminUsersLoaded(this.users);
+  final List<User> allUsers;      // List asli (Backup)
+  final List<User> filteredUsers; // List yang ditampilkan di UI
+
+  const AdminUsersLoaded({
+    required this.allUsers,
+    required this.filteredUsers,
+  });
+
   @override
-  List<Object> get props => [users];
+  List<Object> get props => [allUsers, filteredUsers];
 }
 
 class AdminUsersError extends AdminUsersState {

@@ -78,7 +78,7 @@ class AdminShell extends StatelessWidget {
             onDestinationSelected: (index) {
               switch (index) {
                 case 0:
-                  context.go('/admin/dashboard');
+                  context.go('/admin/home');
                   break;
                 case 1:
                   context.go('/admin/users');
@@ -88,9 +88,6 @@ class AdminShell extends StatelessWidget {
                   break;
                 case 3:
                   context.go('/admin/analytics');
-                  break;
-                case 4:
-                  context.go('/admin/settings');
                   break;
               }
             },
@@ -125,10 +122,6 @@ class AdminShell extends StatelessWidget {
               NavigationRailDestination(
                 icon: Icon(Icons.analytics),
                 label: Text('Analytics'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.settings),
-                label: Text('Settings'),
               ),
             ],
           ),

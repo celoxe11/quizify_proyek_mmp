@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/domain/entities/question.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/quiz_detail/admin_quiz_detail_bloc.dart';
 
 class AdminQuizDetailMobile extends StatelessWidget {
   final List<Question> questions;
+  final String quizId; 
 
-  const AdminQuizDetailMobile({super.key, required this.questions});
+  const AdminQuizDetailMobile({
+    super.key, 
+    required this.questions, 
+    required this.quizId
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +24,7 @@ class AdminQuizDetailMobile extends StatelessWidget {
         return QuestionCard(
           index: index,
           question: questions[index],
+          quizId: quizId,
         );
       },
     );
@@ -27,11 +35,13 @@ class AdminQuizDetailMobile extends StatelessWidget {
 class QuestionCard extends StatelessWidget {
   final int index;
   final Question question;
+  final String quizId;
 
   const QuestionCard({
     super.key,
     required this.index,
     required this.question,
+    required this.quizId,
   });
 
   @override
@@ -80,7 +90,7 @@ class QuestionCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: () {
-                    // TODO: Implement Delete
+                     _showDeleteConfirmation(context);
                   },
                   tooltip: 'Delete Question',
                   style: ButtonStyle(
@@ -155,6 +165,45 @@ class QuestionCard extends StatelessWidget {
             )
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Question?"),
+        content: const Text("This action cannot be undone. Are you sure?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx), // Tutup dialog
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx); // Tutup dialog dulu
+              
+              // Panggil Event Delete di Bloc
+              context.read<AdminQuizDetailBloc>().add(
+                DeleteQuestionEvent(
+                  questionId: question.id, 
+                  quizId: quizId
+                )
+              );
+              
+              // Opsional: Tampilkan Snackbar loading/sukses
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Deleting question..."), duration: Duration(seconds: 1)),
+              );
+            },
+            child: const Text("Delete"),
+          ),
+        ],
       ),
     );
   }
