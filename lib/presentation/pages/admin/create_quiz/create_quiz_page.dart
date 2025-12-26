@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import "package:quizify_proyek_mmp/core/constants/app_colors.dart";
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
-import 'package:quizify_proyek_mmp/presentation/widgets/question_card.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/question_card.dart';
 
 class AdminCreateQuizPage extends StatefulWidget {
   const AdminCreateQuizPage({super.key});
