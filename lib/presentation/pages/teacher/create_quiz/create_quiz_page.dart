@@ -85,6 +85,106 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
     return code.toString();
   }
 
+  void _showAIGenerationDialog(BuildContext context) {
+    // TODO: Check premium status first
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.auto_awesome, color: Colors.deepPurple),
+            SizedBox(width: 8),
+            Text('Generate Question with AI'),
+            SizedBox(width: 8),
+            Icon(Icons.stars, color: Colors.amber, size: 20),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This is a premium feature. Generate questions automatically using AI.',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Topic or Subject',
+                hintText: 'e.g., World War 2, Photosynthesis, etc.',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                prefixIcon: const Icon(Icons.topic),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Difficulty',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                prefixIcon: const Icon(Icons.speed),
+              ),
+              value: 'easy',
+              items: const [
+                DropdownMenuItem(value: 'easy', child: Text('Easy')),
+                DropdownMenuItem(value: 'medium', child: Text('Medium')),
+                DropdownMenuItem(value: 'hard', child: Text('Hard')),
+              ],
+              onChanged: (value) {},
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Question Type',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                prefixIcon: const Icon(Icons.question_answer),
+              ),
+              value: 'multiple',
+              items: const [
+                DropdownMenuItem(
+                  value: 'multiple',
+                  child: Text('Multiple Choice'),
+                ),
+                DropdownMenuItem(value: 'boolean', child: Text('True/False')),
+              ],
+              onChanged: (value) {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              // TODO: Implement AI generation logic
+              Navigator.pop(dialogContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('AI Generation feature coming soon!'),
+                  backgroundColor: Colors.deepPurple,
+                ),
+              );
+            },
+            icon: const Icon(Icons.auto_awesome),
+            label: const Text('Generate'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop =
@@ -359,22 +459,49 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
 
                     const SizedBox(height: 24.0),
 
-                    // Add Question Button
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: ElevatedButton.icon(
-                        onPressed: _addQuestion,
-                        icon: const Icon(Icons.add),
-                        label: const Text("Add Question"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.darkAzure,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                    // Add Question Buttons Row
+                    Row(
+                      children: [
+                        // Add Question Button
+                        ElevatedButton.icon(
+                          onPressed: _addQuestion,
+                          icon: const Icon(Icons.add),
+                          label: const Text("Add Question"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.darkAzure,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        // Generate with AI Button (Premium)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // TODO: Check if user is premium, then show AI generation dialog
+                            _showAIGenerationDialog(context);
+                          },
+                          icon: const Icon(Icons.auto_awesome, size: 20),
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Text("Generate with AI"),
+                              SizedBox(width: 4),
+                              Icon(Icons.stars, size: 16, color: Colors.amber),
+                            ],
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 16.0),
