@@ -110,6 +110,15 @@ class _AdminCreateQuizPageState extends State<AdminCreateQuizPage> {
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addQuestion,
+        backgroundColor: AppColors.darkAzure,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          "Add Question",
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: AppColors.darkAzure,
         elevation: 0,
@@ -315,7 +324,6 @@ class _AdminCreateQuizPageState extends State<AdminCreateQuizPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         // Save quiz logic
-                        
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.darkAzure,

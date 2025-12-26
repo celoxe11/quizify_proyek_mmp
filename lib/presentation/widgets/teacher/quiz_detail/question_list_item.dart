@@ -80,10 +80,6 @@ class QuestionListItem extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 8),
           // Image Preview (if exists)
-          Text(
-            "Question Image ${question.image != null ? 'Preview' : 'Not Available'}",
-          ),
-
           if (question.image != null &&
               question.image!.imageUrl.isNotEmpty) ...[
             Padding(

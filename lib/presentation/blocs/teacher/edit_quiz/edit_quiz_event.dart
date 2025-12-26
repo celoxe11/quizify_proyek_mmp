@@ -19,72 +19,37 @@ class InitializeEditQuizEvent extends EditQuizEvent {
   List<Object?> get props => [quiz, questions];
 }
 
-/// Event when the title is changed
-class TitleChangedEvent extends EditQuizEvent {
-  final String title;
-
-  const TitleChangedEvent(this.title);
-
-  @override
-  List<Object?> get props => [title];
-}
-
-/// Event when the description is changed
-class DescriptionChangedEvent extends EditQuizEvent {
-  final String description;
-
-  const DescriptionChangedEvent(this.description);
-
-  @override
-  List<Object?> get props => [description];
-}
-
-/// Event when the category is changed
-class CategoryChangedEvent extends EditQuizEvent {
-  final String category;
-
-  const CategoryChangedEvent(this.category);
-
-  @override
-  List<Object?> get props => [category];
-}
-
-/// Event when the public status is toggled
-class TogglePublicEvent extends EditQuizEvent {
-  final bool isPublic;
-
-  const TogglePublicEvent(this.isPublic);
-
-  @override
-  List<Object?> get props => [isPublic];
-}
-
-/// Event to add a new question
-class AddQuestionEvent extends EditQuizEvent {}
-
-/// Event to update a question at an index
-class UpdateQuestionEvent extends EditQuizEvent {
-  final int index;
-  final QuestionModel question;
-
-  const UpdateQuestionEvent({required this.index, required this.question});
-
-  @override
-  List<Object?> get props => [index, question];
-}
-
-/// Event to remove a question at an index
-class RemoveQuestionEvent extends EditQuizEvent {
-  final int index;
-
-  const RemoveQuestionEvent(this.index);
-
-  @override
-  List<Object?> get props => [index];
-}
-
 /// Event to save the quiz
-class SaveQuizEvent extends EditQuizEvent {}
+class SaveQuizEvent extends EditQuizEvent {
+  final String? quizId; // Optional, for updating existing quiz
+  final String title;
+  final String? description;
+  final String? category;
+  final String? status;
+  final String? quizCode;
+  final List<QuestionModel> questions;
+
+  const SaveQuizEvent({
+    this.quizId,
+    required this.title,
+    this.description,
+    this.category,
+    this.status,
+    this.quizCode,
+    required this.questions,
+  });
+
+  @override
+  List<Object> get props => [
+    if (quizId != null) quizId!,
+    title,
+    if (description != null) description!,
+    if (category != null) category!,
+    if (status != null) status!,
+    if (quizCode != null) quizCode!,
+    questions,
+  ];
+}
 
 /// Event to mark that changes have been made
 class MarkChangesEvent extends EditQuizEvent {}

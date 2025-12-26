@@ -10,14 +10,12 @@ import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/ques
 
 /// Edit Quiz Page - Allows teachers to edit an existing quiz.
 ///
-/// Uses BLoC pattern for state management:
-/// - [EditQuizBloc] handles all business logic
-/// - [EditQuizState] contains the current state
-/// - [EditQuizEvent] triggers state changes
+/// Uses TextEditingControllers for text field management and BLoC for
+/// question management and saving.
 ///
 /// The page receives quiz and questions from the route and initializes
-/// the BLoC with this data via [InitializeEditQuizEvent].
-class TeacherEditQuizPage extends StatelessWidget {
+/// the controllers with this data.
+class TeacherEditQuizPage extends StatefulWidget {
   const TeacherEditQuizPage({
     super.key,
     required this.quiz,
@@ -34,10 +32,103 @@ class TeacherEditQuizPage extends StatelessWidget {
   static const double _kMobileBreakpoint = 600;
 
   @override
+  State<TeacherEditQuizPage> createState() => _TeacherEditQuizPageState();
+}
+
+class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _categoryController;
+  late final TextEditingController _codeController;
+  late List<QuestionModel> _questions;
+  bool _isPublic = true;
+  bool _hasChanges = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.quiz.title);
+    _descriptionController = TextEditingController(
+      text: widget.quiz.description ?? '',
+    );
+    _categoryController = TextEditingController(
+      text: widget.quiz.category ?? '',
+    );
+    _codeController = TextEditingController(text: widget.quiz.quizCode);
+    _questions = List.from(widget.questions);
+    _isPublic = widget.quiz.status.toLowerCase() == 'public';
+
+    // Add listeners to track changes
+    _titleController.addListener(_onTextChanged);
+    _descriptionController.addListener(_onTextChanged);
+    _categoryController.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _categoryController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (!_hasChanges) {
+      setState(() {
+        _hasChanges = true;
+      });
+    }
+  }
+
+  void _onPublicToggled(bool value) {
+    setState(() {
+      _isPublic = value;
+      _hasChanges = true;
+    });
+  }
+
+  void _addQuestion() {
+    setState(() {
+      _questions.add(
+        QuestionModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          type: 'multiple',
+          difficulty: 'easy',
+          questionText: '',
+          correctAnswer: '',
+          options: ['', '', '', ''],
+        ),
+      );
+      _hasChanges = true;
+    });
+  }
+
+  void _updateQuestion(int index, QuestionModel updatedQuestion) {
+    setState(() {
+      if (index >= 0 && index < _questions.length) {
+        _questions[index] = updatedQuestion;
+        _hasChanges = true;
+      }
+    });
+  }
+
+  void _removeQuestion(int index) {
+    setState(() {
+      _questions.removeAt(index);
+      _hasChanges = true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width >= _kMobileBreakpoint;
+    final isDesktop =
+        MediaQuery.of(context).size.width >=
+        TeacherEditQuizPage._kMobileBreakpoint;
     final screenWidth = MediaQuery.of(context).size.width;
-    final maxWidth = isDesktop ? _kDesktopMaxWidth : double.infinity;
+    final maxWidth = isDesktop
+        ? TeacherEditQuizPage._kDesktopMaxWidth
+        : double.infinity;
 
     return BlocConsumer<EditQuizBloc, EditQuizState>(
       listener: (context, state) {
@@ -51,10 +142,16 @@ class TeacherEditQuizPage extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
+              duration: const Duration(seconds: 2),
             ),
           );
-          // Navigate back to quiz detail
-          context.pop();
+
+          // Navigate back to quiz detail page after a short delay
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (context.mounted) {
+              context.go('/teacher/quiz-detail', extra: state.updatedQuiz);
+            }
+          });
         } else if (state is EditQuizError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -64,13 +161,14 @@ class TeacherEditQuizPage extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
+              duration: const Duration(seconds: 3),
             ),
           );
         }
       },
       builder: (context, state) {
         return PopScope(
-          canPop: state is! EditQuizReady || !state.hasChanges,
+          canPop: !_hasChanges,
           onPopInvokedWithResult: (didPop, result) async {
             if (didPop) return;
             final shouldPop = await _showUnsavedChangesDialog(context);
@@ -80,6 +178,15 @@ class TeacherEditQuizPage extends StatelessWidget {
           },
           child: Scaffold(
             backgroundColor: AppColors.dirtyCyan,
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _addQuestion,
+              backgroundColor: AppColors.darkAzure,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Add Question",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
             appBar: _buildAppBar(context, state),
             body: _buildBody(context, state, isDesktop, screenWidth, maxWidth),
           ),
@@ -89,7 +196,6 @@ class TeacherEditQuizPage extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context, EditQuizState state) {
-    final hasChanges = state is EditQuizReady && state.hasChanges;
     final isSaving = state is EditQuizReady && state.isSaving;
 
     return AppBar(
@@ -98,7 +204,7 @@ class TeacherEditQuizPage extends StatelessWidget {
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
         onPressed: () async {
-          if (hasChanges) {
+          if (_hasChanges) {
             final shouldPop = await _showUnsavedChangesDialog(context);
             if (shouldPop && context.mounted) {
               context.pop();
@@ -120,7 +226,7 @@ class TeacherEditQuizPage extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (hasChanges)
+          if (_hasChanges)
             const Text(
               'Unsaved changes',
               style: TextStyle(
@@ -133,11 +239,25 @@ class TeacherEditQuizPage extends StatelessWidget {
       ),
       actions: [
         // Save button in app bar for quick access
-        if (hasChanges)
+        if (_hasChanges)
           TextButton.icon(
             onPressed: isSaving
                 ? null
-                : () => context.read<EditQuizBloc>().add(SaveQuizEvent()),
+                : () => context.read<EditQuizBloc>().add(
+                    SaveQuizEvent(
+                      quizId: widget.quiz.id,
+                      title: _titleController.text.trim(),
+                      description: _descriptionController.text.trim().isEmpty
+                          ? null
+                          : _descriptionController.text.trim(),
+                      category: _categoryController.text.trim().isEmpty
+                          ? null
+                          : _categoryController.text.trim(),
+                      status: _isPublic ? 'public' : 'private',
+                      quizCode: _codeController.text,
+                      questions: _questions,
+                    ),
+                  ),
             icon: isSaving
                 ? const SizedBox(
                     width: 16,
@@ -165,15 +285,7 @@ class TeacherEditQuizPage extends StatelessWidget {
     double screenWidth,
     double maxWidth,
   ) {
-    if (state is EditQuizInitial || state is EditQuizLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.darkAzure),
-      );
-    }
-
-    if (state is! EditQuizReady) {
-      return const Center(child: Text('Something went wrong'));
-    }
+    final isSaving = state is EditQuizReady && state.isSaving;
 
     return Container(
       decoration: const BoxDecoration(color: AppColors.dirtyCyan),
@@ -189,7 +301,7 @@ class TeacherEditQuizPage extends StatelessWidget {
             child: Column(
               children: [
                 // Quiz Header Card
-                _buildQuizHeaderCard(context, state, isDesktop),
+                _buildQuizHeaderCard(context, isDesktop),
 
                 const SizedBox(height: 24.0),
 
@@ -199,12 +311,12 @@ class TeacherEditQuizPage extends StatelessWidget {
                 const SizedBox(height: 16.0),
 
                 // Questions List
-                _buildQuestionsList(context, state),
+                _buildQuestionsList(context),
 
                 const SizedBox(height: 24.0),
 
                 // Save Button
-                _buildSaveButton(context, state),
+                _buildSaveButton(context, isSaving),
 
                 const SizedBox(height: 16.0),
               ],
@@ -215,11 +327,7 @@ class TeacherEditQuizPage extends StatelessWidget {
     );
   }
 
-  Widget _buildQuizHeaderCard(
-    BuildContext context,
-    EditQuizReady state,
-    bool isDesktop,
-  ) {
+  Widget _buildQuizHeaderCard(BuildContext context, bool isDesktop) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -240,8 +348,8 @@ class TeacherEditQuizPage extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: TextFormField(
-                  initialValue: state.title,
+                child: TextField(
+                  controller: _titleController,
                   decoration: const InputDecoration(
                     hintText: 'Quiz Title',
                     border: InputBorder.none,
@@ -252,35 +360,29 @@ class TeacherEditQuizPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: AppColors.darkAzure,
                   ),
-                  onChanged: (value) {
-                    context.read<EditQuizBloc>().add(TitleChangedEvent(value));
-                  },
                 ),
               ),
-              if (isDesktop) _buildPublicSwitch(context, state),
+              if (isDesktop) _buildPublicSwitch(context),
             ],
           ),
 
           // If mobile, show switch on separate line
           if (!isDesktop) ...[
             const SizedBox(height: 12),
-            _buildPublicSwitch(context, state),
+            _buildPublicSwitch(context),
           ],
 
           const SizedBox(height: 16.0),
 
           // Quiz Description
-          TextFormField(
-            initialValue: state.description,
+          TextField(
+            controller: _descriptionController,
             decoration: const InputDecoration(
               hintText: 'Quiz Description',
               border: InputBorder.none,
             ),
             style: const TextStyle(fontSize: 16, color: AppColors.darkAzure),
             maxLines: null,
-            onChanged: (value) {
-              context.read<EditQuizBloc>().add(DescriptionChangedEvent(value));
-            },
           ),
 
           const SizedBox(height: 20.0),
@@ -293,8 +395,8 @@ class TeacherEditQuizPage extends StatelessWidget {
               const Icon(Icons.category, color: AppColors.darkAzure, size: 20),
               const SizedBox(width: 12),
               Expanded(
-                child: TextFormField(
-                  initialValue: state.category,
+                child: TextField(
+                  controller: _categoryController,
                   decoration: const InputDecoration(
                     hintText: 'Category (e.g., Science, Math, History)',
                     border: InputBorder.none,
@@ -304,11 +406,6 @@ class TeacherEditQuizPage extends StatelessWidget {
                     fontSize: 14,
                     color: AppColors.darkAzure,
                   ),
-                  onChanged: (value) {
-                    context.read<EditQuizBloc>().add(
-                      CategoryChangedEvent(value),
-                    );
-                  },
                 ),
               ),
             ],
@@ -348,7 +445,7 @@ class TeacherEditQuizPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      state.code,
+                      _codeController.text,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -359,7 +456,8 @@ class TeacherEditQuizPage extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy, size: 20),
-                    onPressed: () => _copyCodeToClipboard(context, state.code),
+                    onPressed: () =>
+                        _copyCodeToClipboard(context, _codeController.text),
                     tooltip: 'Copy Code',
                     color: AppColors.darkAzure,
                   ),
@@ -372,28 +470,26 @@ class TeacherEditQuizPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPublicSwitch(BuildContext context, EditQuizReady state) {
+  Widget _buildPublicSwitch(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          state.isPublic ? Icons.public : Icons.lock,
+          _isPublic ? Icons.public : Icons.lock,
           size: 18,
-          color: state.isPublic ? Colors.green : Colors.orange,
+          color: _isPublic ? Colors.green : Colors.orange,
         ),
         const SizedBox(width: 8),
         Text(
-          state.isPublic ? "Public" : "Private",
+          _isPublic ? "Public" : "Private",
           style: TextStyle(
-            color: state.isPublic ? Colors.green : Colors.orange,
+            color: _isPublic ? Colors.green : Colors.orange,
             fontWeight: FontWeight.w500,
           ),
         ),
         Switch(
-          value: state.isPublic,
-          onChanged: (value) {
-            context.read<EditQuizBloc>().add(TogglePublicEvent(value));
-          },
+          value: _isPublic,
+          onChanged: _onPublicToggled,
           activeColor: Colors.green,
           inactiveThumbColor: Colors.orange,
         ),
@@ -405,9 +501,7 @@ class TeacherEditQuizPage extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: ElevatedButton.icon(
-        onPressed: () {
-          context.read<EditQuizBloc>().add(AddQuestionEvent());
-        },
+        onPressed: _addQuestion,
         icon: const Icon(Icons.add),
         label: const Text("Add Question"),
         style: ElevatedButton.styleFrom(
@@ -422,8 +516,8 @@ class TeacherEditQuizPage extends StatelessWidget {
     );
   }
 
-  Widget _buildQuestionsList(BuildContext context, EditQuizReady state) {
-    if (state.questions.isEmpty) {
+  Widget _buildQuestionsList(BuildContext context) {
+    if (_questions.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
@@ -469,33 +563,42 @@ class TeacherEditQuizPage extends StatelessWidget {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: state.questions.length,
+      itemCount: _questions.length,
       itemBuilder: (context, index) {
         return QuestionCard(
           index: index,
-          question: state.questions[index],
-          onUpdate: (updatedQuestion) {
-            context.read<EditQuizBloc>().add(
-              UpdateQuestionEvent(index: index, question: updatedQuestion),
-            );
-          },
-          onRemove: () {
-            context.read<EditQuizBloc>().add(RemoveQuestionEvent(index));
-          },
+          question: _questions[index],
+          onUpdate: (updatedQuestion) =>
+              _updateQuestion(index, updatedQuestion),
+          onRemove: () => _removeQuestion(index),
         );
       },
     );
   }
 
-  Widget _buildSaveButton(BuildContext context, EditQuizReady state) {
+  Widget _buildSaveButton(BuildContext context, bool isSaving) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: state.isSaving
+        onPressed: isSaving
             ? null
-            : () => context.read<EditQuizBloc>().add(SaveQuizEvent()),
+            : () => context.read<EditQuizBloc>().add(
+                SaveQuizEvent(
+                  quizId: widget.quiz.id,
+                  title: _titleController.text.trim(),
+                  description: _descriptionController.text.trim().isEmpty
+                      ? null
+                      : _descriptionController.text.trim(),
+                  category: _categoryController.text.trim().isEmpty
+                      ? null
+                      : _categoryController.text.trim(),
+                  status: _isPublic ? 'public' : 'private',
+                  quizCode: _codeController.text,
+                  questions: _questions,
+                ),
+              ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: state.hasChanges ? AppColors.darkAzure : Colors.grey,
+          backgroundColor: _hasChanges ? AppColors.darkAzure : Colors.grey,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
@@ -503,7 +606,7 @@ class TeacherEditQuizPage extends StatelessWidget {
           ),
           disabledBackgroundColor: Colors.grey.shade400,
         ),
-        child: state.isSaving
+        child: isSaving
             ? const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -523,7 +626,7 @@ class TeacherEditQuizPage extends StatelessWidget {
                 ],
               )
             : Text(
-                state.hasChanges ? "Save Changes" : "No Changes",
+                _hasChanges ? "Save Changes" : "No Changes",
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
