@@ -28,14 +28,14 @@ final class SubmitQuizEvent extends CreateQuizEvent {
 
   @override
   List<Object> get props => [
-        if (quizId != null) quizId!,
-        title,
-        if (description != null) description!,
-        if (category != null) category!,
-        if (status != null) status!,
-        if (quizCode != null) quizCode!,
-        questions,
-      ];
+    if (quizId != null) quizId!,
+    title,
+    if (description != null) description!,
+    if (category != null) category!,
+    if (status != null) status!,
+    if (quizCode != null) quizCode!,
+    questions,
+  ];
 }
 
 final class ValidateQuizEvent extends CreateQuizEvent {

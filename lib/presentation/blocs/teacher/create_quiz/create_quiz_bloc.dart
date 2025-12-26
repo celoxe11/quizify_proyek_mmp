@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/domain/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 
 part 'create_quiz_event.dart';
@@ -9,10 +10,14 @@ part 'create_quiz_state.dart';
 
 class CreateQuizBloc extends Bloc<CreateQuizEvent, CreateQuizState> {
   final TeacherRepository _teacherRepository;
+  final AuthenticationRepository _authRepository;
 
-  CreateQuizBloc({required TeacherRepository teacherRepository})
-      : _teacherRepository = teacherRepository,
-        super(CreateQuizInitial()) {
+  CreateQuizBloc({
+    required TeacherRepository teacherRepository,
+    required AuthenticationRepository authRepository,
+  }) : _teacherRepository = teacherRepository,
+       _authRepository = authRepository,
+       super(CreateQuizInitial()) {
     on<ValidateQuizEvent>(_onValidateQuiz);
     on<SubmitQuizEvent>(_onSubmitQuiz);
   }
@@ -22,10 +27,7 @@ class CreateQuizBloc extends Bloc<CreateQuizEvent, CreateQuizState> {
     Emitter<CreateQuizState> emit,
   ) async {
     // First validate
-    final validationError = _validateQuiz(
-      event.title,
-      event.questions,
-    );
+    final validationError = _validateQuiz(event.title, event.questions);
 
     if (validationError != null) {
       emit(CreateQuizValidationError(validationError));
@@ -33,7 +35,7 @@ class CreateQuizBloc extends Bloc<CreateQuizEvent, CreateQuizState> {
     }
 
     emit(CreateQuizLoading());
-    
+
     try {
       final savedQuiz = await _teacherRepository.saveQuiz(
         quizId: event.quizId,
@@ -52,22 +54,21 @@ class CreateQuizBloc extends Bloc<CreateQuizEvent, CreateQuizState> {
       if (errorMessage.contains('Exception: ')) {
         errorMessage = errorMessage.replaceAll('Exception: ', '');
       }
-      
+
       // Handle specific error cases
       if (errorMessage.contains('Anda sudah membuat kuis hari ini')) {
-        errorMessage = 'You have reached your daily quiz creation limit. Upgrade to premium for unlimited quizzes.';
+        errorMessage =
+            'You have reached your daily quiz creation limit. Upgrade to premium for unlimited quizzes.';
       } else if (errorMessage.contains('Kode kuis sudah digunakan')) {
-        errorMessage = 'This quiz code is already in use. Please choose a different code.';
+        errorMessage =
+            'This quiz code is already in use. Please choose a different code.';
       }
 
       emit(CreateQuizFailure(errorMessage));
     }
   }
 
-  void _onValidateQuiz(
-    ValidateQuizEvent event,
-    Emitter<CreateQuizState> emit,
-  ) {
+  void _onValidateQuiz(ValidateQuizEvent event, Emitter<CreateQuizState> emit) {
     final validationError = _validateQuiz(event.title, event.questions);
 
     if (validationError != null) {
@@ -94,7 +95,9 @@ class CreateQuizBloc extends Bloc<CreateQuizEvent, CreateQuizState> {
     }
 
     // Count total images for free tier validation (max 3 per quiz)
-    int totalImagesCount = questions.where((q) => q.image != null && q.image!.isNotEmpty).length;
+    int totalImagesCount = questions
+        .where((q) => q.image != null && q.image!.isNotEmpty)
+        .length;
 
     // Validate each question
     for (var i = 0; i < questions.length; i++) {

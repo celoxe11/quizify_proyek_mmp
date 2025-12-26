@@ -31,16 +31,10 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
 
     try {
       final response = await teacherRepository.getQuizDetail(event.quizId);
-      print('Quiz detail response received: $response');
 
       final quiz = response.quiz;
-      print('Loaded quiz: ${quiz.title}');
-
       final questions = response.questions;
-      print('Loaded ${questions.length} questions for quiz ${quiz.id}');
-
       final isPremium = authRepository.isPremiumUser();
-      print('Is Premium User: $isPremium');
 
       emit(
         QuizDetailLoaded(

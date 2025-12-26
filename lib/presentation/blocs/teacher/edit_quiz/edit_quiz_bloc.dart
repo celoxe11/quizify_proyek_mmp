@@ -47,7 +47,6 @@ class EditQuizBloc extends Bloc<EditQuizEvent, EditQuizState> {
     );
   }
 
-
   /// Save the quiz and all questions
   Future<void> _onSaveQuiz(
     SaveQuizEvent event,
