@@ -1,4 +1,5 @@
 import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
+import 'package:quizify_proyek_mmp/data/models/user_log_model.dart';
 import 'package:quizify_proyek_mmp/domain/entities/question.dart';
 
 import '../../domain/repositories/admin_repository.dart';
@@ -90,6 +91,25 @@ class AdminRepositoryImpl implements AdminRepository {
       return rawData.map((json) => QuestionModel.fromJson(json)).toList();
     } catch (e) {
       throw Exception("Gagal ambil soal: $e");
+    }
+  }
+
+  @override
+  Future<List<UserLogModel>> fetchLogs({String? userId}) async {
+    try {
+      final rawData = await apiService.getLogs(userId: userId);
+      return rawData.map((e) => UserLogModel.fromJson(e)).toList();
+    } catch (e) {
+      throw Exception("Repo Error Logs: $e");
+    }
+  }
+
+  @override
+  Future<void> deleteQuestion(String questionId) async {
+    try {
+      await apiService.deleteQuestion(questionId);
+    } catch (e) {
+      rethrow;
     }
   }
 

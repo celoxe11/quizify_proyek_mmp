@@ -1,186 +1,105 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quizify_proyek_mmp/core/api/api_client.dart';
-import 'package:quizify_proyek_mmp/core/api/quiz/quiz_api.dart';
+import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 
-class AdminQuizDesktopPage extends StatefulWidget {
-  const AdminQuizDesktopPage({super.key});
+class AdminQuizDesktopPage extends StatelessWidget {
+  final List<QuizModel> quizzes;
 
-  static const double _kMobileBreakpoint = 600;
-
-  @override
-  State<AdminQuizDesktopPage> createState() => _AdminQuizDesktopPageState();
-}
-
-class _AdminQuizDesktopPageState extends State<AdminQuizDesktopPage> {
-  late final QuizApi _quizApi;
-  late Future<List<QuizModel>> _futureQuizzes;
-
-  @override
-  void initState() {
-    super.initState();
-    _quizApi = QuizApi(ApiClient());
-    _futureQuizzes = _quizApi.getAllQuizzes();
-  }
+  const AdminQuizDesktopPage({super.key, required this.quizzes});
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryTeal = Color(0xFF007C89);
-    const Color lightTeal = Color(0xFFD6F2F3);
+    double screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = screenWidth > 1200 ? 4 : 3;
 
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: Column(
-        children: [
-          // HEADER
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            child: Row(
-              children: [
-                Text(
-                  'Quizify',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: primaryTeal,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {
-                    // TODO: ke halaman merchant
-                  },
-                  icon: const Icon(Icons.storefront_outlined, size: 28),
-                ),
-              ],
-            ),
-          ),
-
-          // BODY
-          Expanded(
-            child: SingleChildScrollView(
-              child: Container(
-                width: double.infinity,
-                color: lightTeal,
-                padding: const EdgeInsets.fromLTRB(32, 24, 32, 120),
-                height: MediaQuery.of(context).size.height - 80,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Quizzes',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ======= PANGGIL API DI SINI =======
-                    FutureBuilder<List<QuizModel>>(
-                      future: _futureQuizzes,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        if (snapshot.hasError) {
-                          return Text(
-                            'Failed to load quizzes: ${snapshot.error}',
-                            style: const TextStyle(color: Colors.red),
-                          );
-                        }
-
-                        final quizzes = snapshot.data ?? [];
-
-                        if (quizzes.isEmpty) {
-                          return const Text(
-                            'No quizzes found.',
-                            style: TextStyle(color: Colors.black54),
-                          );
-                        }
-
-                        return LayoutBuilder(
-                          builder: (context, constraints) {
-                            final isMobile =
-                                constraints.maxWidth <=
-                                AdminQuizDesktopPage._kMobileBreakpoint;
-
-                            return ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: quizzes.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 16),
-                              itemBuilder: (context, index) {
-                                final quiz = quizzes[index];
-                                return _QuizCard(
-                                  title: quiz.title,
-                                  isCompact: isMobile,
-                                  onTap: () {
-                                    // contoh ke halaman detail
-                                    // sesuaikan route kalau perlu
-                                    context.go('/admin/quiz/${quiz.id}');
-                                  },
-                                );
-                              },
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+    return GridView.builder(
+      padding: const EdgeInsets.all(24),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.5, // Rasio lebar:tinggi card
       ),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.go('/admin/quizz/create');
-        },
-        backgroundColor: primaryTeal,
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      itemCount: quizzes.length,
+      itemBuilder: (context, index) {
+        return _QuizGridCard(quiz: quizzes[index]);
+      },
     );
   }
 }
 
-class _QuizCard extends StatelessWidget {
-  final String title;
-  final bool isCompact;
-  final VoidCallback? onTap;
+class _QuizGridCard extends StatelessWidget {
+  final QuizModel quiz;
 
-  const _QuizCard({required this.title, required this.isCompact, this.onTap});
+  const _QuizGridCard({required this.quiz});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.teal.shade200, width: 2),
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
       ),
+      color: Colors.white,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
+        onTap: () {
+          context.go('/admin/quiz/${quiz.id}', extra: quiz.title);
+        },
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: EdgeInsets.all(isCompact ? 12 : 16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: AppColors.darkAzure.withOpacity(0.1),
+                    child: const Icon(Icons.quiz, color: AppColors.darkAzure),
+                  ),
+                  const Spacer(),
+                  // Badge Status (Public/Private)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: quiz.status == 'public' ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      quiz.status.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10, 
+                        fontWeight: FontWeight.bold,
+                        color: quiz.status == 'public' ? Colors.green : Colors.grey[700],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                quiz.title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Expanded(
+                child: Text(
+                  quiz.description ?? "No description",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Created by: ${quiz.creatorName ?? 'Unknown'}",
+                style: TextStyle(fontSize: 11, color: Colors.grey[500], fontStyle: FontStyle.italic),
+              ),
+            ],
           ),
         ),
       ),

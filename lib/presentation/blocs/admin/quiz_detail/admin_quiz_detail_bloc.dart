@@ -19,5 +19,21 @@ class AdminQuizDetailBloc extends Bloc<AdminQuizDetailEvent, AdminQuizDetailStat
         emit(AdminQuizDetailError(e.toString()));
       }
     });
+
+    on<DeleteQuestionEvent>((event, emit) async {
+      try {
+        // 1. Panggil Repo Delete
+        await adminRepository.deleteQuestion(event.questionId);
+        
+        // 2. Jika sukses, panggil ulang data Quiz (Refresh otomatis)
+        add(LoadAdminQuizDetail(event.quizId));
+        
+      } catch (e) {
+        // Opsional: Bisa emit state error khusus atau tampilkan snackbar di UI
+        // Untuk simpelnya, kita print dulu atau biarkan state tetap loaded
+        print("Gagal menghapus: $e");
+      }
+    });
+
   }
 }

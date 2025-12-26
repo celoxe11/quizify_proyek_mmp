@@ -4,9 +4,14 @@ import 'package:quizify_proyek_mmp/domain/entities/question.dart';
 import 'quiz_mobile.dart'; 
 
 class AdminQuizDetailDesktop extends StatelessWidget {
+  final String quizId;
   final List<Question> questions;
 
-  const AdminQuizDetailDesktop({super.key, required this.questions});
+  const AdminQuizDetailDesktop({
+    super.key, 
+    required this.questions, 
+    required this.quizId
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +34,7 @@ class AdminQuizDetailDesktop extends StatelessWidget {
         return QuestionCard(
           index: index,
           question: questions[index],
+          quizId: quizId,
         );
       },
     );
