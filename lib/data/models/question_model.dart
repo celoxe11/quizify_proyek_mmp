@@ -21,19 +21,39 @@ class QuestionModel extends Question {
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
-    // Parse question image if exists (backend includes questionimage relation)
+    // Parse question image if exists
     QuestionImage? questionImage;
-    if (json['questionimage'] != null) {
+    if (json['image_url'] != null) {
       try {
-        // Backend returns single object or array with 1 item
-        final imageData = json['questionimage'] is List 
-            ? (json['questionimage'] as List).isNotEmpty 
-                ? json['questionimage'][0] 
-                : null
-            : json['questionimage'];
-            
-        if (imageData != null) {
+        final imageData = json['image_url'];
+        
+        // Case 1: Backend returns string URL directly
+        if (imageData is String && imageData.isNotEmpty) {
+          questionImage = QuestionImageModel(
+            id: 0, // Placeholder since backend doesn't return full object
+            userId: json['created_by']?.toString() ?? '',
+            questionId: json['id']?.toString() ?? '',
+            imageUrl: imageData,
+            uploadedAt: null,
+          );
+        }
+        // Case 2: Backend returns object with image details
+        else if (imageData is Map<String, dynamic>) {
           questionImage = QuestionImageModel.fromJson(imageData);
+        }
+        // Case 3: Backend returns array with image object
+        else if (imageData is List && imageData.isNotEmpty) {
+          if (imageData[0] is String) {
+            questionImage = QuestionImageModel(
+              id: 0,
+              userId: json['created_by']?.toString() ?? '',
+              questionId: json['id']?.toString() ?? '',
+              imageUrl: imageData[0] as String,
+              uploadedAt: null,
+            );
+          } else if (imageData[0] is Map<String, dynamic>) {
+            questionImage = QuestionImageModel.fromJson(imageData[0]);
+          }
         }
       } catch (e) {
         print('Error parsing questionimage: $e');
@@ -42,7 +62,6 @@ class QuestionModel extends Question {
     
     return QuestionModel(
       id: json['id']?.toString() ?? '',
-      // ... field lain sama ...
       quizId: json['quiz_id']?.toString(),
       type: json['type']?.toString() ?? 'multiple',
       difficulty: json['difficulty']?.toString() ?? 'medium',
@@ -51,7 +70,7 @@ class QuestionModel extends Question {
       options: _parseOptions(json['options']),
       isGenerated: _parseBool(json['is_generated']),
 
-      // [TAMBAHAN BARU] Baca statistik (antisipasi null)
+      // Statistics (handle null)
       correctCount: int.tryParse(json['correct_answers']?.toString() ?? '0') ?? 0,
       incorrectCount: int.tryParse(json['incorrect_answers']?.toString() ?? '0') ?? 0,
 
@@ -62,26 +81,24 @@ class QuestionModel extends Question {
     );
   }
 
-
   static List<String> _parseOptions(dynamic value) {
     if (value == null) return [];
 
-    // KASUS 1: Backend mengirim String "[...]" (Ini yang terjadi sekarang)
+    // Case 1: Backend sends String "["a", "b", ...]"
     if (value is String) {
       try {
-        // Kita ubah String JSON menjadi List asli
         final decoded = jsonDecode(value); 
         
         if (decoded is List) {
           return decoded.map((e) => e.toString()).toList();
         }
       } catch (e) {
-        print("Gagal decode options JSON: $e");
+        print("Failed to decode options JSON: $e");
         return [];
       }
     }
 
-    // KASUS 2: Backend mengirim List asli (Untuk jaga-jaga kalau backend diperbaiki)
+    // Case 2: Backend sends List directly
     if (value is List) {
       return value.map((e) => e.toString()).toList();
     }
@@ -119,10 +136,11 @@ class QuestionModel extends Question {
       difficulty: question.difficulty,
       questionText: question.questionText,
       correctAnswer: question.correctAnswer,
-      options: _parseOptions(json['options']),
-      isGenerated: _parseBool(json['is_generated']),
+      options: question.options,
+      isGenerated: question.isGenerated,
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
+      image: question.image,
     );
   }
 

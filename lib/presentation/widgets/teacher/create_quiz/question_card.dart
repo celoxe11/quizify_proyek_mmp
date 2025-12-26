@@ -43,11 +43,9 @@ class _QuestionCardState extends State<QuestionCard> {
     );
 
     // Load existing image if available (local path stored in imageUrl for new uploads)
-    // Only load File on non-web platforms
-    if (!kIsWeb && 
-        widget.question.image != null && 
-        (widget.question.image!.imageUrl.startsWith('/') || 
-         widget.question.image!.imageUrl.contains(':'))) {
+    if (widget.question.image != null &&
+        (widget.question.image!.imageUrl.startsWith('/') ||
+            widget.question.image!.imageUrl.contains(':'))) {
       // Local file path
       _selectedImage = File(widget.question.image!.imageUrl);
     }
@@ -144,7 +142,7 @@ class _QuestionCardState extends State<QuestionCard> {
       ),
     );
   }
-  
+
   Future<void> _pickImage() async {
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
@@ -158,7 +156,7 @@ class _QuestionCardState extends State<QuestionCard> {
         // For web, we need to read bytes and convert to base64
         // For mobile, we store the file path
         String imageData;
-        
+
         if (kIsWeb) {
           // Web: Read bytes and convert to base64
           final bytes = await pickedFile.readAsBytes();
@@ -171,7 +169,7 @@ class _QuestionCardState extends State<QuestionCard> {
             _selectedImage = File(pickedFile.path);
           });
         }
-        
+
         // Store as temporary QuestionImage with image data
         final tempQuestionImage = QuestionImage(
           id: 0, // Temporary ID, will be assigned by backend
@@ -180,9 +178,9 @@ class _QuestionCardState extends State<QuestionCard> {
           imageUrl: imageData, // Store base64 for web or path for mobile
           uploadedAt: DateTime.now(),
         );
-        
+
         widget.onUpdate(widget.question.copyWith(image: tempQuestionImage));
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Image selected! Will be uploaded when saving quiz.'),
@@ -209,7 +207,7 @@ class _QuestionCardState extends State<QuestionCard> {
 
   Widget _buildWebImage() {
     final imageUrl = widget.question.image?.imageUrl ?? '';
-    
+
     // Check if it's a base64 encoded image
     if (imageUrl.startsWith('data:image')) {
       // Extract the base64 data
@@ -232,9 +230,7 @@ class _QuestionCardState extends State<QuestionCard> {
           return Container(
             height: 200,
             color: Colors.grey.shade300,
-            child: const Center(
-              child: Text('Failed to load image'),
-            ),
+            child: const Center(child: Text('Failed to load image')),
           );
         },
       );
@@ -243,13 +239,10 @@ class _QuestionCardState extends State<QuestionCard> {
       return Container(
         height: 200,
         color: Colors.grey.shade300,
-        child: const Center(
-          child: Text('Image preview unavailable'),
-        ),
+        child: const Center(child: Text('Image preview unavailable')),
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +356,10 @@ class _QuestionCardState extends State<QuestionCard> {
                       ),
                     ],
                   ),
-                  if (_selectedImage != null || (kIsWeb && widget.question.image != null && widget.question.image!.imageUrl.isNotEmpty)) ...[
+                  if (_selectedImage != null ||
+                      (kIsWeb &&
+                          widget.question.image != null &&
+                          widget.question.image!.imageUrl.isNotEmpty)) ...[
                     const SizedBox(height: 12),
                     Stack(
                       children: [
