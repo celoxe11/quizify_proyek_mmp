@@ -5,7 +5,12 @@ import 'package:go_router/go_router.dart';
 import "package:quizify_proyek_mmp/core/constants/app_colors.dart";
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/edit_quiz/edit_quiz_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_state.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/ai_generation_dialog.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/question_card.dart';
 
 /// Edit Quiz Page - Allows teachers to edit an existing quiz.
@@ -43,6 +48,7 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
   late List<QuestionModel> _questions;
   bool _isPublic = true;
   bool _hasChanges = false;
+  bool _isPremiumUser = false;
 
   @override
   void initState() {
@@ -62,6 +68,18 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
     _titleController.addListener(_onTextChanged);
     _descriptionController.addListener(_onTextChanged);
     _categoryController.addListener(_onTextChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPremiumStatus());
+  }
+
+  Future<void> _loadPremiumStatus() async {
+    final authRepo = context.read<AuthenticationRepositoryImpl>();
+    try {
+      final premium = authRepo.isPremiumUser();
+      if (mounted) setState(() => _isPremiumUser = premium);
+    } catch (e) {
+      // handle error if needed
+    }
   }
 
   @override
@@ -130,68 +148,135 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
         ? TeacherEditQuizPage._kDesktopMaxWidth
         : double.infinity;
 
-    return BlocConsumer<EditQuizBloc, EditQuizState>(
-      listener: (context, state) {
-        // Handle side effects
-        if (state is EditQuizSaved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Quiz updated successfully!'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<EditQuizBloc, EditQuizState>(
+          listener: (context, state) {
+            // Handle side effects
+            if (state is EditQuizSaved) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Quiz updated successfully!'),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
 
-          // Navigate back to quiz detail page after a short delay
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (context.mounted) {
-              context.go('/teacher/quiz-detail', extra: state.updatedQuiz);
-            }
-          });
-        } else if (state is EditQuizError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      },
-      builder: (context, state) {
-        return PopScope(
-          canPop: !_hasChanges,
-          onPopInvokedWithResult: (didPop, result) async {
-            if (didPop) return;
-            final shouldPop = await _showUnsavedChangesDialog(context);
-            if (shouldPop && context.mounted) {
-              context.pop();
+              // Navigate back to quiz detail page after a short delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  context.go('/teacher/quiz-detail', extra: state.updatedQuiz);
+                }
+              });
+            } else if (state is EditQuizError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
             }
           },
-          child: Scaffold(
-            backgroundColor: AppColors.dirtyCyan,
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: _addQuestion,
-              backgroundColor: AppColors.darkAzure,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                "Add Question",
-                style: TextStyle(color: Colors.white),
+        ),
+        BlocListener<GenerateQuestionBloc, GenerateQuestionState>(
+          listener: (context, state) {
+            if (state is GenerateQuestionLoading) {
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Dialog(
+                  backgroundColor: Colors.transparent,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Colors.deepPurple),
+                        SizedBox(height: 16),
+                        Text(
+                          'Generating question with AI...',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            } else if (state is GenerateQuestionSuccess) {
+              // Hide loading dialog
+              Navigator.of(context, rootNavigator: true).pop();
+
+              // Add generated question to list
+              setState(() {
+                _questions.add(state.question);
+                _hasChanges = true;
+              });
+
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Question generated successfully!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            } else if (state is GenerateQuestionFailure) {
+              // Hide loading dialog
+              Navigator.of(context, rootNavigator: true).pop();
+
+              // Show error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to generate question: ${state.error}'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          },
+        ),
+      ],
+      child: BlocConsumer<EditQuizBloc, EditQuizState>(
+        listener: (context, state) {
+          // This listener is now redundant but kept for backwards compatibility
+          // The actual logic has been moved to the MultiBlocListener above
+        },
+        builder: (context, state) {
+          return PopScope(
+            canPop: !_hasChanges,
+            onPopInvokedWithResult: (didPop, result) async {
+              if (didPop) return;
+              final shouldPop = await _showUnsavedChangesDialog(context);
+              if (shouldPop && context.mounted) {
+                context.pop();
+              }
+            },
+            child: Scaffold(
+              backgroundColor: AppColors.dirtyCyan,
+              floatingActionButton: FloatingActionButton.extended(
+                onPressed: _addQuestion,
+                backgroundColor: AppColors.darkAzure,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  "Add Question",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
+              appBar: _buildAppBar(context, state),
+              body: _buildBody(context, state, isDesktop, screenWidth, maxWidth),
             ),
-            appBar: _buildAppBar(context, state),
-            body: _buildBody(context, state, isDesktop, screenWidth, maxWidth),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -327,32 +412,26 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
                     ),
                     const SizedBox(width: 12),
                     // Generate with AI Button (Premium)
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Check if user is premium, then show AI generation dialog
-                        _showAIGenerationDialog(context);
-                      },
-                      icon: const Icon(Icons.auto_awesome, size: 20),
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Text("Generate with AI"),
-                          SizedBox(width: 4),
-                          Icon(Icons.stars, size: 16, color: Colors.amber),
-                        ],
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    if (_isPremiumUser) ...{
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          _showAIGenerationDialog(context);
+                        },
+                        icon: const Icon(Icons.auto_awesome, size: 20),
+                        label: const Text("Generate with AI"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
-                    ),
+                    },
                   ],
                 ),
 
@@ -565,101 +644,27 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
   }
 
   void _showAIGenerationDialog(BuildContext context) {
-    // TODO: Check premium status first
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.auto_awesome, color: Colors.deepPurple),
-            SizedBox(width: 8),
-            Text('Generate Question with AI'),
-            SizedBox(width: 8),
-            Icon(Icons.stars, color: Colors.amber, size: 20),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'This is a premium feature. Generate questions automatically using AI.',
-              style: TextStyle(fontSize: 14),
+      builder: (dialogContext) => AIGenerationDialog(
+        onGenerate: (params) {
+          Navigator.pop(dialogContext);
+          // Dispatch GenerateQuestionWithAIEvent
+          context.read<GenerateQuestionBloc>().add(
+            GenerateQuestionWithAIEvent(
+              type: params["type"],
+              difficulty: params["difficulty"],
+              category: params["category"],
+              topic: params["topic"],
+              language: params["language"],
+              context: params["context"],
+              ageGroup: params["age_group"],
+              avoidTopics: params["avoid_topics"],
+              includeExplanation: params["include_explanation"],
+              questionStyle: params["question_style"],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Topic or Subject',
-                hintText: 'e.g., World War 2, Photosynthesis, etc.',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.topic),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Difficulty',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.speed),
-              ),
-              value: 'easy',
-              items: const [
-                DropdownMenuItem(value: 'easy', child: Text('Easy')),
-                DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                DropdownMenuItem(value: 'hard', child: Text('Hard')),
-              ],
-              onChanged: (value) {},
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Question Type',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.question_answer),
-              ),
-              value: 'multiple',
-              items: const [
-                DropdownMenuItem(
-                  value: 'multiple',
-                  child: Text('Multiple Choice'),
-                ),
-                DropdownMenuItem(value: 'boolean', child: Text('True/False')),
-              ],
-              onChanged: (value) {},
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Implement AI generation logic
-              Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('AI Generation feature coming soon!'),
-                  backgroundColor: Colors.deepPurple,
-                ),
-              );
-            },
-            icon: const Icon(Icons.auto_awesome),
-            label: const Text('Generate'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -81,6 +81,22 @@ class QuestionModel extends Question {
     );
   }
 
+  /// Factory for parsing generated question response from backend
+  /// Expected format: {"question": {...}}
+  factory QuestionModel.fromGeneratedResponse(Map<String, dynamic> response) {
+    final questionData = response['question'] as Map<String, dynamic>;
+    
+    return QuestionModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(), // Generate temp ID
+      type: questionData['type']?.toString() ?? 'multiple',
+      difficulty: questionData['difficulty']?.toString() ?? 'easy',
+      questionText: questionData['question_text']?.toString() ?? '',
+      correctAnswer: questionData['correct_answer']?.toString() ?? '',
+      options: _parseOptions(questionData['options']),
+      isGenerated: true, // Always true for AI-generated questions
+    );
+  }
+
   static List<String> _parseOptions(dynamic value) {
     if (value == null) return [];
 

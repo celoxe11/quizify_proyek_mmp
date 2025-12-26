@@ -20,7 +20,9 @@ class TeacherRepositoryImpl extends TeacherRepository {
     AuthApiService? authApiService,
   }) : _teacherService = teacherService ?? TeacherService(),
        // Only use local database on mobile platforms (not web)
-       _localDataSource = localDataSource ?? (kIsWeb ? null : QuizStorage(AppDatabase.instance)),
+       _localDataSource =
+           localDataSource ??
+           (kIsWeb ? null : QuizStorage(AppDatabase.instance)),
        _authApiService = authApiService ?? AuthApiService();
 
   /// Get current user's teacher/student ID (not Firebase UID)
@@ -40,8 +42,6 @@ class TeacherRepositoryImpl extends TeacherRepository {
     throw UnimplementedError();
   }
 
-  
-
   @override
   Future<QuestionModel> generateQuestion({
     String? type,
@@ -54,9 +54,26 @@ class TeacherRepositoryImpl extends TeacherRepository {
     List<String>? avoidTopics,
     bool? includeExplanation,
     String? questionStyle,
-  }) {
-    // TODO: implement generateQuestion
-    throw UnimplementedError();
+  }) async {
+    try {
+      final questionData = await _teacherService.generateQuestion(
+        type: type,
+        difficulty: difficulty,
+        category: category ?? 'General Knowledge',
+        topic: topic ?? '',
+        language: language ?? 'id',
+        context: context ?? '',
+        ageGroup: ageGroup ?? 'SMA',
+        avoidTopics: avoidTopics ?? [],
+        includeExplanation: includeExplanation ?? false,
+        questionStyle: questionStyle ?? 'formal',
+      );
+
+      return QuestionModel.fromGeneratedResponse(questionData);
+    } catch (e) {
+      print('Error generating question: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -67,7 +84,7 @@ class TeacherRepositoryImpl extends TeacherRepository {
       if (userId == null) {
         throw Exception('User profile not found');
       }
-      
+
       print('Fetching quizzes for teacher ID: $userId');
 
       // Fetch from server first (server-first approach for quiz list)
@@ -78,7 +95,7 @@ class TeacherRepositoryImpl extends TeacherRepository {
         return serverQuizzes;
       } catch (serverError) {
         print('Server fetch failed: $serverError');
-        
+
         // Fallback to local cache if server fails
         if (_localDataSource != null) {
           try {
@@ -91,7 +108,7 @@ class TeacherRepositoryImpl extends TeacherRepository {
             print('Local fallback also failed: $localError');
           }
         }
-        
+
         // If both fail, rethrow the server error
         rethrow;
       }
@@ -123,12 +140,12 @@ class TeacherRepositoryImpl extends TeacherRepository {
   /// Cache quizzes to local storage
   Future<void> _cacheQuizzes(List<QuizModel> quizzes) async {
     if (_localDataSource == null || quizzes.isEmpty) return;
-    
+
     try {
       // Get current user ID to only clear their quizzes
       final userId = await _getCurrentUserId();
       if (userId == null) return;
-      
+
       // Clear only this user's old data and insert fresh data
       await _localDataSource.deleteAllQuizzes(userId: userId);
       await _localDataSource.insertQuizzes(quizzes);
@@ -168,10 +185,10 @@ class TeacherRepositoryImpl extends TeacherRepository {
       // Fetch from API
       final apiResponse = await _teacherService.getQuizDetail(quizId);
       final response = QuizDetailResponse.fromApi(apiResponse);
-      
+
       // Cache the quiz metadata
       await _cacheQuiz(response.quiz);
-      
+
       return response;
     } catch (e) {
       // Fallback to local if server fails
@@ -189,7 +206,7 @@ class TeacherRepositoryImpl extends TeacherRepository {
   /// Cache a single quiz
   Future<void> _cacheQuiz(QuizModel quiz) async {
     if (_localDataSource == null) return;
-    
+
     try {
       await _localDataSource.insertQuiz(quiz);
     } catch (e) {
@@ -199,12 +216,15 @@ class TeacherRepositoryImpl extends TeacherRepository {
 
   /// Background sync for quiz detail
   void _syncQuizDetailInBackground(String quizId) {
-    _teacherService.getQuizDetail(quizId).then((apiResponse) {
-      final response = QuizDetailResponse.fromApi(apiResponse);
-      _cacheQuiz(response.quiz);
-    }).catchError((e) {
-      print('Background sync quiz detail failed: $e');
-    });
+    _teacherService
+        .getQuizDetail(quizId)
+        .then((apiResponse) {
+          final response = QuizDetailResponse.fromApi(apiResponse);
+          _cacheQuiz(response.quiz);
+        })
+        .catchError((e) {
+          print('Background sync quiz detail failed: $e');
+        });
   }
 
   @override
@@ -245,37 +265,39 @@ class TeacherRepositoryImpl extends TeacherRepository {
       final savedQuizId = response['quiz_id'] as String;
       final savedQuizCode = response['quiz_code'] as String?;
       final message = response['message'] as String;
-      
+
       print('✓ $message');
 
       // Fetch the updated quiz details
-      final quizDetailResponse = await _teacherService.getQuizDetail(savedQuizId);
+      final quizDetailResponse = await _teacherService.getQuizDetail(
+        savedQuizId,
+      );
       final quizDetailParsed = QuizDetailResponse.fromApi(quizDetailResponse);
-      
+
       // Cache the quiz
       await _cacheQuiz(quizDetailParsed.quiz);
-      
+
       // Also refresh the quiz list cache
       _syncQuizzesInBackground();
-      
+
       return quizDetailParsed.quiz;
     } catch (e) {
       print('Error saving quiz: $e');
       rethrow;
     }
   }
-  
+
   @override
   Future<void> deleteQuiz(String quizId) async {
     try {
       // Delete from server
       await _teacherService.deleteQuiz(quizId);
-      
+
       // Sync with local database
       if (_localDataSource != null) {
         await _localDataSource.deleteQuiz(quizId);
       }
-      
+
       print('✓ Quiz $quizId deleted successfully');
     } catch (e) {
       print('Error deleting quiz: $e');

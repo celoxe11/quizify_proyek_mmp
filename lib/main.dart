@@ -9,6 +9,7 @@ import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 // Import App Database
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
@@ -224,16 +225,26 @@ class _AppView extends StatelessWidget {
                 final data = state.extra as Map<String, dynamic>;
                 final quiz = data['quiz'] as QuizModel;
                 final questions = data['questions'] as List<QuestionModel>;
-                return BlocProvider(
-                  create: (context) =>
-                      EditQuizBloc(
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (context) =>
+                          EditQuizBloc(
+                            teacherRepository: context
+                                .read<TeacherRepository>(),
+                          )..add(
+                            InitializeEditQuizEvent(
+                              quiz: quiz,
+                              questions: questions,
+                            ),
+                          ),
+                    ),
+                    BlocProvider(
+                      create: (context) => GenerateQuestionBloc(
                         teacherRepository: context.read<TeacherRepository>(),
-                      )..add(
-                        InitializeEditQuizEvent(
-                          quiz: quiz,
-                          questions: questions,
-                        ),
                       ),
+                    ),
+                  ],
                   child: TeacherEditQuizPage(quiz: quiz, questions: questions),
                 );
               },
@@ -249,11 +260,22 @@ class _AppView extends StatelessWidget {
             ),
             GoRoute(
               path: "/teacher/create-quiz",
-              builder: (context, state) => BlocProvider(
-                create: (context) => CreateQuizBloc(
-                  teacherRepository: context.read<TeacherRepository>(),
-                ),
-                child: const TeacherCreateQuizPage(),
+              builder: (context, state) => MultiBlocProvider(
+                providers: [
+                  BlocProvider(
+                    create: (context) => CreateQuizBloc(
+                      teacherRepository: context.read<TeacherRepository>(),
+                      authRepository: context
+                          .read<AuthenticationRepositoryImpl>(),
+                    ),
+                  ),
+                  BlocProvider(
+                    create: (context) => GenerateQuestionBloc(
+                      teacherRepository: context.read<TeacherRepository>(),
+                    ),
+                  ),
+                ],
+                child: TeacherCreateQuizPage(),
               ),
             ),
             GoRoute(

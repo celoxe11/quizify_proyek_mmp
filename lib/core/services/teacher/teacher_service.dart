@@ -151,6 +151,41 @@ class TeacherService {
     );
   }
 
+  //endpoint for /teacher/quiz/generatequestion
+  Future<Map<String, dynamic>> generateQuestion({
+    String? type,
+    String? difficulty,
+    String? category,
+    String? topic,
+    String? language,
+    String? context,
+    String? ageGroup,
+    List<String>? avoidTopics,
+    bool? includeExplanation,
+    String? questionStyle,
+  }) async {
+    final requestBody = {
+      if (type != null) 'type': type,
+      if (difficulty != null) 'difficulty': difficulty,
+      if (category != null) 'category': category,
+      if (topic != null) 'topic': topic,
+      if (language != null) 'language': language,
+      if (context != null) 'context': context,
+      if (ageGroup != null) 'age_group': ageGroup,
+      if (avoidTopics != null && avoidTopics.isNotEmpty)
+        'avoid_topics': avoidTopics,
+      if (includeExplanation != null)
+        'include_explanation': includeExplanation,
+      if (questionStyle != null) 'question_style': questionStyle,
+    };
+
+    final response = await _client.post(
+      '/teacher/generatequestion',
+      data: requestBody,
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
   /// Check if a path is a local file path (not a URL)
   bool _isLocalPath(String path) {
     return !path.startsWith('http://') && 
