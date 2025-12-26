@@ -56,9 +56,8 @@ import 'package:quizify_proyek_mmp/core/services/auth/auth_service.dart';
 import 'package:quizify_proyek_mmp/core/services/auth/auth_api_service.dart';
 import 'package:quizify_proyek_mmp/core/config/platform_config.dart';
 
-import 'package:dio/dio.dart'; 
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 
 // --- Global Navigator Keys (REQUIRED for ShellRoute) ---
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -226,10 +225,15 @@ class _AppView extends StatelessWidget {
                 final quiz = data['quiz'] as QuizModel;
                 final questions = data['questions'] as List<QuestionModel>;
                 return BlocProvider(
-                  create: (context) => EditQuizBloc()
-                    ..add(
-                      InitializeEditQuizEvent(quiz: quiz, questions: questions),
-                    ),
+                  create: (context) =>
+                      EditQuizBloc(
+                        teacherRepository: context.read<TeacherRepository>(),
+                      )..add(
+                        InitializeEditQuizEvent(
+                          quiz: quiz,
+                          questions: questions,
+                        ),
+                      ),
                   child: TeacherEditQuizPage(quiz: quiz, questions: questions),
                 );
               },
@@ -300,8 +304,7 @@ class _AppView extends StatelessWidget {
             ),
             GoRoute(
               path: '/admin/analytics',
-              builder: (context, state) =>
-                  const AnalyticPageWrapper(),
+              builder: (context, state) => const AnalyticPageWrapper(),
             ),
             GoRoute(
               path: '/admin/settings',
@@ -312,17 +315,17 @@ class _AppView extends StatelessWidget {
               path: '/admin/logs',
               builder: (context, state) {
                 final userId = state.uri.queryParameters['user_id'];
-                
+
                 // Masukkan ke Constructor Page
                 return AdminLogsPage(userId: userId);
               },
             ),
             GoRoute(
-              path: '/admin/quiz/:quizId', 
+              path: '/admin/quiz/:quizId',
               builder: (context, state) {
                 // Ambil ID dari URL
                 final quizId = state.pathParameters['quizId']!;
-                
+
                 // Ambil Title dari "extra" (dikirim saat navigasi) atau default
                 final quizTitle = state.extra as String? ?? "Quiz Detail";
 
@@ -355,52 +358,57 @@ class _AppView extends StatelessWidget {
           create: (context) => TeacherRepositoryImpl(),
         ),
         RepositoryProvider(
-          create: (context)  {
-             // Sebaiknya gunakan instance Dio yang sama dengan Auth (Singleton)
-             // Tapi untuk sekarang new Dio() dulu tidak apa-apa asalkan diatur BaseURL-nya
-             final dio = Dio(BaseOptions(
-               baseUrl: PlatformConfig.getBaseUrl().replaceAll('/api', ''), 
-               headers: {
-                 'Content-Type': 'application/json',
-                 'Accept': 'application/json',
-               }
-             ));
+          create: (context) {
+            // Sebaiknya gunakan instance Dio yang sama dengan Auth (Singleton)
+            // Tapi untuk sekarang new Dio() dulu tidak apa-apa asalkan diatur BaseURL-nya
+            final dio = Dio(
+              BaseOptions(
+                baseUrl: PlatformConfig.getBaseUrl().replaceAll('/api', ''),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                },
+              ),
+            );
 
-             // Ini tugasnya menyisipkan Token otomatis sebelum request dikirim
-             dio.interceptors.add(InterceptorsWrapper(
-               onRequest: (options, handler) async {
-                 // Ambil user yang sedang login
-                 final user = FirebaseAuth.instance.currentUser;
-                 
-                 if (user != null) {
-                   // Ambil token ID Firebase terbaru
-                   final idToken = await user.getIdToken();
-                   
-                   // Masukkan ke Header: "Authorization: Bearer <token>"
-                   options.headers['Authorization'] = 'Bearer $idToken';
-                   print("Token attached: ${idToken?.substring(0, 10)}..."); // Debugging
-                 } else {
+            // Ini tugasnya menyisipkan Token otomatis sebelum request dikirim
+            dio.interceptors.add(
+              InterceptorsWrapper(
+                onRequest: (options, handler) async {
+                  // Ambil user yang sedang login
+                  final user = FirebaseAuth.instance.currentUser;
 
-                  print("⚠️ Sending Mock Token for Bypass");
-                  options.headers['Authorization'] = 'Bearer RAHASIA_KITA_BERSAMA';
+                  if (user != null) {
+                    // Ambil token ID Firebase terbaru
+                    final idToken = await user.getIdToken();
 
-                   print("User not logged in, no token sent.");
-                 }
-                 
-                 return handler.next(options);
-               },
-               onError: (error, handler) {
-                 print("Interceptor Error: ${error.response?.statusCode} -> ${error.message}");
-                 return handler.next(error);
-               }
-             )); 
-             
-             return AdminRepositoryImpl(
-               apiService: AdminApiService(dio),
-             );
+                    // Masukkan ke Header: "Authorization: Bearer <token>"
+                    options.headers['Authorization'] = 'Bearer $idToken';
+                    print(
+                      "Token attached: ${idToken?.substring(0, 10)}...",
+                    ); // Debugging
+                  } else {
+                    print("⚠️ Sending Mock Token for Bypass");
+                    options.headers['Authorization'] =
+                        'Bearer RAHASIA_KITA_BERSAMA';
+
+                    print("User not logged in, no token sent.");
+                  }
+
+                  return handler.next(options);
+                },
+                onError: (error, handler) {
+                  print(
+                    "Interceptor Error: ${error.response?.statusCode} -> ${error.message}",
+                  );
+                  return handler.next(error);
+                },
+              ),
+            );
+
+            return AdminRepositoryImpl(apiService: AdminApiService(dio));
           },
         ),
-
       ],
       child: MultiBlocProvider(
         providers: [
@@ -431,7 +439,7 @@ class _AppView extends StatelessWidget {
                   router.go('/admin/home');
                 }
               }
-              }
+            }
           },
           child: MaterialApp.router(
             title: 'Quizify',

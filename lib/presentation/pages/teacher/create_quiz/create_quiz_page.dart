@@ -158,6 +158,15 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
       },
       child: Scaffold(
         backgroundColor: AppColors.dirtyCyan,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _addQuestion,
+          backgroundColor: AppColors.darkAzure,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text(
+            "Add Question",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
         appBar: AppBar(
           backgroundColor: AppColors.darkAzure,
           elevation: 0,
