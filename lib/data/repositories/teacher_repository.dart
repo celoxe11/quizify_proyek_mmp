@@ -1,9 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/core/local/quiz_storage.dart';
 import 'package:quizify_proyek_mmp/core/services/services.dart';
-import 'package:quizify_proyek_mmp/core/services/auth/auth_api_service.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/data/responses/quiz_detail_response.dart';
@@ -239,12 +237,6 @@ class TeacherRepositoryImpl extends TeacherRepository {
   }
 
   @override
-  Future<dynamic> getStudentsAnswers(String quizId) {
-    // TODO: implement getStudentsAnswers
-    throw UnimplementedError();
-  }
-
-  @override
   Future<QuizModel> saveQuiz({
     String? quizId,
     required String title,
@@ -306,6 +298,30 @@ class TeacherRepositoryImpl extends TeacherRepository {
       print('✓ Quiz $quizId deleted successfully');
     } catch (e) {
       print('Error deleting quiz: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStudentAnswers({
+    required String studentId,
+    required String quizId,
+  }) async {
+    try {
+      final response = await _teacherService.getStudentAnswers(
+        studentId: studentId,
+        quizId: quizId,
+      );
+
+      // Response includes: message, session (object), answers (array with Question property)
+      return {
+        'session': response['session'] as Map<String, dynamic>,
+        'answers': (response['answers'] as List<dynamic>)
+            .map((answer) => answer as Map<String, dynamic>)
+            .toList(),
+      };
+    } catch (e) {
+      print('Error fetching student answers: $e');
       rethrow;
     }
   }

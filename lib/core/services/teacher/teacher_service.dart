@@ -52,61 +52,70 @@ class TeacherService {
     required List<QuestionModel> questions,
   }) async {
     // Format questions according to backend requirements
-    final formattedQuestions = await Future.wait(questions.map((q) async {
-      // Separate correct answer from other options
-      final incorrectAnswers = q.options
-          .where((option) => option != q.correctAnswer)
-          .toList();
+    final formattedQuestions = await Future.wait(
+      questions.map((q) async {
+        // Separate correct answer from other options
+        final incorrectAnswers = q.options
+            .where((option) => option != q.correctAnswer)
+            .toList();
 
-      print("Incorrect answers for question '${q.questionText}': $incorrectAnswers");
+        final questionData = {
+          'type': q.type,
+          'difficulty': q.difficulty,
+          'question_text': q.questionText,
+          'correct_answer': q.correctAnswer,
+          'incorrect_answers': incorrectAnswers,
+        };
 
-      final questionData = {
-        'type': q.type,
-        'difficulty': q.difficulty,
-        'question_text': q.questionText,
-        'correct_answer': q.correctAnswer,
-        'incorrect_answers': incorrectAnswers,
-      };
-
-      // Convert local image to base64 if exists
-      if (q.image != null && 
-          q.image!.isNotEmpty && 
-          q.image!.imageUrl.isNotEmpty) {
-        try {
-          // Check if it's already base64 encoded (from web upload)
-          if (q.image!.imageUrl.startsWith('data:image')) {
-            questionData['question_image'] = q.image!.imageUrl;
-            print('✓ Using pre-encoded base64 image for question: ${q.questionText}');
-          } else if (!kIsWeb && _isLocalPath(q.image!.imageUrl)) {
-            // Mobile: Read from file system
-            final imageFile = File(q.image!.imageUrl);
-            if (await imageFile.exists()) {
-              final bytes = await imageFile.readAsBytes();
-              final base64Image = base64Encode(bytes);
-              questionData['question_image'] = 'data:image/png;base64,$base64Image';
-              print('✓ Image converted to base64 for question: ${q.questionText}');
+        // Convert local image to base64 if exists
+        if (q.image != null &&
+            q.image!.isNotEmpty &&
+            q.image!.imageUrl.isNotEmpty) {
+          try {
+            // Check if it's already base64 encoded (from web upload)
+            if (q.image!.imageUrl.startsWith('data:image')) {
+              questionData['question_image'] = q.image!.imageUrl;
+              print(
+                '✓ Using pre-encoded base64 image for question: ${q.questionText}',
+              );
+            } else if (!kIsWeb && _isLocalPath(q.image!.imageUrl)) {
+              // Mobile: Read from file system
+              final imageFile = File(q.image!.imageUrl);
+              if (await imageFile.exists()) {
+                final bytes = await imageFile.readAsBytes();
+                final base64Image = base64Encode(bytes);
+                questionData['question_image'] =
+                    'data:image/png;base64,$base64Image';
+                print(
+                  '✓ Image converted to base64 for question: ${q.questionText}',
+                );
+              }
             }
+          } catch (e) {
+            print('Error converting image to base64: $e');
+            // Continue without image if conversion fails
           }
-        } catch (e) {
-          print('Error converting image to base64: $e');
-          // Continue without image if conversion fails
         }
-      }
 
-      return questionData;
-    }));
+        return questionData;
+      }),
+    );
 
     final requestBody = {
       if (quizId != null) 'quiz_id': quizId,
       'title': title,
-      if (description != null && description.isNotEmpty) 'description': description,
+      if (description != null && description.isNotEmpty)
+        'description': description,
       if (category != null && category.isNotEmpty) 'category': category,
       if (status != null && status.isNotEmpty) 'status': status,
       if (quizCode != null && quizCode.isNotEmpty) 'quiz_code': quizCode,
       'questions': formattedQuestions,
     };
 
-    final response = await _client.post('/teacher/quiz/save', data: requestBody);
+    final response = await _client.post(
+      '/teacher/quiz/save',
+      data: requestBody,
+    );
     return response.data as Map<String, dynamic>;
   }
 
@@ -139,6 +148,17 @@ class TeacherService {
     return response.data as Map<String, dynamic>;
   }
 
+  // endpoint for /teacher/student/answers (GET)
+  Future<Map<String, dynamic>> getStudentAnswers({
+    required String studentId,
+    required String quizId,
+  }) async {
+    final response = await _client.get(
+      '/teacher/quiz/answers/$quizId/$studentId',
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
   // endpoint for "teacher/quiz/accuracy/:quiz_id",
   Future<Map<String, dynamic>> getQuizAccuracy(String quizId) async {
     final response = await _client.get('/teacher/quiz/accuracy/$quizId');
@@ -147,9 +167,7 @@ class TeacherService {
 
   // endpoint for /teacher/quiz/endquiz/:session_id
   Future<void> endQuiz(String quizId) async {
-    await _client.post(
-      '/teacher/quiz/endquiz/$quizId',
-    );
+    await _client.post('/teacher/quiz/endquiz/$quizId');
   }
 
   //endpoint for /teacher/quiz/generatequestion
@@ -175,8 +193,7 @@ class TeacherService {
       if (ageGroup != null) 'age_group': ageGroup,
       if (avoidTopics != null && avoidTopics.isNotEmpty)
         'avoid_topics': avoidTopics,
-      if (includeExplanation != null)
-        'include_explanation': includeExplanation,
+      if (includeExplanation != null) 'include_explanation': includeExplanation,
       if (questionStyle != null) 'question_style': questionStyle,
     };
 
@@ -189,8 +206,8 @@ class TeacherService {
 
   /// Check if a path is a local file path (not a URL)
   bool _isLocalPath(String path) {
-    return !path.startsWith('http://') && 
-           !path.startsWith('https://') && 
-           (path.startsWith('/') || path.contains(':'));
+    return !path.startsWith('http://') &&
+        !path.startsWith('https://') &&
+        (path.startsWith('/') || path.contains(':'));
   }
 }

@@ -10,6 +10,7 @@ import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
@@ -36,9 +37,9 @@ import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_pag
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/answer_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/students_answers_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/users/admin_users_bloc.dart';
@@ -251,8 +252,25 @@ class _AppView extends StatelessWidget {
             ),
             GoRoute(
               path: "/teacher/quiz-detail/answers",
-              builder: (context, state) =>
-                  TeacherAnswerDetailPage(quiz: state.extra as QuizModel),
+              builder: (context, state) {
+                final data = state.extra as Map<String, dynamic>;
+                final studentId = data['student_id'] as String;
+                final studentName = data['student_name'] as String;
+                final quizId = data['quiz_id'] as String;
+                final quizTitle = data['quiz_title'] as String;
+
+                return BlocProvider(
+                  create: (context) => StudentAnswersBloc(
+                    teacherRepository: context.read<TeacherRepository>(),
+                  ),
+                  child: TeacherStudentAnswersPage(
+                    studentId: studentId,
+                    studentName: studentName,
+                    quizId: quizId,
+                    quizTitle: quizTitle,
+                  ),
+                );
+              },
             ),
             GoRoute(
               path: "/teacher/new-quiz",
