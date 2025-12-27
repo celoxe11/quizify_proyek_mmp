@@ -29,7 +29,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
   // Tab Controller for Questions/Students/Accuracy tabs
   late TabController _tabController;
   bool _isPremiumUser = false;
-  
+
   // Cache quiz details data to persist across tab changes
   QuizDetailLoaded? _cachedQuizData;
 
@@ -173,9 +173,10 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
             if (state is QuizDetailLoaded) {
               _cachedQuizData = state;
             }
-            
+
             // Use cached data or create fallback
-            final quizData = _cachedQuizData ??
+            final quizData =
+                _cachedQuizData ??
                 QuizDetailLoaded(quiz: widget.quiz, questions: const []);
 
             return _buildContent(
@@ -531,6 +532,8 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
               return StudentListItem(
                 student: state.students[index],
                 index: index,
+                quizId: widget.quiz.id,
+                quizTitle: widget.quiz.title,
               );
             },
           ),

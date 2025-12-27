@@ -53,7 +53,10 @@ abstract class TeacherRepository {
 
   Future<dynamic> getQuizResult(String quizId);
 
-  Future<dynamic> getStudentsAnswers(String quizId);
-
   Future<dynamic> getQuizAccuracy(String quizId);
+  
+  Future<Map<String, dynamic>> getStudentAnswers({
+    required String studentId,
+    required String quizId,
+  });
 }
