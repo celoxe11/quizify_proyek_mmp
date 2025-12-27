@@ -262,7 +262,7 @@ class AdminRepositoryImpl implements AdminRepository {
     }
   }
 
-    @override
+  @override
   Future<void> deleteQuiz(String quizId) async {
     try {
       // Delete from server
@@ -277,6 +277,36 @@ class AdminRepositoryImpl implements AdminRepository {
     } catch (e) {
       print('Error deleting quiz: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchStudents(String quizId) async {
+    try {
+      return await _adminService.getQuizResults(quizId);
+    } catch (e) {
+      throw Exception('Failed to fetch students: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> fetchAccuracyResults(String quizId) async {
+    try {
+      return await _adminService.getQuizAccuracy(quizId);
+    } catch (e) {
+      throw Exception('Failed to fetch accuracy results: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> fetchStudentAnswers({
+    required String studentId,
+    required String quizId,
+  }) async {
+    try {
+      return await _adminService.getQuizAnswers(quizId, studentId);
+    } catch (e) {
+      throw Exception('Failed to fetch student answers: $e');
     }
   }
 }

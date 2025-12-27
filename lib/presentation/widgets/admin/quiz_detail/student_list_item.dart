@@ -37,14 +37,24 @@ class StudentListItem extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        print("Student Id: ${student['student_id']}");
+        print('[StudentListItem] Navigating to answers:');
+        print('  student data: $student');
+        print('  student_id: "${student['student_id']}"');
+        print('  student_id (alt): "${student['id']}"');
+        print('  user_id: "${student['user_id']}"');
+
+        // Try multiple possible field names for student ID
+        final studentId =
+            student['student_id'] ?? student['id'] ?? student['user_id'] ?? '';
+
+        print('  Final studentId: "$studentId"');
 
         // Navigate to student answers page
         context.push(
           '/admin/quiz-detail/answers',
           extra: {
-            'student_id': student['student_id'] ?? '',
-            'student_name': student['student'] ?? 'Unknown',
+            'student_id': studentId,
+            'student_name': student['student'] ?? student['name'] ?? 'Unknown',
             'quiz_id': quizId,
             'quiz_title': quizTitle,
           },
