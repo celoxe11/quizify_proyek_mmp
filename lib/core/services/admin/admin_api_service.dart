@@ -13,13 +13,13 @@ class AdminApiService {
       final response = await _dio.get('/api/admin/users');
 
       if (response.data is List) {
-        return response.data; 
-      } 
+        return response.data;
+      }
       // Atau berupa Map dengan key 'data' (Kurung Kurawal {})
       else if (response.data is Map && response.data['data'] != null) {
         return response.data['data'];
       }
-      
+
       return [];
     } catch (e) {
       throw Exception("API Error Fetch Users: $e");
@@ -42,7 +42,17 @@ class AdminApiService {
   Future<List<dynamic>> getAllQuizzes() async {
     try {
       final response = await _dio.get('/api/admin/quizzes');
-      return response.data['data'];
+
+      // Handle different response structures
+      if (response.data is List) {
+        return response.data;
+      } else if (response.data is Map && response.data['data'] != null) {
+        if (response.data['data'] is List) {
+          return response.data['data'];
+        }
+      }
+
+      return [];
     } catch (e) {
       throw Exception("API Error Fetch Quizzes: $e");
     }
@@ -52,7 +62,7 @@ class AdminApiService {
     try {
       // Endpoint sesuai request backend kamu: /quiz/detail/:quiz_id
       final response = await _dio.get('/api/admin/quiz/detail/$quizId');
-      
+
       // Backend return: { message: "...", questions: [...] }
       return response.data['questions'];
     } catch (e) {
@@ -64,7 +74,8 @@ class AdminApiService {
   Future<dynamic> getAnalytics() async {
     try {
       final response = await _dio.get('/api/admin/analytics');
-      return response.data; // Mengembalikan seluruh JSON { message:..., data:... }
+      return response
+          .data; // Mengembalikan seluruh JSON { message:..., data:... }
     } catch (e) {
       throw Exception("API Error Analytics: $e");
     }
@@ -76,7 +87,7 @@ class AdminApiService {
       // Dio otomatis menyusun query string: /logaccess?user_id=123
       final response = await _dio.get(
         '/api/admin/logaccess',
-        queryParameters: userId != null ? {'user_id': userId} : null, 
+        queryParameters: userId != null ? {'user_id': userId} : null,
       );
       return response.data;
     } catch (e) {
@@ -93,6 +104,4 @@ class AdminApiService {
       throw Exception("API Error Delete Question: $e");
     }
   }
-
-
 }

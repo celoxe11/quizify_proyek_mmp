@@ -2,13 +2,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quizify_proyek_mmp/core/api/dio_client.dart';
 import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
+import 'package:quizify_proyek_mmp/core/services/admin/admin_service.dart';
 import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 // Import App Database
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/edit_quiz/admin_edit_quiz_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
@@ -24,9 +29,13 @@ import 'package:quizify_proyek_mmp/presentation/blocs/teacher/edit_quiz/edit_qui
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quiz_detail/admin_quiz_detail_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/create_quiz/admin_create_quiz_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/generate_question/admin_generate_question_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/analytic/analytic_page.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/edit_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/create_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
@@ -336,11 +345,70 @@ class _AppView extends StatelessWidget {
 
             GoRoute(
               path: '/admin/quizzes',
-              builder: (context, state) => const AdminQuizPage(),
+              builder: (context, state) {
+                return BlocProvider(
+                  create: (context) => AdminQuizzesBloc(
+                    adminRepository: context.read<AdminRepositoryImpl>(),
+                  )..add(LoadAdminQuizzesEvent()),
+                  child: const AdminQuizPage(),
+                );
+              },
             ),
             GoRoute(
-              path: '/admin/quizz/create',
-              builder: (context, state) => const AdminCreateQuizPage(),
+              path: '/admin/new-quiz',
+              builder: (context, state) => const AdminEnterQuizNamePage(),
+            ),
+            GoRoute(
+              path: '/admin/create-quiz',
+              builder: (context, state) {
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (context) => AdminCreateQuizBloc(
+                        adminRepository: context.read<AdminRepositoryImpl>(),
+                        authRepository: context
+                            .read<AuthenticationRepositoryImpl>(),
+                      ),
+                    ),
+                    BlocProvider(
+                      create: (context) => AdminGenerateQuestionBloc(
+                        adminRepository: context.read<AdminRepositoryImpl>(),
+                      ),
+                    ),
+                  ],
+                  child: const AdminCreateQuizPage(),
+                );
+              },
+            ),
+            GoRoute(
+              path: "/admin/quiz-detail/edit",
+              builder: (context, state) {
+                final data = state.extra as Map<String, dynamic>;
+                final quiz = data['quiz'] as QuizModel;
+                final questions = data['questions'] as List<QuestionModel>;
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (context) =>
+                          AdminEditQuizBloc(
+                            adminRepository: context
+                                .read<AdminRepositoryImpl>(),
+                          )..add(
+                            AdminInitializeEditQuizEvent(
+                              quiz: quiz,
+                              questions: questions,
+                            ),
+                          ),
+                    ),
+                    BlocProvider(
+                      create: (context) => AdminGenerateQuestionBloc(
+                        adminRepository: context.read<AdminRepositoryImpl>(),
+                      ),
+                    ),
+                  ],
+                  child: AdminEditQuizPage(quiz: quiz, questions: questions),
+                );
+              },
             ),
             GoRoute(
               path: '/admin/analytics',
@@ -361,22 +429,14 @@ class _AppView extends StatelessWidget {
               },
             ),
             GoRoute(
-              path: '/admin/quiz/:quizId',
+              path: '/admin/quiz-detail',
               builder: (context, state) {
-                // Ambil ID dari URL
-                final quizId = state.pathParameters['quizId']!;
-
-                // Ambil Title dari "extra" (dikirim saat navigasi) atau default
-                final quizTitle = state.extra as String? ?? "Quiz Detail";
-
+                final quiz = state.extra as QuizModel;
                 return BlocProvider(
                   create: (context) => AdminQuizDetailBloc(
                     adminRepository: context.read<AdminRepositoryImpl>(),
-                  ),
-                  child: AdminQuizDetailPage(
-                    quizId: quizId,
-                    quizTitle: quizTitle,
-                  ),
+                  )..add(LoadAdminQuizDetail(quiz.id)),
+                  child: AdminQuizDetailPage(quiz: quiz),
                 );
               },
             ),
@@ -446,7 +506,10 @@ class _AppView extends StatelessWidget {
               ),
             );
 
-            return AdminRepositoryImpl(apiService: AdminApiService(dio));
+            return AdminRepositoryImpl(
+              apiService: AdminApiService(dio),
+              adminService: AdminService(client: DioClient()),
+            );
           },
         ),
       ],

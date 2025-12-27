@@ -14,23 +14,27 @@ class AdminQuizDetailInitial extends AdminQuizDetailState {}
 /// Loading state while fetching quiz data
 class AdminQuizDetailLoading extends AdminQuizDetailState {}
 
-/// State when quiz data is successfully loaded
 class AdminQuizDetailLoaded extends AdminQuizDetailState {
-  final List<Question> questions; // Using Entity Question
-  final String quizId;
+  final QuizModel quiz;
+  final List<QuestionModel> questions;
 
-  const AdminQuizDetailLoaded({required this.questions, required this.quizId});
+  const AdminQuizDetailLoaded({required this.quiz, this.questions = const []});
 
   /// Create a copy with updated values
-  AdminQuizDetailLoaded copyWith({List<Question>? questions, String? quizId}) {
+  AdminQuizDetailLoaded copyWith({
+    QuizModel? quiz,
+    List<QuestionModel>? questions,
+    int? selectedTabIndex,
+    bool? isPremiumUser,
+  }) {
     return AdminQuizDetailLoaded(
+      quiz: quiz ?? this.quiz,
       questions: questions ?? this.questions,
-      quizId: quizId ?? this.quizId,
     );
   }
 
   @override
-  List<Object?> get props => [questions, quizId];
+  List<Object?> get props => [quiz, questions];
 }
 
 /// Error state when something goes wrong
@@ -45,3 +49,47 @@ class AdminQuizDetailError extends AdminQuizDetailState {
 
 /// State when question is successfully deleted
 class AdminQuestionDeleted extends AdminQuizDetailState {}
+
+class AdminQuizDetailDeleted extends AdminQuizDetailState {}
+
+// === Students States ===
+class AdminStudentsLoading extends AdminQuizDetailState {}
+
+class AdminStudentsLoaded extends AdminQuizDetailState {
+  final List<Map<String, dynamic>>
+  students; // List of students who took the quiz and their scores
+
+  const AdminStudentsLoaded({required this.students});
+  @override
+  List<Object?> get props => [students];
+}
+
+class AdminStudentsError extends AdminQuizDetailState {
+  final String message;
+
+  const AdminStudentsError({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+// === Accuracy States ===
+class AdminAccuracyLoading extends AdminQuizDetailState {}
+
+class AdminAccuracyLoaded extends AdminQuizDetailState {
+  final List<Map<String, dynamic>> accuracyResults; // Accuracy results data
+
+  const AdminAccuracyLoaded({required this.accuracyResults});
+
+  @override
+  List<Object?> get props => [accuracyResults];
+}
+
+class AdminAccuracyError extends AdminQuizDetailState {
+  final String message;
+
+  const AdminAccuracyError({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}

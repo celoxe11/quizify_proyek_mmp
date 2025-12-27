@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:quizify_proyek_mmp/domain/entities/question.dart';
+import 'package:quizify_proyek_mmp/data/models/question_model.dart';
+import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/admin_repository.dart';
 
 part 'admin_quiz_detail_event.dart';
@@ -15,6 +16,7 @@ class AdminQuizDetailBloc
     on<LoadAdminQuizDetail>(_onLoadQuizDetail);
     on<DeleteQuestionEvent>(_onDeleteQuestion);
     on<RefreshAdminQuizDetailEvent>(_onRefresh);
+    on<DeleteAdminQuizEvent>(_onDeleteQuiz);
   }
 
   /// Load quiz details and questions
@@ -25,8 +27,12 @@ class AdminQuizDetailBloc
     emit(AdminQuizDetailLoading());
 
     try {
-      final questions = await adminRepository.fetchQuizDetail(event.quizId);
-      emit(AdminQuizDetailLoaded(questions: questions, quizId: event.quizId));
+      final response = await adminRepository.fetchQuizDetail(event.quizId);
+
+      final quiz = response.quiz;
+      final questions = response.questions;
+
+      emit(AdminQuizDetailLoaded(quiz: quiz, questions: questions));
     } catch (e) {
       emit(
         AdminQuizDetailError(message: 'Failed to load quiz: ${e.toString()}'),
@@ -60,5 +66,23 @@ class AdminQuizDetailBloc
     Emitter<AdminQuizDetailState> emit,
   ) async {
     add(LoadAdminQuizDetail(event.quizId));
+  }
+
+  // delete quiz
+  Future<void> _onDeleteQuiz(
+    DeleteAdminQuizEvent event,
+    Emitter<AdminQuizDetailState> emit,
+  ) async {
+    try {
+      // Delete quiz through repository
+      await adminRepository.deleteQuiz(event.quizId);
+
+      // Emit a state indicating successful deletion
+      emit(AdminQuizDetailDeleted());
+    } catch (e) {
+      emit(
+        AdminQuizDetailError(message: 'Failed to delete quiz: ${e.toString()}'),
+      );
+    }
   }
 }

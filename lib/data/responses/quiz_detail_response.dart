@@ -14,22 +14,64 @@ class QuizDetailResponse {
 
   // From API response
   factory QuizDetailResponse.fromApi(Map<String, dynamic> json) {
-    print('🔍 Parsing API response: $json');
-    
-    final quizData = json['quiz'] as Map<String, dynamic>?;
+    print('🔍 DEBUG: Parsing API response');
+    print('🔍 DEBUG: Full response: $json');
+
+    // Try different response structures
+    Map<String, dynamic>? quizData;
+    List? questionsData;
+
+    // Structure 1: { "quiz": {...}, "questions": [...] }
+    if (json.containsKey('quiz')) {
+      quizData = json['quiz'] as Map<String, dynamic>?;
+      questionsData = json['questions'] as List?;
+    }
+    // Structure 2: { "data": { "quiz": {...}, "questions": [...] } }
+    else if (json.containsKey('data')) {
+      final data = json['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        quizData = data['quiz'] as Map<String, dynamic>?;
+        questionsData = data['questions'] as List?;
+      }
+    }
+    // Structure 3: Quiz data directly at root level with questions array
+    else if (json.containsKey('title') && json.containsKey('questions')) {
+      quizData = json;
+      questionsData = json['questions'] as List?;
+    }
+    // Structure 4: Quiz object nested in quiz key with questions inside
+    else if (json.containsKey('quiz')) {
+      final quiz = json['quiz'] as Map<String, dynamic>?;
+      if (quiz != null && quiz.containsKey('questions')) {
+        quizData = quiz;
+        questionsData = quiz['questions'] as List?;
+      }
+    }
+
     if (quizData == null) {
-      throw Exception('Quiz data is null in API response');
+      print('❌ ERROR: Quiz data is null in API response');
+      print('❌ ERROR: Response keys: ${json.keys.toList()}');
+      throw Exception(
+        'Quiz data is null in API response. Available keys: ${json.keys.toList()}',
+      );
     }
-    
-    print('🔍 Quiz data: $quizData');
-    
-    final questionsData = quizData['questions'] as List?;
+
+    print('✅ DEBUG: Quiz data found: ${quizData.keys.toList()}');
+
+    // Extract questions from quiz data if not already extracted
+    if (questionsData == null && quizData.containsKey('questions')) {
+      questionsData = quizData['questions'] as List?;
+    }
+
     if (questionsData == null) {
-      throw Exception('Questions data is null in quiz');
+      print('⚠️ WARNING: No questions found, using empty list');
+      questionsData = [];
     }
-    
+
+    print('✅ DEBUG: Found ${questionsData.length} questions');
+
     return QuizDetailResponse(
-      message: json['message'] ?? '',
+      message: json['message'] ?? 'Success',
       quiz: QuizModel.fromJson(quizData),
       questions: questionsData
           .map((q) => QuestionModel.fromJson(q as Map<String, dynamic>))
