@@ -38,13 +38,23 @@ class AdminCreateQuizBloc
     emit(AdminCreateQuizLoading());
 
     try {
-      // Admin can create quiz without restrictions
-      // TODO: Implement admin-specific quiz creation through AdminRepository
-      // For now, this is a placeholder - you'll need to add saveQuiz method to AdminRepository
+      // Save quiz using AdminRepository
+      final response = await _adminRepository.saveQuizWithQuestions(
+        quizId: event.quizId,
+        title: event.title,
+        description: event.description,
+        category: event.category,
+        status: event.status ?? 'public',
+        quizCode: event.quizCode,
+        questions: event.questions,
+      );
 
-      // Simulated success
+      // Create QuizModel from response
       final savedQuiz = QuizModel(
-        id: event.quizId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            response['quiz_id'] ??
+            event.quizId ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         title: event.title,
         description: event.description,
         category: event.category,

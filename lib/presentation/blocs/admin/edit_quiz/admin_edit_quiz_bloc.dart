@@ -65,11 +65,19 @@ class AdminEditQuizBloc extends Bloc<AdminEditQuizEvent, AdminEditQuizState> {
     emit(currentState.copyWith(isSaving: true));
 
     try {
-      // TODO: Implement admin-specific quiz update through AdminRepository
-      // For now, this is a placeholder
+      // Save quiz using AdminRepository
+      final response = await _adminRepository.saveQuizWithQuestions(
+        quizId: event.quizId,
+        title: event.title,
+        description: event.description,
+        category: event.category,
+        status: event.status ?? 'public',
+        quizCode: event.quizCode,
+        questions: event.questions,
+      );
 
       final updatedQuiz = QuizModel(
-        id: event.quizId ?? '',
+        id: response['quiz_id'] ?? event.quizId ?? '',
         title: event.title,
         description: event.description,
         category: event.category,
