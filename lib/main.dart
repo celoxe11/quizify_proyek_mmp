@@ -16,6 +16,7 @@ import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizze
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/student_answers_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/student_answers/admin_student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
@@ -36,6 +37,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/edit_qui
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/enter_quiz_name_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/students_answers_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
@@ -407,6 +409,28 @@ class _AppView extends StatelessWidget {
                     ),
                   ],
                   child: AdminEditQuizPage(quiz: quiz, questions: questions),
+                );
+              },
+            ),
+            GoRoute(
+              path: "/admin/quiz-detail/answers",
+              builder: (context, state) {
+                final data = state.extra as Map<String, dynamic>;
+                final studentId = data['student_id'] as String;
+                final studentName = data['student_name'] as String;
+                final quizId = data['quiz_id'] as String;
+                final quizTitle = data['quiz_title'] as String;
+
+                return BlocProvider(
+                  create: (context) => AdminStudentAnswersBloc(
+                    adminRepository: context.read<AdminRepositoryImpl>(),
+                  ),
+                  child: AdminStudentAnswersPage(
+                    studentId: studentId,
+                    studentName: studentName,
+                    quizId: quizId,
+                    quizTitle: quizTitle,
+                  ),
                 );
               },
             ),

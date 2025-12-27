@@ -120,9 +120,9 @@ class AdminService {
     }
   }
 
-  // endpoint for /admin/quiz/{quizId}/results
+  // endpoint for /admin/quiz/results
   Future<List<Map<String, dynamic>>> getQuizResults(String quizId) async {
-    final response = await _client.get('/admin/quiz/$quizId/results');
+    final response = await _client.get('/admin/quiz/results/$quizId');
     final List<dynamic> results = response.data['results'] ?? [];
     return results.cast<Map<String, dynamic>>();
   }

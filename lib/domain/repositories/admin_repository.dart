@@ -26,4 +26,11 @@ abstract class AdminRepository {
     String? quizCode,
     required List<QuestionModel> questions,
   });
+
+  Future<List<Map<String, dynamic>>> fetchStudents(String quizId);
+  Future<Map<String, dynamic>> fetchAccuracyResults(String quizId);
+  Future<Map<String, dynamic>> fetchStudentAnswers({
+    required String studentId,
+    required String quizId,
+  });
 }

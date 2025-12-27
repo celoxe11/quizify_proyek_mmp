@@ -17,6 +17,8 @@ class AdminQuizDetailBloc
     on<DeleteQuestionEvent>(_onDeleteQuestion);
     on<RefreshAdminQuizDetailEvent>(_onRefresh);
     on<DeleteAdminQuizEvent>(_onDeleteQuiz);
+    on<LoadAdminStudentsEvent>(_onLoadStudents);
+    on<LoadAdminAccuracyResultsEvent>(_onLoadAccuracyResults);
   }
 
   /// Load quiz details and questions
@@ -82,6 +84,47 @@ class AdminQuizDetailBloc
     } catch (e) {
       emit(
         AdminQuizDetailError(message: 'Failed to delete quiz: ${e.toString()}'),
+      );
+    }
+  }
+
+  /// Load students who took this quiz
+  Future<void> _onLoadStudents(
+    LoadAdminStudentsEvent event,
+    Emitter<AdminQuizDetailState> emit,
+  ) async {
+    emit(AdminStudentsLoading());
+
+    try {
+      final students = await adminRepository.fetchStudents(event.quizId);
+      emit(AdminStudentsLoaded(students: students));
+    } catch (e) {
+      emit(
+        AdminStudentsError(message: 'Failed to load students: ${e.toString()}'),
+      );
+    }
+  }
+
+  /// Load accuracy results for this quiz
+  Future<void> _onLoadAccuracyResults(
+    LoadAdminAccuracyResultsEvent event,
+    Emitter<AdminQuizDetailState> emit,
+  ) async {
+    emit(AdminAccuracyLoading());
+
+    try {
+      final response = await adminRepository.fetchAccuracyResults(event.quizId);
+      final List<dynamic> results = response['results'] ?? [];
+      emit(
+        AdminAccuracyLoaded(
+          accuracyResults: results.cast<Map<String, dynamic>>(),
+        ),
+      );
+    } catch (e) {
+      emit(
+        AdminAccuracyError(
+          message: 'Failed to load accuracy results: ${e.toString()}',
+        ),
       );
     }
   }
