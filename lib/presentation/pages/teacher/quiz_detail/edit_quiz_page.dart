@@ -13,13 +13,6 @@ import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/ai_generation_dialog.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/question_card.dart';
 
-/// Edit Quiz Page - Allows teachers to edit an existing quiz.
-///
-/// Uses TextEditingControllers for text field management and BLoC for
-/// question management and saving.
-///
-/// The page receives quiz and questions from the route and initializes
-/// the controllers with this data.
 class TeacherEditQuizPage extends StatefulWidget {
   const TeacherEditQuizPage({
     super.key,
@@ -621,25 +614,6 @@ class _TeacherEditQuizPageState extends State<TeacherEditQuizPage> {
           inactiveThumbColor: Colors.orange,
         ),
       ],
-    );
-  }
-
-  Widget _buildAddQuestionButton(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ElevatedButton.icon(
-        onPressed: _addQuestion,
-        icon: const Icon(Icons.add),
-        label: const Text("Add Question"),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.darkAzure,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      ),
     );
   }
 
