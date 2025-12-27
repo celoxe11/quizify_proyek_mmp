@@ -116,9 +116,10 @@ class TeacherService {
   }
 
   // endpoint for /teacher/quiz/results/:quiz_id
-  Future<Map<String, dynamic>> getQuizResults(String quizId) async {
+  Future<List<Map<String, dynamic>>> getQuizResults(String quizId) async {
     final response = await _client.get('/teacher/quiz/results/$quizId');
-    return response.data as Map<String, dynamic>;
+    final List<dynamic> results = response.data['results'] ?? [];
+    return results.cast<Map<String, dynamic>>();
   }
 
   // endpoint for /teacher/quiz/delete

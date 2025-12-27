@@ -72,7 +72,7 @@ class StudentListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  student['username'] ?? 'Unknown',
+                  student['student'] ?? 'Unknown',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -80,12 +80,24 @@ class StudentListItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Completed: ${_formatDateTime(student['completed_at'])}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textDark.withOpacity(0.6),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Started: ${_formatDateTime(student['started_at'])}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textDark.withOpacity(0.6),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      'Completed: ${_formatDateTime(student['ended_at'])}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textDark.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

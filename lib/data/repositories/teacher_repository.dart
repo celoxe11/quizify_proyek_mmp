@@ -228,9 +228,14 @@ class TeacherRepositoryImpl extends TeacherRepository {
   }
 
   @override
-  Future<dynamic> getQuizResult(String quizId) {
-    // TODO: implement getQuizResult
-    throw UnimplementedError();
+  Future<dynamic> getQuizResult(String quizId) async {
+    try {
+      final response = await _teacherService.getQuizResults(quizId);
+      return response;
+    } catch (e) {
+      print('Error getting quiz result: $e');
+      rethrow;
+    }
   }
 
   @override
