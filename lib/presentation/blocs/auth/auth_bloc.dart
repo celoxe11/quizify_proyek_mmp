@@ -2,6 +2,7 @@
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/repositories/auth_repository.dart'; // Import Repository
+import '../../../core/utils/error_mapper.dart'; // Import ErrorMapper
 import 'auth_event.dart';
 import 'auth_state.dart';
 
@@ -61,7 +62,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      final friendlyMessage = ErrorMapper.getUserFriendlyMessage(e.toString());
+      emit(AuthFailure(friendlyMessage));
       emit(const AuthUnauthenticated());
     }
   }
@@ -78,7 +80,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      final friendlyMessage = ErrorMapper.getUserFriendlyMessage(e.toString());
+      emit(AuthFailure(friendlyMessage));
       emit(const AuthUnauthenticated());
     }
   }
@@ -104,7 +107,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else {
-        emit(AuthFailure(e.toString()));
+        final friendlyMessage = ErrorMapper.getUserFriendlyMessage(
+          e.toString(),
+        );
+        emit(AuthFailure(friendlyMessage));
         emit(const AuthUnauthenticated());
       }
     }
@@ -125,7 +131,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      final friendlyMessage = ErrorMapper.getUserFriendlyMessage(e.toString());
+      emit(AuthFailure(friendlyMessage));
       emit(const AuthUnauthenticated());
     }
   }
@@ -139,7 +146,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authRepository.logout();
       emit(const AuthUnauthenticated());
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      final friendlyMessage = ErrorMapper.getUserFriendlyMessage(e.toString());
+      emit(AuthFailure(friendlyMessage));
     }
   }
 
