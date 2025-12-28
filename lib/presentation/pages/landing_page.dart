@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/hover_card.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_state.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -280,7 +283,14 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  Widget _quizCard(BuildContext context, Color? bgColor) {
+  Widget _quizCard(
+    BuildContext context, {
+    required String title,
+    required String description,
+    required String quizCode,
+    required String category,
+    Color? bgColor,
+  }) {
     return HoverCardWrapper(
       child: Container(
         decoration: BoxDecoration(
@@ -288,22 +298,64 @@ class LandingPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.darkTurquoise, width: 1),
         ),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Category badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.lightCyan,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                category,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkTurquoise,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Quiz title
             Text(
-              'Sample Quiz Title',
+              title,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.darkAzure,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
+            // Quiz description
             Text(
-              'A brief description of the quiz goes here. Engage with this sample quiz to see how it works!',
-              style: TextStyle(fontSize: 14, color: AppColors.darkAzure),
+              description,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.darkAzure.withOpacity(0.8),
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 16),
+            // Quiz code
+            Row(
+              children: [
+                Icon(Icons.qr_code_2, size: 18, color: AppColors.darkTurquoise),
+                const SizedBox(width: 6),
+                Text(
+                  'Code: $quizCode',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkTurquoise,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -383,42 +435,112 @@ class LandingPage extends StatelessWidget {
             },
           ),
           SizedBox(height: 24), // Add spacing between title and content
-          // Compute column count and card width so cards fill the available width evenly
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final double maxWidth = constraints.maxWidth;
-              // Determine columns based on available width
-              int columns;
-              if (maxWidth >= 1000) {
-                columns = 3;
-              } else if (maxWidth >= 700) {
-                columns = 2;
-              } else {
-                columns = 1;
+          // Use BlocBuilder to fetch and display quizzes
+          BlocBuilder<LandingBloc, LandingState>(
+            builder: (context, state) {
+              if (state is LandingQuizzesLoading) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
               }
 
-              const spacing = 16.0;
-              final cardWidth = (maxWidth - spacing * (columns - 1)) / columns;
+              if (state is LandingQuizzesError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.darkAzure.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Failed to load quizzes',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.darkAzure,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          state.error,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.darkAzure.withOpacity(0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
 
-              return Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                alignment: WrapAlignment.start,
-                children: [
-                  SizedBox(
-                    width: cardWidth,
-                    child: _quizCard(context, AppColors.pureWhite),
-                  ),
-                  SizedBox(
-                    width: cardWidth,
-                    child: _quizCard(context, AppColors.pureWhite),
-                  ),
-                  SizedBox(
-                    width: cardWidth,
-                    child: _quizCard(context, AppColors.pureWhite),
-                  ),
-                ],
-              );
+              if (state is LandingQuizzesLoaded) {
+                final quizzes = state.quizzes;
+
+                if (quizzes.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Text(
+                        'No public quizzes available yet',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.darkAzure.withOpacity(0.7),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                // Compute column count and card width so cards fill the available width evenly
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double maxWidth = constraints.maxWidth;
+                    // Determine columns based on available width
+                    int columns;
+                    if (maxWidth >= 1000) {
+                      columns = 3;
+                    } else if (maxWidth >= 700) {
+                      columns = 2;
+                    } else {
+                      columns = 1;
+                    }
+
+                    const spacing = 16.0;
+                    final cardWidth =
+                        (maxWidth - spacing * (columns - 1)) / columns;
+
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.start,
+                      children: quizzes.map((quiz) {
+                        return SizedBox(
+                          width: cardWidth,
+                          child: _quizCard(
+                            context,
+                            title: quiz.title,
+                            description: quiz.description ?? '',
+                            quizCode: quiz.quizCode ?? '',
+                            category: quiz.category ?? 'General',
+                            bgColor: AppColors.pureWhite,
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                );
+              }
+
+              return const SizedBox.shrink();
             },
           ),
         ],

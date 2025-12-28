@@ -5,15 +5,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/api/dio_client.dart';
 import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
 import 'package:quizify_proyek_mmp/core/services/admin/admin_service.dart';
+import 'package:quizify_proyek_mmp/core/services/landing/landing_service.dart';
 import 'package:quizify_proyek_mmp/core/theme/app_theme.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 // Import App Database
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
+import 'package:quizify_proyek_mmp/data/repositories/landing_repository.dart';
+import 'package:quizify_proyek_mmp/domain/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/edit_quiz/admin_edit_quiz_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/student_answers/admin_student_answers_bloc.dart';
@@ -39,7 +44,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/create_q
 import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/students_answers_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_page.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/auth/landing_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_selection_page.dart';
@@ -158,7 +163,15 @@ class _AppView extends StatelessWidget {
         return null; // No redirect needed
       },
       routes: [
-        GoRoute(path: '/', builder: (context, state) => const LandingPage()),
+        GoRoute(
+          path: '/',
+          builder: (context, state) => BlocProvider(
+            create: (context) => LandingBloc(
+              landingRepository: context.read<LandingRepository>(),
+            )..add(FetchLandingQuizzesEvent()),
+            child: const LandingPage(),
+          ),
+        ),
         GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
         GoRoute(
           path: '/register',
@@ -481,6 +494,10 @@ class _AppView extends StatelessWidget {
         RepositoryProvider<TeacherRepository>(
           create: (context) => TeacherRepositoryImpl(),
         ),
+        RepositoryProvider<LandingRepository>(
+          create: (context) =>
+              LandingRepositoryImpl(landingService: LandingService()),
+        ),
         RepositoryProvider(
           create: (context) {
             // Sebaiknya gunakan instance Dio yang sama dengan Auth (Singleton)
@@ -549,8 +566,19 @@ class _AppView extends StatelessWidget {
         child: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthUnauthenticated) {
-              // Navigate to login page when logged out
-              router.go('/login');
+              // Only redirect to login if not on an auth page already
+              final currentLocation = router.routeInformationProvider.value.uri
+                  .toString();
+              final isOnAuthPage =
+                  currentLocation == '/' ||
+                  currentLocation == '/login' ||
+                  currentLocation == '/register' ||
+                  currentLocation == '/role-selection';
+
+              // Don't redirect if already on an auth page (prevents override of initial route)
+              if (!isOnAuthPage) {
+                router.go('/login');
+              }
             } else if (state is AuthAuthenticated) {
               // Auto-navigate to appropriate home after login
               final currentLocation = router.routeInformationProvider.value.uri
