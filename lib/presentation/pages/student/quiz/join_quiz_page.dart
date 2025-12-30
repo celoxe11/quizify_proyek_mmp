@@ -5,7 +5,7 @@ import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/join_quiz/join_quiz_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/join_quiz/join_quiz_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/join_quiz/join_quiz_state.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/space_game_page.dart';
 
 class JoinQuizPage extends StatefulWidget {
   const JoinQuizPage({super.key});
@@ -64,8 +64,10 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    QuizPage(sessionId: state.sessionId, quizId: state.quizId),
+                builder: (context) => SpaceGamePage(
+                  sessionId: state.sessionId,
+                  quizId: state.quizId,
+                ),
               ),
             );
           } else if (state is JoinQuizError) {
