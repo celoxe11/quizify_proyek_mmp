@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/api/api_client.dart';
-import 'package:quizify_proyek_mmp/core/api/quiz/quiz_api.dart';
-import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/student/join_quiz/join_quiz_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/student/join_quiz/join_quiz_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/student/join_quiz/join_quiz_state.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/quiz_page.dart';
 
 class JoinQuizPage extends StatefulWidget {
@@ -14,8 +16,6 @@ class JoinQuizPage extends StatefulWidget {
 
 class _JoinQuizPageState extends State<JoinQuizPage> {
   final TextEditingController _quizCodeController = TextEditingController();
-  final QuizApi _quizApi = QuizApi(ApiClient());
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -23,7 +23,7 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
     super.dispose();
   }
 
-  Future<void> _handleJoinQuiz() async {
+  void _handleJoinQuiz(BuildContext context) {
     final code = _quizCodeController.text.trim();
 
     if (code.isEmpty) {
@@ -31,52 +31,7 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
       return;
     }
 
-    // Check if user is authenticated
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      _showErrorDialog('Anda harus login terlebih dahulu');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      // Refresh token to ensure it's valid
-      await currentUser.getIdToken(true);
-
-      // Start quiz session by code
-      final response = await _quizApi.startQuizByCode(code);
-
-      if (!mounted) return;
-
-      // Extract session_id from response
-      final sessionId = response['session_id'] as String?;
-      if (sessionId == null) {
-        _showErrorDialog('Session ID tidak ditemukan dalam response');
-        return;
-      }
-
-      // Navigate to quiz page with session ID
-      // Note: You might need to fetch the quiz details using the session
-      // For now, we'll navigate with the session ID
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => QuizPage(sessionId: sessionId)),
-      );
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      _showErrorDialog(e.message);
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      _showErrorDialog('Authentication error: ${e.message}');
-    } catch (e) {
-      if (!mounted) return;
-      _showErrorDialog('Terjadi kesalahan: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    context.read<JoinQuizBloc>().add(JoinQuizByCodeEvent(code));
   }
 
   void _showErrorDialog(String message) {
@@ -101,6 +56,39 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
     const Color bodyTeal = Color(0xFF63C5C5);
     const Color bottomBarColor = Color(0xFF00596B);
 
+    return BlocProvider(
+      create: (context) => JoinQuizBloc(StudentRepository(ApiClient())),
+      child: BlocListener<JoinQuizBloc, JoinQuizState>(
+        listener: (context, state) {
+          if (state is JoinQuizSuccess) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    QuizPage(sessionId: state.sessionId, quizId: state.quizId),
+              ),
+            );
+          } else if (state is JoinQuizError) {
+            _showErrorDialog(state.message);
+          }
+        },
+        child: BlocBuilder<JoinQuizBloc, JoinQuizState>(
+          builder: (context, state) {
+            final isLoading = state is JoinQuizLoading;
+
+            return _buildScaffold(context, isLoading, primaryTeal, bodyTeal);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScaffold(
+    BuildContext context,
+    bool isLoading,
+    Color primaryTeal,
+    Color bodyTeal,
+  ) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -155,7 +143,7 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
                       child: TextField(
                         controller: _quizCodeController,
                         textAlign: TextAlign.center,
-                        enabled: !_isLoading,
+                        enabled: !isLoading,
                         decoration: InputDecoration(
                           hintText: 'Enter Quiz Code',
                           hintStyle: const TextStyle(
@@ -183,7 +171,9 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
                       width: 350,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleJoinQuiz,
+                        onPressed: isLoading
+                            ? null
+                            : () => _handleJoinQuiz(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black87,
                           shape: RoundedRectangleBorder(
@@ -191,7 +181,7 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
                           ),
                           elevation: 0,
                         ),
-                        child: _isLoading
+                        child: isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
