@@ -1,5 +1,5 @@
-class SpaceGame extends {
-  void start() {
-    print('Space game started!');
-  }
+import 'package:flame/game.dart';
+
+class SpaceGame extends FlameGame {
+  
 }
