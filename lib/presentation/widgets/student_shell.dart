@@ -9,7 +9,7 @@ class StudentShell extends StatelessWidget {
   const StudentShell({required this.child, super.key});
 
   int _indexFromLocation(String loc) {
-    if (loc.startsWith('/student/quizzes')) return 1;
+    if (loc.startsWith('/student/join-quiz')) return 1;
     if (loc.startsWith('/student/profile')) return 2;
     return 0;
   }
