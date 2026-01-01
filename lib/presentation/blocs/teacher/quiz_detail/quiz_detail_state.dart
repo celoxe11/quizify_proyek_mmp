@@ -10,6 +10,7 @@ abstract class QuizDetailState extends Equatable {
   List<Object?> get props => [];
 }
 
+// === Quiz Detail States ===
 /// Initial state before any data is loaded
 class QuizDetailInitial extends QuizDetailState {}
 
@@ -20,44 +21,22 @@ class QuizDetailLoading extends QuizDetailState {}
 class QuizDetailLoaded extends QuizDetailState {
   final QuizModel quiz;
   final List<QuestionModel> questions;
-  final List<Map<String, dynamic>> students;
-  final List<Map<String, dynamic>> accuracyResults;
-  final int selectedTabIndex;
-  final bool isLoadingStudents;
-  final bool isLoadingAccuracy;
-  final bool isPremiumUser;
 
   const QuizDetailLoaded({
     required this.quiz,
     this.questions = const [],
-    this.students = const [],
-    this.accuracyResults = const [],
-    this.selectedTabIndex = 0,
-    this.isLoadingStudents = false,
-    this.isLoadingAccuracy = false,
-    this.isPremiumUser = false,
   });
 
   /// Create a copy with updated values
   QuizDetailLoaded copyWith({
     QuizModel? quiz,
     List<QuestionModel>? questions,
-    List<Map<String, dynamic>>? students,
-    List<Map<String, dynamic>>? accuracyResults,
     int? selectedTabIndex,
-    bool? isLoadingStudents,
-    bool? isLoadingAccuracy,
     bool? isPremiumUser,
   }) {
     return QuizDetailLoaded(
       quiz: quiz ?? this.quiz,
       questions: questions ?? this.questions,
-      students: students ?? this.students,
-      accuracyResults: accuracyResults ?? this.accuracyResults,
-      selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
-      isLoadingStudents: isLoadingStudents ?? this.isLoadingStudents,
-      isLoadingAccuracy: isLoadingAccuracy ?? this.isLoadingAccuracy,
-      isPremiumUser: isPremiumUser ?? this.isPremiumUser,
     );
   }
 
@@ -65,12 +44,6 @@ class QuizDetailLoaded extends QuizDetailState {
   List<Object?> get props => [
     quiz,
     questions,
-    students,
-    accuracyResults,
-    selectedTabIndex,
-    isLoadingStudents,
-    isLoadingAccuracy,
-    isPremiumUser,
   ];
 }
 
@@ -86,3 +59,46 @@ class QuizDetailError extends QuizDetailState {
 
 /// State when quiz is successfully deleted
 class QuizDetailDeleted extends QuizDetailState {}
+
+// === Students States ===
+class StudentsLoading extends QuizDetailState {}
+
+class StudentsLoaded extends QuizDetailState {
+  final List<Map<String, dynamic>>
+  students; // List of students who took the quiz and their scores
+
+  const StudentsLoaded({required this.students});
+
+  @override
+  List<Object?> get props => [students];
+}
+
+class StudentsError extends QuizDetailState {
+  final String message;
+
+  const StudentsError({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+// === Accuracy States ===
+class AccuracyLoading extends QuizDetailState {}
+
+class AccuracyLoaded extends QuizDetailState {
+  final List<Map<String, dynamic>> accuracyResults; // Accuracy results data
+
+  const AccuracyLoaded({required this.accuracyResults});
+
+  @override
+  List<Object?> get props => [accuracyResults];
+}
+
+class AccuracyError extends QuizDetailState {
+  final String message;
+
+  const AccuracyError({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}

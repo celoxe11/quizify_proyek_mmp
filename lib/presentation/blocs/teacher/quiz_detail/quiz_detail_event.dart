@@ -38,16 +38,6 @@ class LoadAccuracyResultsEvent extends QuizDetailEvent {
   List<Object?> get props => [quizId];
 }
 
-/// Event to change the current tab
-class ChangeTabEvent extends QuizDetailEvent {
-  final int tabIndex;
-
-  const ChangeTabEvent({required this.tabIndex});
-
-  @override
-  List<Object?> get props => [tabIndex];
-}
-
 /// Event to delete the quiz
 class DeleteQuizEvent extends QuizDetailEvent {
   final String quizId;

@@ -15,9 +15,13 @@ abstract class TeacherRepository {
     String? quizId,
     required String title,
     String? description,
+    String? category,
+    String? status,
     String? quizCode,
     required List<QuestionModel> questions,
   });
+
+  Future<void> deleteQuiz(String quizId);
 
   Future<void> endQuiz(String sessionId);
 
@@ -49,7 +53,10 @@ abstract class TeacherRepository {
 
   Future<dynamic> getQuizResult(String quizId);
 
-  Future<dynamic> getStudentsAnswers(String quizId);
-
   Future<dynamic> getQuizAccuracy(String quizId);
+  
+  Future<Map<String, dynamic>> getStudentAnswers({
+    required String studentId,
+    required String quizId,
+  });
 }
