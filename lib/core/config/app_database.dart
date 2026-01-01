@@ -3,7 +3,7 @@ import 'package:path/path.dart';
 
 class AppDatabase {
   static const String _databaseName = "Quizify.db";
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 3;
 
   // Table names
   static const String quizTable = 'quiz';
@@ -47,6 +47,8 @@ class AppDatabase {
         quiz_code TEXT UNIQUE,
         status TEXT DEFAULT 'private',
         category TEXT,
+        created_by TEXT,
+        creator_name TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
@@ -73,6 +75,7 @@ class AppDatabase {
     await db.execute('''
       CREATE TABLE $questionImageTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
         question_id TEXT NOT NULL,
         image_url TEXT NOT NULL,
         uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -95,9 +98,15 @@ class AppDatabase {
   // Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // Handle migrations here when database version changes
-    if (oldVersion < newVersion) {
-      // Example: Add new columns or tables
-      // await db.execute('ALTER TABLE $quizTable ADD COLUMN new_column TEXT');
+    if (oldVersion < 2 && newVersion >= 2) {
+      // Migration from v1 to v2: Add created_by and creator_name columns
+      await db.execute('ALTER TABLE $quizTable ADD COLUMN created_by TEXT');
+      await db.execute('ALTER TABLE $quizTable ADD COLUMN creator_name TEXT');
+    }
+    
+    if (oldVersion < 3 && newVersion >= 3) {
+      // Migration from v2 to v3: Add user_id to questionimage table
+      await db.execute('ALTER TABLE $questionImageTable ADD COLUMN user_id TEXT NOT NULL DEFAULT ""');
     }
   }
 

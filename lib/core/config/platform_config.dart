@@ -60,7 +60,15 @@ class PlatformConfig {
 
     // Mobile/Desktop: check platform
     if (Platform.isAndroid) {
-      // Android emulator uses 10.0.2.2 to reach host machine
+      // For physical devices, use LOCAL_IP environment variable
+      // Example: flutter run --dart-define=LOCAL_IP=192.168.1.100
+      const localIp = String.fromEnvironment('LOCAL_IP');
+      if (localIp.isNotEmpty) {
+        return 'http://$localIp:3000/api';
+      }
+      
+      // For emulator: use 10.0.2.2 (requires backend to listen on 0.0.0.0)
+      // Note: If using ADB reverse (adb reverse tcp:3000 tcp:3000), you can use localhost
       return 'http://10.0.2.2:3000/api';
     }
 
