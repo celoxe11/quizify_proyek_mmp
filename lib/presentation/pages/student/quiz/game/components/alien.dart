@@ -10,6 +10,7 @@ class Alien extends PositionComponent
     with HasGameReference<SpaceGame>, CollisionCallbacks {
   String optionValue;
   String optionText;
+  int totalOptions; // Total number of options (2 for boolean, 4 for multiple)
   Function()? onHit;
   late TextComponent optionLabel;
   late TextComponent optionTextComponent;
@@ -21,30 +22,49 @@ class Alien extends PositionComponent
   final alienSize = Vector2(160, 160);
   bool isHit = false;
 
-  Alien({required this.optionValue, required this.optionText, this.onHit});
+  Alien({
+    required this.optionValue,
+    required this.optionText,
+    this.totalOptions = 4,
+    this.onHit,
+  });
 
   @override
   Future<void> onLoad() async {
-    // Use same positions as spaceship (skip middle position at index 2)
-    final availableX = [
-      game.size.x / 10, // index 0
-      game.size.x * 3 / 10, // index 1
-      game.size.x * 6 / 10, // index 3 (skip 2)
-      game.size.x * 8 / 10, // index 4
-    ];
+    // Position calculation based on number of options
+    late List<double> availableX;
+
+    if (totalOptions == 2) {
+      // For boolean questions (2 options) - center them
+      availableX = [
+        game.size.x * 0.3, // Option A - left-center
+        game.size.x * 0.6, // Option B - right-center
+      ];
+    } else {
+      // For multiple choice (4 options) - spread across
+      availableX = [
+        game.size.x / 10, // Option A
+        game.size.x * 3 / 10, // Option B
+        game.size.x * 6 / 10, // Option C
+        game.size.x * 8 / 10, // Option D
+      ];
+    }
 
     final spriteMap = {
-      'A': ('alienA.png', availableX[0]),
-      'B': ('alienB.png', availableX[1]),
-      'C': ('alienC.png', availableX[2]),
-      'D': ('alienD.png', availableX[3]),
+      'A': ('alienA.png', 0),
+      'B': ('alienB.png', 1),
+      'C': ('alienC.png', 2),
+      'D': ('alienD.png', 3),
     };
 
     final spriteInfo = spriteMap[optionValue];
     if (spriteInfo == null) return;
 
+    final spriteIndex = spriteInfo.$2;
+    if (spriteIndex >= availableX.length) return;
+
     final alienSpriteData = await game.loadSprite(spriteInfo.$1);
-    basePosition = Vector2(spriteInfo.$2 + 170, 400);
+    basePosition = Vector2(availableX[spriteIndex] + 170, 400);
 
     // Set this component's position
     position = basePosition.clone();
