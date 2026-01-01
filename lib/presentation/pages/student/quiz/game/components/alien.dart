@@ -18,7 +18,7 @@ class Alien extends PositionComponent
   double elapsedTime = 0;
   final double rotationAmplitude = 0.15;
   final double rotationSpeed = 2;
-  final alienSize = Vector2(145, 145);
+  final alienSize = Vector2(160, 160);
   bool isHit = false;
 
   Alien({required this.optionValue, required this.optionText, this.onHit});

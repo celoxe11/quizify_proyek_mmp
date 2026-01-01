@@ -92,12 +92,21 @@ class StudentRepository {
   }
 
   Future<Map<String, dynamic>> endQuizSession(String sessionId) async {
+    print('🌐 [StudentRepository] Ending quiz session: $sessionId');
+    print('📡 [StudentRepository] POST /student/submitquiz');
+
     final raw = await _client.post('/student/submitquiz', {
       'quiz_session_id': sessionId,
     });
+
+    print('📥 [StudentRepository] Response type: ${raw.runtimeType}');
+    print('📥 [StudentRepository] Response data: $raw');
+
     if (raw is Map<String, dynamic>) {
+      print('✅ [StudentRepository] Valid response received');
       return raw;
     }
+    print('❌ [StudentRepository] Invalid response format');
     throw ApiException('Unexpected response format from endQuizSession');
   }
 

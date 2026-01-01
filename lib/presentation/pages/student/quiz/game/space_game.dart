@@ -212,19 +212,26 @@ class SpaceGame extends FlameGame
 
     isProcessingAnswer = true;
 
-    // Save answer
+    // Get the full option text from the answer label (A, B, C, D)
+    final currentQuestion = questions[currentQuestionIndex];
+    final optionIndex = ['A', 'B', 'C', 'D'].indexOf(answer);
+    final answerText =
+        optionIndex >= 0 && optionIndex < currentQuestion.options.length
+        ? currentQuestion.options[optionIndex]
+        : answer;
+
     print(
-      '💾 [SpaceGame] Saving answer for question $currentQuestionIndex: $answer',
+      '💾 [SpaceGame] Saving answer for question $currentQuestionIndex: $answer (text: $answerText)',
     );
     answers[currentQuestionIndex] = answer;
 
-    // Submit this answer immediately to backend
+    // Submit this answer immediately to backend using the full option text
     if (onAnswerSubmit != null && currentQuestionIndex < questions.length) {
-      final questionId = questions[currentQuestionIndex].id;
+      final questionId = currentQuestion.id;
       print(
-        '📤 [SpaceGame] Submitting answer immediately: questionId=$questionId, answer=$answer',
+        '📤 [SpaceGame] Submitting answer immediately: questionId=$questionId, answerLabel=$answer, answerText=$answerText',
       );
-      onAnswerSubmit?.call(questionId, answer);
+      onAnswerSubmit?.call(questionId, answerText);
     }
 
     // Move to next question or complete quiz
