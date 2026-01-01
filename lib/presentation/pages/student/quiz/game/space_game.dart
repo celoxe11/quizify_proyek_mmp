@@ -150,9 +150,10 @@ class SpaceGame extends FlameGame
     // );
     // add(instructionText);
 
+    // Create spaceship first before spawning aliens
+    _createSpaceship();
     // Spawn aliens with options
     _spawnAliens();
-    _createSpaceship();
     return super.onLoad();
   }
 
@@ -178,27 +179,42 @@ class SpaceGame extends FlameGame
     if (questions.isEmpty || currentQuestionIndex >= questions.length) return;
 
     final question = questions[currentQuestionIndex];
-    final optionLabels = ['A', 'B', 'C', 'D'];
+    final numOptions = question.options.length;
+
+    // Update spaceship's totalOptions
+    spaceship.totalOptions = numOptions;
+    spaceship.resetPosition();
+
+    // Determine option labels based on question type
+    final optionLabels = numOptions == 2
+        ? ['A', 'B'] // Boolean questions (True/False)
+        : ['A', 'B', 'C', 'D']; // Multiple choice
+
+    print(
+      '🎮 [SpaceGame] Question type: ${question.type}, Options: $numOptions',
+    );
 
     // Get option texts from the options list
-    final optionTexts = question.options.length >= 4
-        ? question.options
-        : [
-            ...question.options,
-            ...List.filled(4 - question.options.length, ''),
-          ];
+    final optionTexts = question.options;
 
     for (int i = 0; i < optionLabels.length && i < optionTexts.length; i++) {
       final optionValue = optionLabels[i];
       final optionText = optionTexts[i];
+
+      // Skip empty options
+      if (optionText.isEmpty) continue;
+
       final alien = Alien(
         optionValue: optionValue,
         optionText: optionText,
         onHit: () => _handleAnswer(optionValue),
+        totalOptions: numOptions, // Pass total options for positioning
       );
       aliens[optionValue] = alien;
       add(alien);
     }
+
+    print('👽 [SpaceGame] Spawned ${aliens.length} aliens');
   }
 
   void _handleAnswer(String answer) {
