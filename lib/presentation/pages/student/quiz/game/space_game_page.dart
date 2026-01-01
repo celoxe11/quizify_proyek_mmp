@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/api/api_client.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
@@ -34,8 +35,11 @@ class SpaceGamePage extends StatelessWidget {
           }
         },
         buildWhen: (previous, current) {
-          // Don't rebuild when submitting - keep game visible
-          return current is! QuizSessionSubmitting;
+          // Don't rebuild when submitting, ending, or ended - keep game visible
+          // Only rebuild for initial loading states
+          return current is! QuizSessionSubmitting &&
+              current is! QuizSessionEnding &&
+              current is! QuizSessionEnded;
         },
         builder: (context, state) {
           if (state is QuizSessionLoading) {
@@ -112,6 +116,7 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
   late QuizSessionBloc _quizBloc;
   late NavigatorState _navigator;
   late StudentRepository _repository;
+  BuildContext? _dialogContext;
 
   @override
   void initState() {
@@ -159,13 +164,10 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
   }
 
   void _onAnswersSubmit(Map<int, String> answers) {
-    // All answers already submitted per question, just end the quiz session
+    // This is called BEFORE onGameComplete, so we do nothing here
     print(
-      '🏁 [SpaceGame] All answers already submitted, ending quiz session...',
+      '📋 [SpaceGame] onAnswersSubmit called with ${answers.length} answers',
     );
-
-    // End quiz session using BLoC (calls _onEndQuizSession)
-    _quizBloc.add(const EndQuizSessionEvent());
   }
 
   void _onGameComplete() {
@@ -180,52 +182,32 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
     // Pause game immediately
     game.pauseEngine();
 
-    // Save context before async operations
-    final savedContext = context;
+    // Show loading dialog FIRST
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        // Save dialog context for later use
+        _dialogContext = dialogContext;
+        return const AlertDialog(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Menyelesaikan quiz...'),
+            ],
+          ),
+        );
+      },
+    );
 
-    // Use SchedulerBinding to ensure dialog shows after current frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        print('⚠️ [SpaceGamePage] Widget unmounted before dialog');
-        return;
+    // THEN end quiz session (with small delay to ensure dialog is shown)
+    print('🏁 [SpaceGame] Ending quiz session...');
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _quizBloc.add(const EndQuizSessionEvent());
       }
-
-      // Show completion dialog and navigate
-      showDialog(
-        context: savedContext,
-        barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Quiz Selesai!'),
-          content: const Text('Semua jawaban telah disubmit. Terima kasih!'),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                print('🏠 [SpaceGamePage] Navigating to home...');
-
-                // Close dialog using its own context
-                Navigator.of(dialogContext).pop();
-
-                // Reset quiz session using saved BLoC reference
-                try {
-                  _quizBloc.add(const ResetQuizSessionEvent());
-                  print('✅ [SpaceGamePage] Quiz session reset');
-                } catch (e) {
-                  print('⚠️ [SpaceGamePage] Error resetting session: $e');
-                }
-
-                // Navigate back to home using saved navigator
-                try {
-                  _navigator.popUntil((route) => route.isFirst);
-                  print('✅ [SpaceGamePage] Navigated to home');
-                } catch (e) {
-                  print('⚠️ [SpaceGamePage] Navigation error: $e');
-                }
-              },
-              child: const Text('Kembali ke Beranda'),
-            ),
-          ],
-        ),
-      );
     });
   }
 
@@ -233,11 +215,131 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
   Widget build(BuildContext context) {
     return BlocListener<QuizSessionBloc, QuizSessionState>(
       listener: (context, state) {
+        print('🔄 [SpaceGamePage] State changed: ${state.runtimeType}');
+
         if (state is QuizSessionEnded) {
           print('🏆 [SpaceGamePage] Quiz ended: ${state.message}');
           print('📊 [SpaceGamePage] Score: ${state.score}');
-        } else if (state is QuizSessionError) {
+
+          // Close loading dialog and show result
+          if (_isCompleting && mounted) {
+            print('🚪 [SpaceGamePage] Closing loading dialog...');
+
+            // Close loading dialog using saved context
+            if (_dialogContext != null && _dialogContext!.mounted) {
+              Navigator.of(_dialogContext!).pop();
+              _dialogContext = null;
+            } else {
+              // Fallback: use root navigator
+              _navigator.pop();
+            }
+
+            // Use a small delay to ensure smooth transition
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (!mounted) return;
+
+              // Show result dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Quiz Selesai!'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 64,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(state.message, textAlign: TextAlign.center),
+                      if (state.score != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Score: ${state.score}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  actions: [
+                    ElevatedButton(
+                      onPressed: () {
+                        print('🏠 [SpaceGamePage] Navigating to home...');
+
+                        // Close result dialog
+                        Navigator.of(dialogContext).pop();
+
+                        // Reset quiz session
+                        try {
+                          context.read<QuizSessionBloc>().add(
+                            const ResetQuizSessionEvent(),
+                          );
+                          print('✅ [SpaceGamePage] Quiz session reset');
+                        } catch (e) {
+                          print(
+                            '⚠️ [SpaceGamePage] Error resetting session: $e',
+                          );
+                        }
+
+                        // Navigate back to home using GoRouter
+                        try {
+                          context.go('/student/home');
+                          print('✅ [SpaceGamePage] Navigated to student/home');
+                        } catch (e) {
+                          print('⚠️ [SpaceGamePage] Navigation error: $e');
+                        }
+                      },
+                      child: const Text('Kembali ke Beranda'),
+                    ),
+                  ],
+                ),
+              );
+            });
+          }
+        } else if (state is QuizSessionError && _isCompleting) {
           print('❌ [SpaceGamePage] Error: ${state.message}');
+
+          // Close loading dialog
+          if (mounted) {
+            print('🚪 [SpaceGamePage] Closing loading dialog (error)...');
+
+            // Close loading dialog using saved context
+            if (_dialogContext != null && _dialogContext!.mounted) {
+              Navigator.of(_dialogContext!).pop();
+              _dialogContext = null;
+            } else {
+              _navigator.pop();
+            }
+
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (!mounted) return;
+
+              // Show error dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Error'),
+                  content: Text(state.message),
+                  actions: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                        context.go('/student/home');
+                      },
+                      child: const Text('Kembali ke Beranda'),
+                    ),
+                  ],
+                ),
+              );
+            });
+          }
         }
       },
       child: Scaffold(

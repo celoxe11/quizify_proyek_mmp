@@ -162,24 +162,41 @@ class QuizSessionBloc extends Bloc<QuizSessionEvent, QuizSessionState> {
     EndQuizSessionEvent event,
     Emitter<QuizSessionState> emit,
   ) async {
-    if (state is! QuizSessionLoaded) return;
+    if (state is! QuizSessionLoaded) {
+      print(
+        '⚠️ [QuizSessionBloc] Cannot end quiz - state is not QuizSessionLoaded',
+      );
+      return;
+    }
 
     final currentState = state as QuizSessionLoaded;
+    print(
+      '🔄 [QuizSessionBloc] Ending quiz session: ${currentState.session.id}',
+    );
     emit(const QuizSessionEnding());
 
     try {
+      print('📡 [QuizSessionBloc] Calling repository.endQuizSession...');
       final response = await _repository.endQuizSession(
         currentState.session.id,
       );
+      print('✅ [QuizSessionBloc] Response received: $response');
+
+      // Backend uses 'score_akhir' instead of 'score'
+      final score =
+          response['score_akhir'] as int? ?? response['score'] as int?;
+      print('📊 [QuizSessionBloc] Extracted score: $score');
 
       emit(
         QuizSessionEnded(
           sessionId: currentState.session.id,
-          score: response['score'] as int?,
+          score: score,
           message: response['message'] as String? ?? 'Quiz selesai',
         ),
       );
+      print('🎉 [QuizSessionBloc] QuizSessionEnded state emitted');
     } catch (e) {
+      print('❌ [QuizSessionBloc] Error ending quiz: $e');
       emit(QuizSessionError('Gagal mengakhiri quiz: ${e.toString()}'));
     }
   }
