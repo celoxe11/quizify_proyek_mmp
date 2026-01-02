@@ -25,7 +25,7 @@ class SpaceGamePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) =>
-          QuizSessionBloc(StudentRepository(ApiClient()))
+          QuizSessionBloc(context.read<StudentRepository>())
             ..add(LoadQuizSessionEvent(sessionId: sessionId, quizId: quizId)),
       child: BlocConsumer<QuizSessionBloc, QuizSessionState>(
         listener: (context, state) {
@@ -121,7 +121,6 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
   @override
   void initState() {
     super.initState();
-    _repository = StudentRepository(ApiClient());
     game = SpaceGame(
       questions: widget.questions,
       onAnswerSubmit: _onSingleAnswerSubmit,
@@ -136,6 +135,7 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
     // Save references to avoid accessing deactivated context later
     _quizBloc = context.read<QuizSessionBloc>();
     _navigator = Navigator.of(context, rootNavigator: true);
+    _repository = context.read<StudentRepository>();
   }
 
   @override

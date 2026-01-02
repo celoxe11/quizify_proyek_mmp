@@ -57,7 +57,7 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
     const Color bottomBarColor = Color(0xFF00596B);
 
     return BlocProvider(
-      create: (context) => JoinQuizBloc(StudentRepository(ApiClient())),
+      create: (context) => JoinQuizBloc(context.read<StudentRepository>()),
       child: BlocListener<JoinQuizBloc, JoinQuizState>(
         listener: (context, state) {
           if (state is JoinQuizSuccess) {

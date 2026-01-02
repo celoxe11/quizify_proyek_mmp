@@ -21,7 +21,7 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => QuizSessionBloc(StudentRepository(ApiClient()))
+      create: (context) => QuizSessionBloc(context.read<StudentRepository>())
         ..add(
           LoadQuizSessionEvent(
             sessionId: widget.sessionId,
