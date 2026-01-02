@@ -51,6 +51,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_selection_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/history/history_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/history_detail/history_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
@@ -210,6 +211,14 @@ class _AppView extends StatelessWidget {
               path: '/student/history',
               builder: (context, state) => const StudentHistoryPage(),
             ),
+            GoRoute(
+              path: '/student/history/:sessionId',
+              builder: (context, state) {
+                final sessionId = state.pathParameters['sessionId']!;
+                return HistoryDetailPage(sessionId: sessionId);
+              },
+            ),
+
           ],
         ),
 
