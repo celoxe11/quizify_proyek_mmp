@@ -114,8 +114,7 @@ class _HistoryCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          // Navigasi ke Detail Jawaban (Jika fitur review sudah ada)
-          // context.push('/student/history/${history.id}');
+          context.push('/student/history/${history.id}');
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),

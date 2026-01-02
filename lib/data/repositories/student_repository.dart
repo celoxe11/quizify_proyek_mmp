@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart'; 
 import 'package:quizify_proyek_mmp/core/api/api_client.dart';
+import 'package:quizify_proyek_mmp/data/models/history_detail_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_session_model.dart';
@@ -191,4 +192,19 @@ class StudentRepository {
       throw Exception("Gagal mengambil history: $e");
     }
   }
+
+  Future<HistoryDetailModel> fetchHistoryDetail(String sessionId) async {
+    try {
+      // Panggil API Backend
+      final response = await _dio.get('/student/history/$sessionId');
+      
+      // Ambil bagian 'data' dari JSON response
+      final data = _unwrapObject(response.data);
+      
+      return HistoryDetailModel.fromJson(data);
+    } catch (e) {
+      throw Exception("Gagal mengambil detail history: $e");
+    }
+  }
+
 }
