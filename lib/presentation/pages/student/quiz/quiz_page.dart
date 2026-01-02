@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quizify_proyek_mmp/core/api/api_client.dart';
-import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/quiz_session/quiz_session_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/quiz_session/quiz_session_event.dart';
@@ -21,7 +19,7 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => QuizSessionBloc(StudentRepository(ApiClient()))
+      create: (context) => QuizSessionBloc(context.read<StudentRepository>())
         ..add(
           LoadQuizSessionEvent(
             sessionId: widget.sessionId,
