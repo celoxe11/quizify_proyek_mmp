@@ -545,6 +545,8 @@ class _AppView extends StatelessWidget {
                   } else {
                     options.headers['Authorization'] = 'Bearer RAHASIA_KITA_BERSAMA';
                   }
+                  print("🚀 [REQUEST] METHOD: ${options.method}");
+                  print("🔗 [REQUEST] FULL URL: ${options.uri}"); 
                   return handler.next(options);
                 },
               ),
@@ -641,8 +643,7 @@ class _AppView extends StatelessWidget {
               }
             } else if (state is AuthAuthenticated) {
 
-              final token = await FirebaseAuth.instance.currentUser?.getIdToken();              
-
+              final token = await FirebaseAuth.instance.currentUser?.getIdToken(); 
               // Auto-navigate to appropriate home after login
               final currentLocation = router.routeInformationProvider.value.uri
                   .toString();

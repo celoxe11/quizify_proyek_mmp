@@ -1,4 +1,5 @@
 import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
+import 'package:quizify_proyek_mmp/data/models/subscription_model.dart';
 import 'package:quizify_proyek_mmp/data/models/user_log_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/responses/quiz_detail_response.dart';
@@ -16,6 +17,8 @@ abstract class AdminRepository {
   Future<void> toggleUserBlockStatus(String userId, bool isActive);
   Future<List<UserLogModel>> fetchLogs({String? userId});
   Future<void> deleteQuiz(String quizId);
+  Future<List<SubscriptionModel>> fetchSubscriptions();
+  Future<void> updateUser(String userId, String role, int subscriptionId);
 
   Future<Map<String, dynamic>> saveQuizWithQuestions({
     String? quizId,
