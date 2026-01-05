@@ -8,18 +8,6 @@ class AdminUsersBloc extends Bloc<AdminUsersEvent, AdminUsersState> {
   final AdminRepository adminRepository;
 
   AdminUsersBloc({required this.adminRepository}) : super(AdminUsersInitial()) {
-    
-    // Handler: Fetch Users
-    on<FetchAllUsersEvent>((event, emit) async {
-      emit(AdminUsersLoading());
-      try {
-        final users = await adminRepository.fetchAllUsers();
-        // Awalnya filteredUsers sama dengan allUsers
-        emit(AdminUsersLoaded(allUsers: users, filteredUsers: users));
-      } catch (e) {
-        emit(AdminUsersError(e.toString()));
-      }
-    });
 
     on<FilterUsersEvent>((event, emit) {
       if (state is AdminUsersLoaded) {
@@ -66,5 +54,38 @@ class AdminUsersBloc extends Bloc<AdminUsersEvent, AdminUsersState> {
         add(FetchAllUsersEvent());
       }
     });
+
+    // Load Subscriptions (Bisa dipanggil sekalian fetch users atau terpisah)
+    on<FetchAllUsersEvent>((event, emit) async {
+      emit(AdminUsersLoading());
+      try {
+        final users = await adminRepository.fetchAllUsers();
+        // Fetch subscriptions juga agar siap dipakai di dropdown
+        final subs = await adminRepository.fetchSubscriptions();
+        
+        emit(AdminUsersLoaded(
+          allUsers: users, 
+          filteredUsers: users,
+          availableSubscriptions: subs
+        ));
+      } catch (e) {
+        emit(AdminUsersError(e.toString()));
+      }
+    });
+
+    on<UpdateUserEvent>((event, emit) async {
+      try {
+        // Panggil Repository
+        await adminRepository.updateUser(event.userId, event.role, event.subscriptionId);
+        
+        // PENTING: Refresh data user agar tampilan tabel berubah
+        add(FetchAllUsersEvent()); 
+      } catch (e) {
+        // Emit error, lalu load ulang agar tidak stuck loading
+        emit(AdminUsersError("Gagal update user: $e"));
+        add(FetchAllUsersEvent()); 
+      }
+    });
+
   }
 }

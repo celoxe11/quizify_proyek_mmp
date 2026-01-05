@@ -104,4 +104,31 @@ class AdminApiService {
       throw Exception("API Error Delete Question: $e");
     }
   }
+
+  // GET SUBSCRIPTIONS
+  Future<List<dynamic>> getSubscriptions() async {
+    final response = await _dio.get('/api/admin/subscriptions');
+    return response.data['data'];
+  }
+  
+ // UPDATE USER
+  Future<void> updateUser(String userId, {String? role, int? subscriptionId}) async {
+    try {
+      print("📡 Sending Update to Backend: Role=$role, SubID=$subscriptionId");
+      
+      await _dio.put(
+        '/api/admin/users/$userId', 
+        data: {
+          // Pastikan key-nya persis dengan yang diminta Backend (req.body)
+          if (role != null) 'role': role,
+          if (subscriptionId != null) 'subscription_id': subscriptionId, // <--- HARUS subscription_id
+        },
+      );
+      print("✅ Update Success");
+    } catch (e) {
+      print("❌ Update Failed: $e");
+      throw Exception("Gagal update user: $e");
+    }
+  }
+  
 }

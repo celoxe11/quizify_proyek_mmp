@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quizify_proyek_mmp/core/api/api_client.dart';
 import 'package:quizify_proyek_mmp/core/api/dio_client.dart';
 import 'package:quizify_proyek_mmp/core/config/firebase_config.dart';
 import 'package:quizify_proyek_mmp/core/services/admin/admin_service.dart';
@@ -12,6 +13,7 @@ import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 // Import App Database
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/data/repositories/landing_repository.dart';
+import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/edit_quiz/admin_edit_quiz_bloc.dart';
@@ -48,6 +50,8 @@ import 'package:quizify_proyek_mmp/presentation/pages/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_selection_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/history/history_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/history_detail/history_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
@@ -203,6 +207,18 @@ class _AppView extends StatelessWidget {
               path: '/student/join-quiz',
               builder: (context, state) => const JoinQuizPage(),
             ),
+            GoRoute(
+              path: '/student/history',
+              builder: (context, state) => const StudentHistoryPage(),
+            ),
+            GoRoute(
+              path: '/student/history/:sessionId',
+              builder: (context, state) {
+                final sessionId = state.pathParameters['sessionId']!;
+                return HistoryDetailPage(sessionId: sessionId);
+              },
+            ),
+
           ],
         ),
 
@@ -499,6 +515,52 @@ class _AppView extends StatelessWidget {
               LandingRepositoryImpl(landingService: LandingService()),
         ),
         RepositoryProvider(
+          create: (context) => AuthenticationRepositoryImpl(
+            firebaseAuthService: AuthService(),
+            apiService: AuthApiService(), // Ini pakai ApiClient lama (http)
+          ),
+        ),
+
+        // ... Repo Teacher, Landing ...
+
+        // STUDENT REPOSITORY (SPESIAL PAKAI DIO)
+        RepositoryProvider<StudentRepository>(
+          create: (context) {
+            // 1. Siapkan Dio (Untuk History & Auth)
+            final dio = Dio(
+              BaseOptions(
+                baseUrl: PlatformConfig.getBaseUrl().replaceAll('/api', '') + '/api', // Sesuaikan URL
+                headers: {'Content-Type': 'application/json'},
+              ),
+            );
+
+            // Pasang Interceptor (Wajib buat History)
+            dio.interceptors.add(
+              InterceptorsWrapper(
+                onRequest: (options, handler) async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    final idToken = await user.getIdToken();
+                    options.headers['Authorization'] = 'Bearer $idToken';
+                  } else {
+                    options.headers['Authorization'] = 'Bearer RAHASIA_KITA_BERSAMA';
+                  }
+                  print("🚀 [REQUEST] METHOD: ${options.method}");
+                  print("🔗 [REQUEST] FULL URL: ${options.uri}"); 
+                  return handler.next(options);
+                },
+              ),
+            );
+
+            // 2. Siapkan ApiClient Lama (Untuk Quiz dll)
+            // ApiClient ini pakai http biasa di dalamnya
+            final apiClient = ApiClient(); 
+
+            // 3. Masukkan KEDUANYA ke Repository
+            return StudentRepository(apiClient, dio); 
+          },
+        ),
+        RepositoryProvider(
           create: (context) {
             // Sebaiknya gunakan instance Dio yang sama dengan Auth (Singleton)
             // Tapi untuk sekarang new Dio() dulu tidak apa-apa asalkan diatur BaseURL-nya
@@ -564,7 +626,7 @@ class _AppView extends StatelessWidget {
           ),
         ],
         child: BlocListener<AuthBloc, AuthState>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is AuthUnauthenticated) {
               // Only redirect to login if not on an auth page already
               final currentLocation = router.routeInformationProvider.value.uri
@@ -580,6 +642,8 @@ class _AppView extends StatelessWidget {
                 router.go('/login');
               }
             } else if (state is AuthAuthenticated) {
+
+              final token = await FirebaseAuth.instance.currentUser?.getIdToken(); 
               // Auto-navigate to appropriate home after login
               final currentLocation = router.routeInformationProvider.value.uri
                   .toString();

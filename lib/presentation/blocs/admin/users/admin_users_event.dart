@@ -25,3 +25,4 @@ class FilterUsersEvent extends AdminUsersEvent {
   @override
   List<Object> get props => [filterType];
 }
+

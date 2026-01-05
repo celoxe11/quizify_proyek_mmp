@@ -1,6 +1,7 @@
 import 'package:quizify_proyek_mmp/core/local/quiz_storage.dart';
 import 'package:quizify_proyek_mmp/core/services/admin/admin_service.dart';
 import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
+import 'package:quizify_proyek_mmp/data/models/subscription_model.dart';
 import 'package:quizify_proyek_mmp/data/models/user_log_model.dart';
 import 'package:quizify_proyek_mmp/data/responses/quiz_detail_response.dart';
 import 'package:quizify_proyek_mmp/domain/entities/question.dart';
@@ -308,5 +309,18 @@ class AdminRepositoryImpl implements AdminRepository {
     } catch (e) {
       throw Exception('Failed to fetch student answers: $e');
     }
+  }
+
+  // Implementation
+  @override
+  Future<List<SubscriptionModel>> fetchSubscriptions() async {
+    
+    final raw = await apiService.getSubscriptions();
+    return raw.map((e) => SubscriptionModel.fromJson(e)).toList();
+  }
+
+  @override
+  Future<void> updateUser(String userId, String role, int subscriptionId) async {
+    await apiService.updateUser(userId, role: role, subscriptionId: subscriptionId);
   }
 }
