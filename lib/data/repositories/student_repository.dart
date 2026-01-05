@@ -1,13 +1,18 @@
+import 'package:dio/dio.dart'; 
 import 'package:quizify_proyek_mmp/core/api/api_client.dart';
+import 'package:quizify_proyek_mmp/data/models/history_detail_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_session_model.dart';
+import 'package:quizify_proyek_mmp/data/models/student_history_model.dart';
 import 'package:quizify_proyek_mmp/data/models/submission_answer_model.dart';
 
 class StudentRepository {
   final ApiClient _client;
+  final Dio _dio;          
+  
 
-  StudentRepository(this._client);
+  StudentRepository(this._client, this._dio);
 
   List<dynamic> _unwrapList(dynamic json) {
     if (json is List) return json;
@@ -163,4 +168,43 @@ class StudentRepository {
         .map((e) => QuestionModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<StudentHistoryModel>> fetchHistory() async {
+    try {
+      // Pake _dio agar token 'Bearer ...' otomatis terkirim
+      final response = await _dio.get('/student/history'); 
+      
+      // Dio response.data sudah berupa Object (List/Map), tidak perlu jsonDecode
+      final data = response.data;
+      
+      // Handle format { "data": [...] } atau [...]
+      List<dynamic> listJson = [];
+      if (data is Map && data['data'] is List) {
+        listJson = data['data'];
+      } else if (data is List) {
+        listJson = data;
+      }
+
+      return listJson
+          .map((e) => StudentHistoryModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception("Gagal mengambil history: $e");
+    }
+  }
+
+  Future<HistoryDetailModel> fetchHistoryDetail(String sessionId) async {
+    try {
+      // Panggil API Backend
+      final response = await _dio.get('/student/history/$sessionId');
+      
+      // Ambil bagian 'data' dari JSON response
+      final data = _unwrapObject(response.data);
+      
+      return HistoryDetailModel.fromJson(data);
+    } catch (e) {
+      throw Exception("Gagal mengambil detail history: $e");
+    }
+  }
+
 }
