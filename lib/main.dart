@@ -19,6 +19,7 @@ import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/edit_quiz/admin_edit_quiz_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/transaction/admin_transaction_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
@@ -46,6 +47,8 @@ import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/create_q
 import 'package:quizify_proyek_mmp/presentation/pages/admin/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quiz_detail/students_answers_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/subscriptions/admin_subscriptions_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/transaction/admin_transaction_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/landing_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/login/login_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/auth/register/register_page.dart';
@@ -373,7 +376,6 @@ class _AppView extends StatelessWidget {
                 );
               },
             ),
-
             GoRoute(
               path: '/admin/quizzes',
               builder: (context, state) {
@@ -468,9 +470,16 @@ class _AppView extends StatelessWidget {
               builder: (context, state) => const AnalyticPageWrapper(),
             ),
             GoRoute(
-              path: '/admin/settings',
-              builder: (context, state) =>
-                  const Scaffold(body: Center(child: Text('Settings'))),
+              path: '/admin/subscriptions',
+              builder: (context, state) {
+                // Kita reuse AdminUsersBloc karena dia yang handle subscription
+                return BlocProvider(
+                  create: (context) => AdminUsersBloc(
+                    adminRepository: context.read<AdminRepositoryImpl>(),
+                  ),
+                  child: const AdminSettingsPage(),
+                );
+              },
             ),
             GoRoute(
               path: '/admin/logs',
@@ -479,6 +488,32 @@ class _AppView extends StatelessWidget {
 
                 // Masukkan ke Constructor Page
                 return AdminLogsPage(userId: userId);
+              },
+            ),
+            GoRoute(
+              path: '/admin/transactions',
+              builder: (context, state) {
+                return BlocProvider(
+                  create: (context) => AdminTransactionBloc(
+                    context.read<AdminRepositoryImpl>(),
+                  )..add(LoadAdminTransactions()), // Load data saat dibuka
+                  child: const AdminTransactionPage(),
+                );
+              },
+            ),
+
+            // 2. ROUTE SUBSCRIPTIONS (SETTINGS)
+            GoRoute(
+              path: '/admin/subscriptions',
+              builder: (context, state) {
+                // Kita reuse AdminUsersBloc karena dia yang handle add/edit subscription
+                return BlocProvider(
+                  create: (context) => AdminUsersBloc(
+                    adminRepository: context.read<AdminRepositoryImpl>(),
+                  ),
+                  // Asumsi nama class di dalam file admin_subscriptions_page.dart adalah AdminSettingsPage
+                  child: const AdminSettingsPage(), 
+                );
               },
             ),
             GoRoute(
@@ -643,7 +678,8 @@ class _AppView extends StatelessWidget {
               }
             } else if (state is AuthAuthenticated) {
 
-              final token = await FirebaseAuth.instance.currentUser?.getIdToken(); 
+              final token = await FirebaseAuth.instance.currentUser?.getIdToken();   
+          
               // Auto-navigate to appropriate home after login
               final currentLocation = router.routeInformationProvider.value.uri
                   .toString();

@@ -12,7 +12,7 @@ class AdminShell extends StatelessWidget {
     if (loc.startsWith('/admin/users')) return 1;
     if (loc.startsWith('/admin/quizzes')) return 2;
     if (loc.startsWith('/admin/analytics')) return 3;
-    if (loc.startsWith('/admin/settings')) return 4;
+    if (loc.startsWith('/admin/subscriptions')) return 4; 
     return 0;
   }
 
@@ -89,6 +89,9 @@ class AdminShell extends StatelessWidget {
                 case 3:
                   context.go('/admin/analytics');
                   break;
+                case 4:
+                  context.go('/admin/subscriptions');
+                  break;
               }
             },
             labelType: NavigationRailLabelType.all,
@@ -122,6 +125,10 @@ class AdminShell extends StatelessWidget {
               NavigationRailDestination(
                 icon: Icon(Icons.analytics),
                 label: Text('Analytics'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.card_membership),
+                label: Text('Subscriptions'),
               ),
             ],
           ),
