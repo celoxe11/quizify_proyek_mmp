@@ -130,5 +130,51 @@ class AdminApiService {
       throw Exception("Gagal update user: $e");
     }
   }
-  
+
+  // CREATE SUBSCRIPTION TIER
+  Future<void> createSubscription(String statusName, {required double price}) async {
+    try {
+      await _dio.post(
+        '/api/admin/subscriptions', // Endpoint backend Anda
+        data: {
+          'status': statusName, 
+          'price': price,
+        },
+      );
+    } catch (e) {
+      throw Exception("Gagal membuat subscription: $e");
+    }
+  }
+
+  // UPDATE SUBSCRIPTION TIER
+  Future<void> updateSubscription(int id, String statusName, double price) async {
+    try {
+      await _dio.put(
+        '/api/admin/subscriptions/$id', // Asumsi endpoint backend: PUT /subscriptions/:id
+        data: {
+          'status': statusName,
+          'price': price,
+        },
+      );
+    } catch (e) {
+      throw Exception("Gagal update subscription: $e");
+    }
+  }
+
+  // GET ALL TRANSACTIONS
+  Future<List<dynamic>> getAllTransactions() async {
+    try {
+      final response = await _dio.get('/api/admin/transactions');
+      
+      // Handle response structure { data: [...] }
+      if (response.data is Map && response.data['data'] != null) {
+        return response.data['data'];
+      } else if (response.data is List) {
+        return response.data;
+      }
+      return [];
+    } catch (e) {
+      throw Exception("Gagal mengambil transaksi: $e");
+    }
+  }
 }

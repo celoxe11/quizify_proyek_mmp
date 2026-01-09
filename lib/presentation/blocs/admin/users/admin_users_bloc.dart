@@ -87,5 +87,36 @@ class AdminUsersBloc extends Bloc<AdminUsersEvent, AdminUsersState> {
       }
     });
 
+
+    // Handler Create Subscription
+    on<CreateSubscriptionEvent>((event, emit) async {
+      try {
+        await adminRepository.addSubscriptionTier(event.name, event.price);
+        
+        // Setelah sukses, refresh semua data (termasuk list subscription)
+        add(FetchAllUsersEvent()); 
+      } catch (e) {
+        emit(AdminUsersError("Gagal menambah tier: $e"));
+        // Load ulang agar kembali ke state stabil
+        add(FetchAllUsersEvent());
+      }
+    });
+
+    on<UpdateSubscriptionEvent>((event, emit) async {
+      try {
+        // Panggil Repository
+        await adminRepository.updateSubscriptionTier(event.id, event.name, event.price);
+        
+        // Refresh data agar list di UI terupdate
+        add(FetchAllUsersEvent());
+      } catch (e) {
+        // Handle Error
+        emit(AdminUsersError("Gagal update tier: $e"));
+        // Load ulang agar kembali ke state stabil
+        add(FetchAllUsersEvent());
+      }
+    });
+
+
   }
 }
