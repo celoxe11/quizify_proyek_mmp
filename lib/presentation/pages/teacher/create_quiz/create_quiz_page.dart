@@ -1,10 +1,17 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import "package:quizify_proyek_mmp/core/constants/app_colors.dart";
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
-import 'package:quizify_proyek_mmp/presentation/widgets/question_card.dart';
+import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/create_quiz/create_quiz_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_state.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/ai_generation_dialog.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/teacher/create_quiz/question_card.dart';
 
 class TeacherCreateQuizPage extends StatefulWidget {
   const TeacherCreateQuizPage({super.key});
@@ -23,6 +30,7 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _codeController;
   late final TextEditingController _categoryController;
+  bool _isPremiumUser = false;
 
   @override
   void initState() {
@@ -31,6 +39,8 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
     _descriptionController = TextEditingController();
     _codeController = TextEditingController(text: _generateQuizCode());
     _categoryController = TextEditingController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPremiumStatus());
   }
 
   @override
@@ -40,6 +50,16 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
     _codeController.dispose();
     _categoryController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPremiumStatus() async {
+    final authRepo = context.read<AuthenticationRepositoryImpl>();
+    try {
+      final premium = authRepo.isPremiumUser();
+      if (mounted) setState(() => _isPremiumUser = premium);
+    } catch (e) {
+      // handle error if needed
+    }
   }
 
   void _addQuestion() {
@@ -82,6 +102,32 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
     return code.toString();
   }
 
+  void _showAIGenerationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AIGenerationDialog(
+        onGenerate: (params) {
+          Navigator.pop(dialogContext);
+          // Dispatch GenerateQuestionWithAIEvent
+          context.read<GenerateQuestionBloc>().add(
+            GenerateQuestionWithAIEvent(
+              type: params["type"],
+              difficulty: params["difficulty"],
+              category: params["category"],
+              topic: params["topic"],
+              language: params["language"],
+              context: params["context"],
+              ageGroup: params["age_group"],
+              avoidTopics: params["avoid_topics"],
+              includeExplanation: params["include_explanation"],
+              questionStyle: params["question_style"],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop =
@@ -102,265 +148,436 @@ class _TeacherCreateQuizPageState extends State<TeacherCreateQuizPage> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.dirtyCyan,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkAzure,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => {context.go("/teacher/new-quiz")},
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<CreateQuizBloc, CreateQuizState>(
+          listener: (context, state) {
+            if (state is CreateQuizLoading) {
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Dialog(
+                  backgroundColor: Colors.transparent,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            } else if (state is CreateQuizSuccess) {
+              // Hide loading dialog
+              Navigator.of(context, rootNavigator: true).pop();
+
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Quiz saved successfully!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+
+              // Navigate to my quizzes page
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  context.go("/teacher/quizzes");
+                }
+              });
+            } else if (state is CreateQuizFailure) {
+              // Hide loading dialog
+              Navigator.of(context, rootNavigator: true).pop();
+
+              // Show error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.error),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            } else if (state is CreateQuizValidationError) {
+              // Hide loading dialog if it's showing
+              if (ModalRoute.of(context)?.isCurrent == false) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+
+              // Show validation error
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
         ),
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Create New Quiz',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(color: AppColors.dirtyCyan),
-        child: SingleChildScrollView(
-          child: Center(
-            child: Container(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              width: screenWidth,
-              padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 16.0 : 8.0,
-                vertical: 16.0,
-              ),
-              child: Column(
-                children: [
-                  // Quiz Header Card
-                  Container(
-                    padding: const EdgeInsets.all(20.0),
-                    decoration: BoxDecoration(
-                      color: AppColors.pureWhite,
-                      borderRadius: BorderRadius.circular(12.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+        BlocListener<GenerateQuestionBloc, GenerateQuestionState>(
+          listener: (context, state) {
+            if (state is GenerateQuestionLoading) {
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Dialog(
+                  backgroundColor: Colors.transparent,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Colors.deepPurple),
+                        SizedBox(height: 16),
+                        Text(
+                          'Generating question with AI...',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Quiz Title and Public Switch
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _titleController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Quiz Title',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.darkAzure,
-                                ),
-                              ),
-                            ),
-                            if (isDesktop)
-                              Row(
-                                children: [
-                                  const Text("Make Quiz Public"),
-                                  Switch(
-                                    value: _isPublic,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _isPublic = value;
-                                      });
-                                    },
-                                    activeColor: AppColors.darkAzure,
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
+                  ),
+                ),
+              );
+            } else if (state is GenerateQuestionSuccess) {
+              // Hide loading dialog
+              Navigator.of(context, rootNavigator: true).pop();
 
-                        // If mobile, show switch on separate line
-                        if (!isDesktop) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Text("Make Quiz Public"),
-                              Switch(
-                                value: _isPublic,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isPublic = value;
-                                  });
-                                },
-                                activeColor: AppColors.darkAzure,
-                              ),
-                            ],
+              print("Generated question: ${state.question}");
+
+              // Add generated question to list
+              setState(() {
+                _questions.add(state.question);
+              });
+
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Question generated successfully!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            } else if (state is GenerateQuestionFailure) {
+              // Hide loading dialog
+              Navigator.of(context, rootNavigator: true).pop();
+
+              // Show error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to generate question: ${state.error}'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: AppColors.dirtyCyan,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _addQuestion,
+          backgroundColor: AppColors.darkAzure,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text(
+            "Add Question",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        appBar: AppBar(
+          backgroundColor: AppColors.darkAzure,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => {context.go("/teacher/new-quiz")},
+          ),
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Create New Quiz',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        body: Container(
+          decoration: BoxDecoration(color: AppColors.dirtyCyan),
+          child: SingleChildScrollView(
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                width: screenWidth,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 16.0 : 8.0,
+                  vertical: 16.0,
+                ),
+                child: Column(
+                  children: [
+                    // Quiz Header Card
+                    Container(
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: BoxDecoration(
+                        color: AppColors.pureWhite,
+                        borderRadius: BorderRadius.circular(12.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
                         ],
-
-                        const SizedBox(height: 16.0),
-
-                        // Quiz Description
-                        TextField(
-                          controller: _descriptionController,
-                          decoration: const InputDecoration(
-                            hintText: 'Quiz Description',
-                            border: InputBorder.none,
-                          ),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: AppColors.darkAzure,
-                          ),
-                          maxLines: null,
-                        ),
-
-                        const SizedBox(height: 20.0),
-                        const Divider(),
-                        const SizedBox(height: 16.0),
-
-                        // Category Field
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.category,
-                              color: AppColors.darkAzure,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                controller: _categoryController,
-                                decoration: const InputDecoration(
-                                  hintText:
-                                      'Category (e.g., Science, Math, History)',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.darkAzure,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16.0),
-                        const Divider(),
-                        const SizedBox(height: 16.0),
-
-                        // Quiz Code Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Quiz Code:",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.darkAzure,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  _codeController.text,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Quiz Title and Public Switch
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _titleController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Quiz Title',
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.darkAzure,
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.copy),
-                                  onPressed: () {
-                                    // Copy quiz code to clipboard
+                              ),
+                              if (isDesktop)
+                                Row(
+                                  children: [
+                                    const Text("Make Quiz Public"),
+                                    Switch(
+                                      value: _isPublic,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _isPublic = value;
+                                        });
+                                      },
+                                      activeColor: AppColors.darkAzure,
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+
+                          // If mobile, show switch on separate line
+                          if (!isDesktop) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Text("Make Quiz Public"),
+                                Switch(
+                                  value: _isPublic,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _isPublic = value;
+                                    });
                                   },
-                                  tooltip: 'Copy Code',
+                                  activeColor: AppColors.darkAzure,
                                 ),
                               ],
                             ),
                           ],
+
+                          const SizedBox(height: 16.0),
+
+                          // Quiz Description
+                          TextField(
+                            controller: _descriptionController,
+                            decoration: const InputDecoration(
+                              hintText: 'Quiz Description',
+                              border: InputBorder.none,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColors.darkAzure,
+                            ),
+                            maxLines: null,
+                          ),
+
+                          const SizedBox(height: 20.0),
+                          const Divider(),
+                          const SizedBox(height: 16.0),
+
+                          // Category Field
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.category,
+                                color: AppColors.darkAzure,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _categoryController,
+                                  decoration: const InputDecoration(
+                                    hintText:
+                                        'Category (e.g., Science, Math, History)',
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.darkAzure,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16.0),
+                          const Divider(),
+                          const SizedBox(height: 16.0),
+
+                          // Quiz Code Section
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Quiz Code:",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.darkAzure,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    _codeController.text,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.darkAzure,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.copy),
+                                    onPressed: () {
+                                      // Copy quiz code to clipboard
+                                    },
+                                    tooltip: 'Copy Code',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24.0),
+
+                    // Add Question Buttons Row
+                    Row(
+                      children: [
+                        // Add Question Button
+                        ElevatedButton.icon(
+                          onPressed: _addQuestion,
+                          icon: const Icon(Icons.add),
+                          label: const Text("Add Question"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.darkAzure,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        // Generate with AI Button (Premium)
+                        if (_isPremiumUser) ...{
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              _showAIGenerationDialog(context);
+                            },
+                            icon: const Icon(Icons.auto_awesome, size: 20),
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Text("Generate with AI"),
+                                SizedBox(width: 4),
+                                Icon(
+                                  Icons.stars,
+                                  size: 16,
+                                  color: Colors.amber,
+                                ),
+                              ],
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        },
                       ],
                     ),
-                  ),
 
-                  const SizedBox(height: 24.0),
+                    const SizedBox(height: 16.0),
 
-                  // Add Question Button
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: ElevatedButton.icon(
-                      onPressed: _addQuestion,
-                      icon: const Icon(Icons.add),
-                      label: const Text("Add Question"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.darkAzure,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16.0),
-
-                  // Questions List using LayoutBuilder
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _questions.length,
-                    itemBuilder: (context, index) {
-                      return QuestionCard(
-                        index: index,
-                        question: _questions[index],
-                        onUpdate: (updatedQuestion) =>
-                            _updateQuestion(index, updatedQuestion),
-                        onRemove: () => _removeQuestion(index),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 24.0),
-
-                  // Save Quiz Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Save quiz logic
+                    // Questions List using LayoutBuilder
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _questions.length,
+                      itemBuilder: (context, index) {
+                        return QuestionCard(
+                          index: index,
+                          question: _questions[index],
+                          onUpdate: (updatedQuestion) =>
+                              _updateQuestion(index, updatedQuestion),
+                          onRemove: () => _removeQuestion(index),
+                        );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.darkAzure,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    ),
+
+                    const SizedBox(height: 24.0),
+
+                    // Save Quiz Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Dispatch SubmitQuizEvent
+                          context.read<CreateQuizBloc>().add(
+                            SubmitQuizEvent(
+                              title: _titleController.text,
+                              description: _descriptionController.text,
+                              category: _categoryController.text,
+                              status: _isPublic ? 'public' : 'private',
+                              quizCode: _codeController.text,
+                              questions: _questions,
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.darkAzure,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        "Save Quiz",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        child: const Text(
+                          "Save Quiz",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16.0),
-                ],
+                    const SizedBox(height: 16.0),
+                  ],
+                ),
               ),
             ),
           ),

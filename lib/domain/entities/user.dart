@@ -8,6 +8,7 @@ class User extends Equatable {
   final String? firebaseUid;
   final String role; // 'teacher' or 'student'
   final int subscriptionId;
+  final String? subscriptionStatus; 
   final bool isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -20,6 +21,7 @@ class User extends Equatable {
     this.firebaseUid,
     required this.role,
     required this.subscriptionId,
+    this.subscriptionStatus,
     this.isActive = true,
     this.createdAt,
     this.updatedAt,
@@ -33,6 +35,7 @@ class User extends Equatable {
     email: '',
     role: '',
     subscriptionId: 0,
+    subscriptionStatus: '',
     isActive: false,
   );
 
@@ -41,15 +44,16 @@ class User extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        username,
-        email,
-        firebaseUid,
-        role,
-        subscriptionId,
-        isActive,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    name,
+    username,
+    email,
+    firebaseUid,
+    role,
+    subscriptionId,
+    subscriptionStatus, 
+    isActive,
+    createdAt,
+    updatedAt,
+  ];
 }

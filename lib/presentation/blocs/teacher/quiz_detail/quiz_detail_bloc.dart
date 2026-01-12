@@ -1,33 +1,22 @@
 import 'package:bloc/bloc.dart';
-import 'package:quizify_proyek_mmp/data/models/question_model.dart';
-import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/data/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_state.dart';
 
-/// BLoC for managing Quiz Detail page state
-///
-/// Handles loading quiz data, questions, students, and accuracy results.
-/// Also manages tab navigation and quiz deletion.
-///
-/// Usage:
-/// ```dart
-/// BlocProvider(
-///   create: (context) => QuizDetailBloc()
-///     ..add(LoadQuizDetailEvent(quizId: quiz.id)),
-///   child: QuizDetailPage(quiz: quiz),
-/// )
-/// ```
 class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
-  // TODO: Inject repositories when implementing backend integration
-  // final QuizRepository quizRepository;
-  // final QuestionRepository questionRepository;
-  // final AuthRepository authRepository;
+  final TeacherRepositoryImpl teacherRepository;
+  final AuthenticationRepositoryImpl authRepository;
 
-  QuizDetailBloc() : super(QuizDetailInitial()) {
+  QuizDetailBloc({
+    TeacherRepositoryImpl? teacherRepository,
+    AuthenticationRepositoryImpl? authRepository,
+  }) : teacherRepository = teacherRepository ?? TeacherRepositoryImpl(),
+       authRepository = authRepository ?? AuthenticationRepositoryImpl(),
+       super(QuizDetailInitial()) {
     on<LoadQuizDetailEvent>(_onLoadQuizDetail);
     on<LoadStudentsEvent>(_onLoadStudents);
     on<LoadAccuracyResultsEvent>(_onLoadAccuracyResults);
-    on<ChangeTabEvent>(_onChangeTab);
     on<DeleteQuizEvent>(_onDeleteQuiz);
     on<RefreshQuizDetailEvent>(_onRefresh);
   }
@@ -40,43 +29,17 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
     emit(QuizDetailLoading());
 
     try {
-      // TODO: Replace with actual backend calls
-      // final quiz = await quizRepository.getById(event.quizId);
-      // final questions = await questionRepository.getByQuizId(event.quizId);
-      // final isPremium = await authRepository.isPremiumUser();
+      final response = await teacherRepository.getQuizDetail(event.quizId);
 
-      // Simulated delay for development
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // TODO: Replace with actual data
-      // For now, create a placeholder quiz (in real implementation, fetch from API)
-      final quiz = QuizModel(
-        id: event.quizId,
-        title: 'Sample Quiz',
-        description: 'This is a sample quiz description',
-        status: 'public',
-        category: 'General',
-        createdAt: DateTime.now(),
-      );
-
-      final questions = <QuestionModel>[];
-      const isPremium = true; // TODO: Get from auth repository
+      final quiz = response.quiz;
+      final questions = response.questions;
 
       emit(
         QuizDetailLoaded(
           quiz: quiz,
           questions: questions,
-          isPremiumUser: isPremium,
         ),
       );
-
-      // Automatically load students after quiz is loaded
-      add(LoadStudentsEvent(quizId: event.quizId));
-
-      // Load accuracy if premium user
-      if (isPremium) {
-        add(LoadAccuracyResultsEvent(quizId: event.quizId));
-      }
     } catch (e) {
       emit(QuizDetailError(message: 'Failed to load quiz: ${e.toString()}'));
     }
@@ -87,46 +50,23 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
     LoadStudentsEvent event,
     Emitter<QuizDetailState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is! QuizDetailLoaded) return;
-
-    emit(currentState.copyWith(isLoadingStudents: true));
+    emit(StudentsLoading());
 
     try {
-      // TODO: Replace with actual backend call
-      // Use the getQuizResult endpoint: GET /api/teacher/quiz/:quiz_id/result
-      // final response = await http.get('/api/teacher/quiz/${event.quizId}/result');
-      // final students = response.results;
-
-      // Simulated delay
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // TODO: Replace with actual data
-      final students = <Map<String, dynamic>>[
-        {
-          'student': 'John Doe',
-          'score': 85,
-          'started_at': '2024-12-10T10:00:00',
-          'ended_at': '2024-12-10T10:30:00',
-        },
-        {
-          'student': 'Jane Smith',
-          'score': 92,
-          'started_at': '2024-12-10T11:00:00',
-          'ended_at': '2024-12-10T11:25:00',
-        },
-        {
-          'student': 'Bob Johnson',
-          'score': 78,
-          'started_at': '2024-12-10T14:00:00',
-          'ended_at': '2024-12-10T14:35:00',
-        },
-      ];
-
-      emit(currentState.copyWith(students: students, isLoadingStudents: false));
+      final students = await teacherRepository.getQuizResult(event.quizId);
+      print('Students data: $students');
+      emit(StudentsLoaded(students: students));
     } catch (e) {
-      emit(currentState.copyWith(isLoadingStudents: false));
-      // Optionally emit error or show snackbar
+      // if the error is due to no students attended, emit empty list
+      if (e.toString().contains(
+        'Tidak ada hasil kuis ditemukan untuk kuis ini',
+      )) {
+        emit(StudentsLoaded(students: []));
+        return;
+      }
+
+      print('Error loading students: $e');
+      emit(StudentsError(message: 'Failed to load students: ${e.toString()}'));
     }
   }
 
@@ -135,10 +75,7 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
     LoadAccuracyResultsEvent event,
     Emitter<QuizDetailState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is! QuizDetailLoaded) return;
-
-    emit(currentState.copyWith(isLoadingAccuracy: true));
+    emit(AccuracyLoading());
 
     try {
       // TODO: Replace with actual backend call
@@ -174,22 +111,22 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
         },
       ];
 
+      emit(AccuracyLoaded(accuracyResults: accuracyResults));
+    } catch (e) {
+      if (e.toString().contains(
+            'Tidak ada pertanyaan ditemukan untuk kuis ini',
+          ) ||
+          e.toString().contains('Tidak ada sesi kuis yang selesai ditemukan')) {
+        emit(AccuracyLoaded(accuracyResults: []));
+        return;
+      }
+
+      print('Error loading accuracy results: $e');
       emit(
-        currentState.copyWith(
-          accuracyResults: accuracyResults,
-          isLoadingAccuracy: false,
+        AccuracyError(
+          message: 'Failed to load accuracy results: ${e.toString()}',
         ),
       );
-    } catch (e) {
-      emit(currentState.copyWith(isLoadingAccuracy: false));
-    }
-  }
-
-  /// Change the current tab
-  void _onChangeTab(ChangeTabEvent event, Emitter<QuizDetailState> emit) {
-    final currentState = state;
-    if (currentState is QuizDetailLoaded) {
-      emit(currentState.copyWith(selectedTabIndex: event.tabIndex));
     }
   }
 
@@ -199,10 +136,10 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
     Emitter<QuizDetailState> emit,
   ) async {
     try {
-      // TODO: Replace with actual backend call
-      // await quizRepository.delete(event.quizId);
+      emit(QuizDetailLoading());
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Delete quiz through repository
+      await teacherRepository.deleteQuiz(event.quizId);
 
       emit(QuizDetailDeleted());
     } catch (e) {

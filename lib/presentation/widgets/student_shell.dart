@@ -8,9 +8,11 @@ class StudentShell extends StatelessWidget {
   final Widget child;
   const StudentShell({required this.child, super.key});
 
+  // 1. Update logika index untuk menyertakan History
   int _indexFromLocation(String loc) {
-    if (loc.startsWith('/student/quizzes')) return 1;
-    if (loc.startsWith('/student/profile')) return 2;
+    if (loc.startsWith('/student/join-quiz')) return 1;
+    if (loc.startsWith('/student/history')) return 2; // Tambahan History
+    if (loc.startsWith('/student/profile')) return 3;
     return 0;
   }
 
@@ -31,7 +33,6 @@ class StudentShell extends StatelessWidget {
           children: [
             // Sidebar with NavigationRail
             NavigationRail(
-              // trailing widget placed after destinations (bottom-aligned)
               trailing: Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
@@ -46,14 +47,12 @@ class StudentShell extends StatelessWidget {
                           endIndent: 8,
                         ),
                         const SizedBox(height: 8),
-                        // The button for the logout action
                         IconButton(
                           icon: const Icon(Icons.logout, color: Colors.white),
                           iconSize: 24,
                           onPressed: handleLogout,
                           tooltip: 'Logout',
                         ),
-                        // Only display the label if labelType is selected (optional, but good practice)
                         if (NavigationRailLabelType.all ==
                             NavigationRailLabelType.all)
                           const Text(
@@ -74,7 +73,10 @@ class StudentShell extends StatelessWidget {
                   case 1:
                     context.go('/student/join-quiz');
                     break;
-                  case 2:
+                  case 2: // Tambahan logic navigasi desktop
+                    context.go('/student/history');
+                    break;
+                  case 3:
                     context.go('/student/profile');
                     break;
                 }
@@ -101,7 +103,12 @@ class StudentShell extends StatelessWidget {
                 ),
                 NavigationRailDestination(
                   icon: Icon(Icons.quiz),
-                  label: Text('Quizzes'),
+                  label: Text('Join Quiz'),
+                ),
+                // 2. Tambahkan Destination Desktop
+                NavigationRailDestination(
+                  icon: Icon(Icons.history),
+                  label: Text('History'),
                 ),
                 NavigationRailDestination(
                   icon: Icon(Icons.person),
@@ -117,17 +124,28 @@ class StudentShell extends StatelessWidget {
       );
     }
 
+    // Tampilan Mobile
     return Scaffold(
       body: child,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
+        // Penting: gunakan fixed type jika item lebih dari 3 agar warna tetap muncul
+        type: BottomNavigationBarType.fixed, 
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF0D6B7A),
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quizzes'),
+          // 3. Tambahkan Item Mobile
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         onTap: (i) {
           if (i == 0) context.go('/student/home');
-          if (i == 1) context.go('/student/quizzes');
+          if (i == 1) context.go('/student/join-quiz');
+          if (i == 2) context.go('/student/history'); // Navigasi History
+          if (i == 3) context.go('/student/profile');
         },
       ),
     );

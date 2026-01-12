@@ -43,13 +43,3 @@ class FilterByCategoryEvent extends QuizzesEvent {
   @override
   List<Object?> get props => [category];
 }
-
-/// Event to delete a quiz
-class DeleteQuizFromListEvent extends QuizzesEvent {
-  final String quizId;
-
-  const DeleteQuizFromListEvent(this.quizId);
-
-  @override
-  List<Object?> get props => [quizId];
-}

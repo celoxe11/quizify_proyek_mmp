@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/admin/quizzes/quiz_mobile.dart';
+import 'quiz_mobile.dart';
 import 'quiz_desktop.dart';
 
 class AdminQuizPage extends StatelessWidget {
@@ -13,9 +13,9 @@ class AdminQuizPage extends StatelessWidget {
     final isMobile = width < _kMobileBreakpoint;
 
     if (isMobile) {
-      return const AdminQuizMobilePage();
+      return const AdminQuizMobile();
     } else {
-      return const AdminQuizDesktopPage();
+      return const AdminQuizDesktop();
     }
   }
 }

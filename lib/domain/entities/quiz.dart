@@ -1,14 +1,14 @@
 import 'package:equatable/equatable.dart';
-import 'question.dart';
 
 class Quiz extends Equatable {
   final String id;
   final String title;
   final String? description;
-  final String? code; // Quiz code for joining
+  final String? quizCode; // Quiz code for joining
   final String status; // 'private' or 'public'
   final String? category;
   final String? createdBy;
+  final String? creatorName; // Field tambahan untuk UI/Admin (hasil join)
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -16,29 +16,41 @@ class Quiz extends Equatable {
     required this.id,
     required this.title,
     this.description,
-    this.code,
-    this.status = 'private',
+    this.quizCode,
+    required this.status,
     this.category,
     this.createdBy,
+    this.creatorName,
     this.createdAt,
     this.updatedAt,
   });
-
-  static const empty = Quiz(id: '', title: '');
+  
+  /// Empty quiz for initial states
+  static const empty = Quiz(
+    id: '',
+    title: '',
+    status: 'private',
+    description: '',
+    quizCode: '',
+    category: '',
+    createdBy: '',
+    creatorName: '',
+  );
 
   bool get isEmpty => this == Quiz.empty;
   bool get isNotEmpty => this != Quiz.empty;
 
   @override
   List<Object?> get props => [
-    id,
-    title,
-    description,
-    code,
-    status,
-    category,
-    createdBy,
-    createdAt,
-    updatedAt,
-  ];
+        id,
+        title,
+        description,
+        quizCode,
+        status,
+        category,
+        createdBy,
+        creatorName,
+        createdAt,
+        updatedAt,
+      ];
 }
