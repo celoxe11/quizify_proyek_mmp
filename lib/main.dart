@@ -56,6 +56,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_s
 import 'package:quizify_proyek_mmp/presentation/pages/student/history/history_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/history_detail/history_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/profile/profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_quiz_name_page.dart';
@@ -223,7 +224,12 @@ class _AppView extends StatelessWidget {
                 return HistoryDetailPage(sessionId: sessionId);
               },
             ),
-
+            GoRoute(
+              path: '/student/profile',
+              builder: (context, state) {
+                return const StudentProfilePage();
+              },
+            ),
           ],
         ),
 
