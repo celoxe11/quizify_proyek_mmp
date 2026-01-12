@@ -6,9 +6,9 @@ import 'package:quizify_proyek_mmp/domain/repositories/auth_repository.dart';
 part 'profile_event.dart';
 part 'profile_state.dart';
 
-/// BLoC for managing teacher profile
+/// BLoC for managing student profile
 ///
-/// Handles loading, updating, and managing teacher profile information.
+/// Handles loading, updating, and managing student profile information.
 /// This BLoC manages:
 /// - Profile data loading
 /// - Profile editing (name, username, email)
@@ -28,7 +28,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<LogoutEvent>(_onLogout);
   }
 
-  /// Load teacher profile
+  /// Load student profile
   Future<void> _onLoadProfile(
     LoadProfileEvent event,
     Emitter<ProfileState> emit,
@@ -63,7 +63,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
   }
 
-  /// Refresh teacher profile
+  /// Refresh student profile
   Future<void> _onRefreshProfile(
     RefreshProfileEvent event,
     Emitter<ProfileState> emit,
