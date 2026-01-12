@@ -29,6 +29,8 @@ import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/answer
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_detail.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/profile_page.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/teacher_shell.dart';
 import 'package:quizify_proyek_mmp/presentation/widgets/student_shell.dart';
@@ -176,9 +178,22 @@ class MyApp extends StatelessWidget {
             ),
             GoRoute(
               path: '/teacher/profile',
-              builder: (context, state) => const Scaffold(
-                body: Center(child: Text('Teacher Profile Page')),
-              ),
+              redirect: (context, state) {
+                // Check if user is authenticated
+                final authRepo = context.read<AuthenticationRepositoryImpl>();
+                if (authRepo.currentUser.id.isEmpty) {
+                  return '/login';
+                }
+                return null; // Allow access
+              },
+              builder: (context, state) {
+                return BlocProvider(
+                  create: (context) => ProfileBloc(
+                    authRepository: context.read<AuthenticationRepositoryImpl>(),
+                  ),
+                  child: const TeacherProfilePage(),
+                );
+              },
             ),
           ],
         ),

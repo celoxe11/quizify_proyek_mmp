@@ -90,13 +90,16 @@ class ApiClient {
   }) async {
     try {
       final headers = await _getHeaders(requiresAuth: requiresAuth);
+      final url = '$baseUrl$endpoint';
+      
       final response = await http
           .put(
-            Uri.parse('$baseUrl$endpoint'),
+            Uri.parse(url),
             headers: headers,
             body: jsonEncode(data),
           )
           .timeout(timeout);
+      
       return _handleResponse(response);
     } catch (e) {
       if (e.toString().contains('TimeoutException')) {

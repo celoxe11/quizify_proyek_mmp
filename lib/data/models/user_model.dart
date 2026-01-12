@@ -16,21 +16,21 @@ class UserModel extends User {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      username: json['username'] as String,
-      email: json['email'] as String,
-      firebaseUid: json['firebase_uid'] as String?,
-      role: json['role'] as String,
+      id: (json['id']?.toString() ?? ''),
+      name: (json['name']?.toString() ?? ''),
+      username: (json['username']?.toString() ?? ''),
+      email: (json['email']?.toString() ?? ''),
+      firebaseUid: json['firebase_uid']?.toString(),
+      role: (json['role']?.toString() ?? 'teacher'),
       subscriptionId: json['subscription_id'] is int 
           ? json['subscription_id'] 
           : int.tryParse(json['subscription_id'].toString()) ?? 1,
       isActive: json['is_active'] == 1 || json['is_active'] == true,
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+          ? DateTime.parse(json['created_at'].toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+          ? DateTime.parse(json['updated_at'].toString())
           : null,
     );
   }
