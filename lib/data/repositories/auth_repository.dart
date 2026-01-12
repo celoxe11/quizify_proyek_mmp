@@ -202,6 +202,32 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   }
 
   @override
+  Future<User> updateUserProfile({
+    required String userId,
+    String? name,
+    String? username,
+    String? email,
+  }) async {
+    try {      
+      // Call API to update user profile (only sends changed fields)
+      final updatedUser = await _apiService.updateUserProfile(
+        userId: userId,
+        name: name,
+        username: username,
+        email: email,
+      );
+      
+      // Update cached user
+      _currentUser = updatedUser;
+      _controller.add(updatedUser);
+
+      return updatedUser;
+    } catch (e, stackTrace) {
+      throw Exception('Gagal memperbarui profil: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<void> logout() async {
     await _firebaseAuthService.signOut();
     _controller.add(User.empty);
