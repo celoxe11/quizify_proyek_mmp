@@ -13,6 +13,8 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
+
+  
   /// Base URL is automatically determined by platform and environment.
   ///
   /// For development (default):
@@ -135,12 +137,24 @@ class ApiClient {
     } else {
       // Parse error message from backend
       String message = 'Unknown error';
+      String? field;
+
       try {
         final body = jsonDecode(response.body);
         message = body['message'] ?? body['error'] ?? 'Unknown error';
+        field = body['field']; // Optional: which field caused the error
+
+        // If there are additional details, append them
+        if (body['details'] != null && body['details'] is List) {
+          final details = (body['details'] as List).join(', ');
+          if (details.isNotEmpty) {
+            message = '$message\n$details';
+          }
+        }
       } catch (_) {
         message = response.body;
       }
+
       throw ApiException(message, statusCode: response.statusCode);
     }
   }

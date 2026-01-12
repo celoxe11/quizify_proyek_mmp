@@ -1,249 +1,324 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quizify_proyek_mmp/core/api/api_client.dart';
-import 'package:quizify_proyek_mmp/core/api/quiz/quiz_api.dart';
+import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_state.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quizzes/quizzes_event.dart';
 
-class AdminQuizMobilePage extends StatefulWidget {
-  const AdminQuizMobilePage({super.key});
-
-  @override
-  State<AdminQuizMobilePage> createState() => _AdminQuizMobilePageState();
-}
-
-class _AdminQuizMobilePageState extends State<AdminQuizMobilePage> {
-  late final QuizApi _quizApi;
-  late Future<List<QuizModel>> _futureQuizzes;
-
-  @override
-  void initState() {
-    super.initState();
-    _quizApi = QuizApi(ApiClient());
-    _futureQuizzes = _quizApi.getAllQuizzes();
-  }
+/// Mobile layout for the Quizzes page.
+///
+/// Uses BLoC pattern for state management.
+/// Data flows from [QuizzesBloc] via [QuizzesState].
+class AdminQuizMobile extends StatelessWidget {
+  const AdminQuizMobile({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryTeal = Color(0xFF007C89); // warna teks "Quizify" & FAB
-    const Color lightTeal = Color(0xFFD6F2F3); // background area list
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        backgroundColor: AppColors.darkAzure,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'My Quizzes',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          // Refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () {
+              context.read<AdminQuizzesBloc>().add(RefreshAdminQuizzesEvent());
+            },
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.go('/admin/new-quiz');
+        },
+        backgroundColor: AppColors.darkAzure,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: BlocBuilder<AdminQuizzesBloc, AdminQuizzesState>(
+        builder: (context, state) {
+          if (state is AdminQuizzesLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
+            );
+          }
+
+          if (state is AdminQuizzesError) {
+            return _buildErrorState(context, state.message);
+          }
+
+          if (state is AdminQuizzesLoaded) {
+            return _buildContent(context, state);
+          }
+
+          // Initial state
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, AdminQuizzesLoaded state) {
+    if (state.filteredQuizzes.isEmpty) {
+      return _buildEmptyState(context, state);
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<AdminQuizzesBloc>().add(RefreshAdminQuizzesEvent());
+        // Wait a bit for the refresh to complete
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      color: AppColors.darkAzure,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: state.filteredQuizzes.length,
+        itemBuilder: (context, index) {
+          final quiz = state.filteredQuizzes[index];
+          return _buildQuizCard(context, quiz);
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, AdminQuizzesLoaded state) {
+    final hasFilters =
+        state.searchQuery != null ||
+        state.statusFilter != null ||
+        state.categoryFilter != null;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _Header(primaryColor: primaryTeal),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              color: lightTeal,
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Quizzes',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.teal,
+          Icon(Icons.quiz_outlined, size: 80, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            hasFilters ? 'No quizzes match your filters' : 'No quizzes yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            hasFilters
+                ? 'Try adjusting your filters'
+                : 'Create your first quiz to get started',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          if (hasFilters) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () {
+                context.read<AdminQuizzesBloc>().add(
+                  const FilterAdminQuizzesEvent(null),
+                );
+                context.read<AdminQuizzesBloc>().add(
+                  const FilterAdminQuizzesEvent(null),
+                );
+                context.read<AdminQuizzesBloc>().add(
+                  const SearchAdminQuizzesEvent(''),
+                );
+              },
+              icon: const Icon(Icons.clear),
+              label: const Text('Clear Filters'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load quizzes',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<AdminQuizzesBloc>().add(LoadAdminQuizzesEvent());
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.darkAzure,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuizCard(BuildContext context, QuizModel quiz) {
+    final isPublic = quiz.status.toLowerCase() == 'public';
+    Color statusColor = isPublic ? Colors.green : Colors.orange;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            context.go('/admin/quiz-detail', extra: quiz);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            quiz.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.darkAzure,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // ====== PANGGIL API DI SINI ======
-                        Expanded(
-                          child: FutureBuilder<List<QuizModel>>(
-                            future: _futureQuizzes,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-
-                              if (snapshot.hasError) {
-                                return Center(
-                                  child: Text(
-                                    'Failed to load quizzes: ${snapshot.error}',
-                                    style: const TextStyle(color: Colors.red),
-                                  ),
-                                );
-                              }
-
-                              final quizzes = snapshot.data ?? [];
-
-                              if (quizzes.isEmpty) {
-                                return const Center(
-                                  child: Text(
-                                    'No quizzes found.',
-                                    style: TextStyle(color: Colors.black54),
-                                  ),
-                                );
-                              }
-
-                              return ListView.separated(
-                                itemCount: quizzes.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final quiz = quizzes[index];
-                                  return _QuizCard(
-                                    title: quiz.title,
-                                    onTap: () {
-                                      // contoh: ke halaman detail quiz
-                                      context.go('/admin/quizz/${quiz.id}');
-                                    },
-                                  );
-                                },
-                              );
-                            },
+                          const SizedBox(height: 4),
+                          Text(
+                            quiz.description ?? 'No description',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      children: [
+                        // Category badge
+                        if (quiz.category != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.darkAzure.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              quiz.category!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.darkAzure,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 4),
+                        // Status badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isPublic ? Icons.public : Icons.lock,
+                                size: 12,
+                                color: statusColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                isPublic ? 'Public' : 'Private',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Created date
+                if (quiz.createdAt != null)
+                  Text(
+                    'Created: ${_formatDate(quiz.createdAt!)}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
-                  // FAB di kanan bawah, sedikit di atas bottom nav
-                  Positioned(
-                    right: 20,
-                    bottom: 10,
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        // ke halaman create quiz
-                        context.go('/admin/quizz/create');
-                      },
-                      backgroundColor: primaryTeal,
-                      shape: const CircleBorder(),
-                      child: const Icon(Icons.add, size: 30),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const _BottomNavBar(),
-    );
-  }
-}
-
-/// Header putih dengan teks "Quizify" & ikon toko di kanan
-class _Header extends StatelessWidget {
-  final Color primaryColor;
-  const _Header({required this.primaryColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Text(
-            'Quizify',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: primaryColor,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: () {
-              // TODO: ke halaman toko / admin lainnya
-            },
-            icon: const Icon(Icons.storefront_outlined, size: 28),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Card untuk tiap quiz
-class _QuizCard extends StatelessWidget {
-  final String title;
-  final VoidCallback? onTap;
-
-  const _QuizCard({
-    required this.title,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 90,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.teal.shade200, width: 2),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.all(16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              // title diset via parent; biar simpel tetap pakai const teks default di design,
-              // kalau mau pakai dynamic title, hapus const dan ganti jadi: Text(title, ...)
-              'Quiz Title',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ],
             ),
           ),
         ),
       ),
     );
   }
-}
 
-/// Bottom navigation bar seperti di desain
-class _BottomNavBar extends StatelessWidget {
-  const _BottomNavBar();
-
-  @override
-  Widget build(BuildContext context) {
-    const Color bottomBarColor = Color(0xFF00596B);
-    const Color iconColor = Colors.black;
-
-    return Container(
-      height: 60,
-      color: bottomBarColor,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Expanded(
-            child: IconButton(
-              onPressed: () {
-                // TODO: ke home
-              },
-              icon: const Icon(Icons.home, color: iconColor, size: 28),
-            ),
-          ),
-          Expanded(
-            child: IconButton(
-              onPressed: () {
-                // TODO: ke daftar quiz / library
-              },
-              icon: const Icon(Icons.menu_book, color: iconColor, size: 28),
-            ),
-          ),
-          Expanded(
-            child: IconButton(
-              onPressed: () {
-                // TODO: ke profil
-              },
-              icon: const Icon(Icons.person, color: iconColor, size: 28),
-            ),
-          ),
-        ],
-      ),
-    );
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

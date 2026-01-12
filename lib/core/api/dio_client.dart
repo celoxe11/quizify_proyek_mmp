@@ -106,12 +106,31 @@ class DioClient {
 
   /// Error Handling Interceptor
   InterceptorsWrapper get _errorInterceptor => InterceptorsWrapper(
-    onError: (DioException e, handler) {
+    onError: (DioException e, handler) async {
       // Handle specific error cases
       if (e.response?.statusCode == 401) {
         // Token expired or unauthorized
-        // TODO: Trigger re-authentication flow
         print('🔐 Unauthorized - Token may be expired');
+
+        // refresh token kalau expired
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          try {
+            // Force token refresh
+            final newToken = await user.getIdToken(true);
+
+            // Retry the original request with new token
+            final options = e.requestOptions;
+            options.headers['Authorization'] = 'Bearer $newToken';
+
+            final response = await _dio.fetch(options);
+            return handler.resolve(response);
+          } catch (refreshError) {
+            print('❌ Token refresh failed - logging out');
+            // Token refresh failed - trigger logout
+            await FirebaseAuth.instance.signOut();
+          }
+        }
       }
 
       // Check if response is an image (from http.cat error pages)
@@ -131,12 +150,14 @@ class DioClient {
   /// GET request
   Future<Response> get(
     String path, {
+    dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
     try {
       return await _dio.get(
         path,
+        data: data,
         queryParameters: queryParameters,
         options: options,
       );

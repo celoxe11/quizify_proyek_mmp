@@ -28,4 +28,6 @@ abstract class AuthenticationRepository {
     String? username,
     String? email,
   });
+
+  bool isPremiumUser();
 }

@@ -9,6 +9,7 @@ class UserModel extends User {
     super.firebaseUid,
     required super.role,
     required super.subscriptionId,
+    super.subscriptionStatus,
     super.isActive = true,
     super.createdAt,
     super.updatedAt,
@@ -35,6 +36,21 @@ class UserModel extends User {
     );
   }
 
+  // --- HELPER SAKTI ---
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString()); // Ubah String ke Int
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value == 1 || value == '1' || value == true || value == 'true') {
+      return true;
+    }
+    return false;
+  }
+
+  // ... toJson dan fromEntity ...
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -49,8 +65,7 @@ class UserModel extends User {
       'updated_at': updatedAt?.toIso8601String(),
     };
   }
-  
-  // Method to convert generic Entity back to Model if needed for API calls
+
   factory UserModel.fromEntity(User user) {
     return UserModel(
       id: user.id,
