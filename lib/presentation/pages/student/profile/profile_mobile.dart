@@ -6,6 +6,7 @@ import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile_detail/edit_profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile_detail/edit_profile_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/subscription/subscription_plan_page.dart';
 
 /// Mobile layout for the Student Profile page
 ///
@@ -317,28 +318,39 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
   }
 
   Widget _buildSubscribeButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          context.read<ProfileBloc>().add(const SubscribeEvent('premium'));
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        return SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              if (state is ProfileLoaded) {
+                // Navigate to subscription plan page dengan userId
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => SubscriptionPlanPage(userId: state.profile.id),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Subscribe',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
-        ),
-        child: const Text(
-          'Subscribe to Premium',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
