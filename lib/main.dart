@@ -14,6 +14,7 @@ import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/data/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
+import 'package:quizify_proyek_mmp/data/repositories/payment_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/edit_quiz/admin_edit_quiz_bloc.dart';
@@ -25,6 +26,7 @@ import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_event.dart
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/student_answers/admin_student_answers_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
@@ -693,6 +695,10 @@ class _AppView extends StatelessWidget {
             );
           },
         ),
+        // PAYMENT REPOSITORY
+        RepositoryProvider<PaymentRepository>(
+          create: (context) => PaymentRepository(ApiClient()),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -700,6 +706,12 @@ class _AppView extends StatelessWidget {
           BlocProvider(
             create: (context) => AuthBloc(
               authRepository: context.read<AuthenticationRepositoryImpl>(),
+            ),
+          ),
+          // PAYMENT BLOC
+          BlocProvider(
+            create: (context) => PaymentBloc(
+              context.read<PaymentRepository>(),
             ),
           ),
         ],
