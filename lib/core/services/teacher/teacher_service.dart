@@ -60,6 +60,8 @@ class TeacherService {
             .toList();
 
         final questionData = {
+          // Include question ID if it exists (for editing existing questions)
+          if (q.id.isNotEmpty && !q.id.startsWith(RegExp(r'\d{13}'))) 'id': q.id,
           'type': q.type,
           'difficulty': q.difficulty,
           'question_text': q.questionText,
@@ -77,6 +79,12 @@ class TeacherService {
               questionData['question_image'] = q.image!.imageUrl;
               print(
                 '✓ Using pre-encoded base64 image for question: ${q.questionText}',
+              );
+            } else if (q.image!.imageUrl.startsWith('http')) {
+              // Existing backend URL - preserve it
+              questionData['question_image'] = q.image!.imageUrl;
+              print(
+                '✓ Preserving existing backend image URL for question: ${q.questionText}',
               );
             } else if (!kIsWeb && _isLocalPath(q.image!.imageUrl)) {
               // Mobile: Read from file system
