@@ -93,16 +93,86 @@ class DioClient {
     },
   );
 
-  /// Logging Interceptor for debugging
-  LogInterceptor get _loggingInterceptor => LogInterceptor(
-    request: true,
-    requestHeader: true,
-    requestBody: true,
-    responseHeader: false,
-    responseBody: true,
-    error: true,
-    logPrint: (obj) => print('🌐 DIO: $obj'),
+  /// Custom Logging Interceptor for debugging
+  InterceptorsWrapper get _loggingInterceptor => InterceptorsWrapper(
+    onRequest: (options, handler) {
+      print('🌐 REQUEST: ${options.method} ${options.uri}');
+
+      // Log request body with truncated base64 images
+      if (options.data != null) {
+        final cleanData = _cleanLogData(options.data);
+        print('🌐 REQUEST BODY: $cleanData');
+      }
+
+      return handler.next(options);
+    },
+    onResponse: (response, handler) {
+      print(
+        '🌐 RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
+      );
+
+      // Log response body with truncated data
+      if (response.data != null) {
+        final cleanData = _cleanLogData(response.data);
+        print('🌐 RESPONSE BODY: $cleanData');
+      }
+
+      return handler.next(response);
+    },
+    onError: (error, handler) {
+      print(
+        '🌐 ERROR: ${error.response?.statusCode} ${error.requestOptions.uri}',
+      );
+      print('🌐 ERROR MESSAGE: ${error.message}');
+
+      if (error.response?.data != null) {
+        final cleanData = _cleanLogData(error.response!.data);
+        print('🌐 ERROR RESPONSE: $cleanData');
+      }
+
+      return handler.next(error);
+    },
   );
+
+  /// Clean log data by truncating base64 images
+  dynamic _cleanLogData(dynamic data) {
+    if (data is Map) {
+      return data.map((key, value) {
+        if (value is String && value.length > 200 && _isBase64Image(value)) {
+          return MapEntry(key, '[BASE64_IMAGE_${value.length}_BYTES]');
+        } else if (value is List) {
+          return MapEntry(key, _cleanLogList(value));
+        } else if (value is Map) {
+          return MapEntry(key, _cleanLogData(value));
+        }
+        return MapEntry(key, value);
+      });
+    } else if (data is List) {
+      return _cleanLogList(data);
+    }
+    return data;
+  }
+
+  /// Clean list data
+  List _cleanLogList(List data) {
+    return data.map((item) {
+      if (item is String && item.length > 200 && _isBase64Image(item)) {
+        return '[BASE64_IMAGE_${item.length}_BYTES]';
+      } else if (item is Map) {
+        return _cleanLogData(item);
+      } else if (item is List) {
+        return _cleanLogList(item);
+      }
+      return item;
+    }).toList();
+  }
+
+  /// Check if string is likely a base64 image
+  bool _isBase64Image(String str) {
+    return str.startsWith('data:image/') ||
+        (str.length > 100 &&
+            RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(str.substring(0, 100)));
+  }
 
   /// Error Handling Interceptor
   InterceptorsWrapper get _errorInterceptor => InterceptorsWrapper(
