@@ -15,7 +15,8 @@ class HistoryDetailModel {
     return HistoryDetailModel(
       quizTitle: json['quiz_title'] ?? '',
       score: json['score'] ?? 0,
-      finishedAt: DateTime.tryParse(json['finished_at'] ?? '') ?? DateTime.now(),
+      finishedAt:
+          DateTime.tryParse(json['finished_at'] ?? '') ?? DateTime.now(),
       details: (json['details'] as List)
           .map((e) => QuestionReview.fromJson(e))
           .toList(),
@@ -31,6 +32,7 @@ class QuestionReview {
   final String userAnswer;
   final String correctAnswer;
   final bool isCorrect;
+  final String? submissionAnswerId;
 
   QuestionReview({
     required this.questionText,
@@ -40,6 +42,7 @@ class QuestionReview {
     required this.userAnswer,
     required this.correctAnswer,
     required this.isCorrect,
+    this.submissionAnswerId,
   });
 
   factory QuestionReview.fromJson(Map<String, dynamic> json) {
@@ -48,12 +51,13 @@ class QuestionReview {
       type: json['type'] ?? 'multiple',
       difficulty: json['difficulty'] ?? 'easy',
       // Helper options parsing (sama seperti question model)
-      options: (json['options'] is List) 
-          ? (json['options'] as List).map((e) => e.toString()).toList() 
-          : [], 
+      options: (json['options'] is List)
+          ? (json['options'] as List).map((e) => e.toString()).toList()
+          : [],
       userAnswer: json['user_answer'] ?? '',
       correctAnswer: json['correct_answer'] ?? '',
       isCorrect: json['is_correct'] == true || json['is_correct'] == 1,
+      submissionAnswerId: json['submission_answer_id']?.toString(),
     );
   }
 }

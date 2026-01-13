@@ -1,5 +1,6 @@
-import 'package:dio/dio.dart'; 
+import 'package:dio/dio.dart';
 import 'package:quizify_proyek_mmp/core/api/api_client.dart';
+import 'package:quizify_proyek_mmp/core/api/dio_client.dart';
 import 'package:quizify_proyek_mmp/data/models/history_detail_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
@@ -9,10 +10,10 @@ import 'package:quizify_proyek_mmp/data/models/submission_answer_model.dart';
 
 class StudentRepository {
   final ApiClient _client;
-  final Dio _dio;          
-  
+  final Dio _dio;
+  final DioClient _dioClient;
 
-  StudentRepository(this._client, this._dio);
+  StudentRepository(this._client, this._dio, this._dioClient);
 
   List<dynamic> _unwrapList(dynamic json) {
     if (json is List) return json;
@@ -169,14 +170,33 @@ class StudentRepository {
         .toList();
   }
 
+  Future<Map<String, dynamic>> getGeminiEvaluation({
+    required String submissionAnswerId,
+    String language = 'id',
+    bool detailedFeedback = true,
+    String questionType = 'multiple',
+  }) async {
+    final response = await _dioClient.post(
+      '/student/question/gemini-evaluation',
+      data: {
+        'submission_answer_id': submissionAnswerId,
+        'language': language,
+        'detailed_feedback': detailedFeedback,
+        'question_type': questionType,
+      },
+    );
+    print(response.data["evaluation"]);
+    return Map<String, dynamic>.from(response.data['evaluation']);
+  }
+
   Future<List<StudentHistoryModel>> fetchHistory() async {
     try {
       // Pake _dio agar token 'Bearer ...' otomatis terkirim
-      final response = await _dio.get('/student/history'); 
-      
+      final response = await _dio.get('/student/history');
+
       // Dio response.data sudah berupa Object (List/Map), tidak perlu jsonDecode
       final data = response.data;
-      
+
       // Handle format { "data": [...] } atau [...]
       List<dynamic> listJson = [];
       if (data is Map && data['data'] is List) {
@@ -197,14 +217,13 @@ class StudentRepository {
     try {
       // Panggil API Backend
       final response = await _dio.get('/student/history/$sessionId');
-      
+
       // Ambil bagian 'data' dari JSON response
       final data = _unwrapObject(response.data);
-      
+
       return HistoryDetailModel.fromJson(data);
     } catch (e) {
       throw Exception("Gagal mengambil detail history: $e");
     }
   }
-
 }

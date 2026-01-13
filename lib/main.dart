@@ -360,7 +360,8 @@ class _AppView extends StatelessWidget {
               builder: (context, state) {
                 return BlocProvider(
                   create: (context) => ProfileBloc(
-                    authRepository: context.read<AuthenticationRepositoryImpl>(),
+                    authRepository: context
+                        .read<AuthenticationRepositoryImpl>(),
                   ),
                   child: const TeacherProfilePage(),
                 );
@@ -515,9 +516,9 @@ class _AppView extends StatelessWidget {
               path: '/admin/transactions',
               builder: (context, state) {
                 return BlocProvider(
-                  create: (context) => AdminTransactionBloc(
-                    context.read<AdminRepositoryImpl>(),
-                  )..add(LoadAdminTransactions()), // Load data saat dibuka
+                  create: (context) =>
+                      AdminTransactionBloc(context.read<AdminRepositoryImpl>())
+                        ..add(LoadAdminTransactions()), // Load data saat dibuka
                   child: const AdminTransactionPage(),
                 );
               },
@@ -533,7 +534,7 @@ class _AppView extends StatelessWidget {
                     adminRepository: context.read<AdminRepositoryImpl>(),
                   ),
                   // Asumsi nama class di dalam file admin_subscriptions_page.dart adalah AdminSettingsPage
-                  child: const AdminSettingsPage(), 
+                  child: const AdminSettingsPage(),
                 );
               },
             ),
@@ -585,7 +586,9 @@ class _AppView extends StatelessWidget {
             // 1. Siapkan Dio (Untuk History & Auth)
             final dio = Dio(
               BaseOptions(
-                baseUrl: PlatformConfig.getBaseUrl().replaceAll('/api', '') + '/api', // Sesuaikan URL
+                baseUrl:
+                    PlatformConfig.getBaseUrl().replaceAll('/api', '') +
+                    '/api', // Sesuaikan URL
                 headers: {'Content-Type': 'application/json'},
               ),
             );
@@ -599,10 +602,11 @@ class _AppView extends StatelessWidget {
                     final idToken = await user.getIdToken();
                     options.headers['Authorization'] = 'Bearer $idToken';
                   } else {
-                    options.headers['Authorization'] = 'Bearer RAHASIA_KITA_BERSAMA';
+                    options.headers['Authorization'] =
+                        'Bearer RAHASIA_KITA_BERSAMA';
                   }
                   print("🚀 [REQUEST] METHOD: ${options.method}");
-                  print("🔗 [REQUEST] FULL URL: ${options.uri}"); 
+                  print("🔗 [REQUEST] FULL URL: ${options.uri}");
                   return handler.next(options);
                 },
               ),
@@ -610,10 +614,11 @@ class _AppView extends StatelessWidget {
 
             // 2. Siapkan ApiClient Lama (Untuk Quiz dll)
             // ApiClient ini pakai http biasa di dalamnya
-            final apiClient = ApiClient(); 
+            final apiClient = ApiClient();
+            final dioClient = DioClient();
 
             // 3. Masukkan KEDUANYA ke Repository
-            return StudentRepository(apiClient, dio); 
+            return StudentRepository(apiClient, dio, dioClient);
           },
         ),
         RepositoryProvider(
@@ -698,9 +703,9 @@ class _AppView extends StatelessWidget {
                 router.go('/login');
               }
             } else if (state is AuthAuthenticated) {
+              final token = await FirebaseAuth.instance.currentUser
+                  ?.getIdToken();
 
-              final token = await FirebaseAuth.instance.currentUser?.getIdToken();   
-          
               // Auto-navigate to appropriate home after login
               final currentLocation = router.routeInformationProvider.value.uri
                   .toString();
