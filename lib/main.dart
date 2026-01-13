@@ -58,6 +58,8 @@ import 'package:quizify_proyek_mmp/presentation/pages/student/history_detail/his
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile/profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
@@ -210,6 +212,13 @@ class _AppView extends StatelessWidget {
               builder: (context, state) => const StudentHomePage(),
             ),
             GoRoute(
+              path: '/student/quiz-detail',
+              builder: (context, state) {
+                final quiz = state.extra as QuizModel;
+                return QuizDetailPage(quiz: quiz);
+              },
+            ),
+            GoRoute(
               path: '/student/join-quiz',
               builder: (context, state) => const JoinQuizPage(),
             ),
@@ -222,6 +231,14 @@ class _AppView extends StatelessWidget {
               builder: (context, state) {
                 final sessionId = state.pathParameters['sessionId']!;
                 return HistoryDetailPage(sessionId: sessionId);
+              },
+            ),
+            GoRoute(
+              path: '/student/quiz/:sessionId/:quizId',
+              builder: (context, state) {
+                final sessionId = state.pathParameters['sessionId']!;
+                final quizId = state.pathParameters['quizId']!;
+                return QuizPage(sessionId: sessionId, quizId: quizId);
               },
             ),
             GoRoute(

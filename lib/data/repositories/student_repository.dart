@@ -16,9 +16,24 @@ class StudentRepository {
   StudentRepository(this._client, this._dio, this._dioClient);
 
   List<dynamic> _unwrapList(dynamic json) {
-    if (json is List) return json;
-    if (json is Map && json['data'] is List) return json['data'] as List;
-    throw ApiException('Unexpected list response format from API');
+    try {
+      if (json is List) {
+        return json;
+      }
+      if (json is Map) {
+        if (json['data'] is List) {
+          final list = json['data'] as List;
+          return list;
+        }
+        if (json['quizzes'] is List) {
+          final list = json['quizzes'] as List;
+          return list;
+        }
+      }
+      throw ApiException('Unexpected list response format from API: ${json.runtimeType}');
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Map<String, dynamic> _unwrapObject(dynamic json) {
@@ -44,10 +59,52 @@ class StudentRepository {
     throw ApiException('Unexpected response format from startQuizByCode');
   }
 
+  // GET /student/quiz/:quiz_id - Get quiz detail by ID
+  Future<QuizModel> getQuizDetail(String quizId) async {
+    try {
+      final raw = await _client.get('/student/quiz/$quizId');
+      final map = _unwrapObject(raw);
+
+      return QuizModel.fromJson(map);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // GET /student/quiz/code/:code - Get quiz by code (legacy)
   Future<QuizModel> getQuizByCode(String code) async {
     final raw = await _client.get('/student/quiz/code/$code');
     final map = _unwrapObject(raw);
     return QuizModel.fromJson(map);
+  }
+
+  Future<List<QuizModel>> fetchPublicQuizzes({
+    String? search,
+    String? category,
+    String? difficulty,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (category != null && category.isNotEmpty) 'category': category,
+        if (difficulty != null && difficulty.isNotEmpty) 'difficulty': difficulty,
+      };
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}')
+          .join('&');
+
+      // Use the correct endpoint for public quizzes
+      final endpoint = '/users/landing/get_public_quiz${queryString.isNotEmpty ? '?$queryString' : ''}';
+      final raw = await _client.get(endpoint);
+      final listJson = _unwrapList(raw);
+
+      return listJson
+          .map((e) => QuizModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception("Gagal mengambil daftar quiz: $e");
+    }
   }
 
   // Quiz Session
