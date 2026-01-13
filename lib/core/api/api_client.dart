@@ -6,15 +6,15 @@ import '../config/platform_config.dart';
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
-  ApiException(this.message, {this.statusCode});
+  final Map<String, dynamic>? data; // Additional data from error response
+
+  ApiException(this.message, {this.statusCode, this.data});
 
   @override
   String toString() => message;
 }
 
 class ApiClient {
-
-  
   /// Base URL is automatically determined by platform and environment.
   ///
   /// For development (default):
@@ -93,15 +93,11 @@ class ApiClient {
     try {
       final headers = await _getHeaders(requiresAuth: requiresAuth);
       final url = '$baseUrl$endpoint';
-      
+
       final response = await http
-          .put(
-            Uri.parse(url),
-            headers: headers,
-            body: jsonEncode(data),
-          )
+          .put(Uri.parse(url), headers: headers, body: jsonEncode(data))
           .timeout(timeout);
-      
+
       return _handleResponse(response);
     } catch (e) {
       if (e.toString().contains('TimeoutException')) {
@@ -138,9 +134,11 @@ class ApiClient {
       // Parse error message from backend
       String message = 'Unknown error';
       String? field;
+      Map<String, dynamic>? errorData;
 
       try {
         final body = jsonDecode(response.body);
+        errorData = body is Map<String, dynamic> ? body : null;
         message = body['message'] ?? body['error'] ?? 'Unknown error';
         field = body['field']; // Optional: which field caused the error
 
@@ -155,7 +153,11 @@ class ApiClient {
         message = response.body;
       }
 
-      throw ApiException(message, statusCode: response.statusCode);
+      throw ApiException(
+        message,
+        statusCode: response.statusCode,
+        data: errorData, // Include full error response data
+      );
     }
   }
 }

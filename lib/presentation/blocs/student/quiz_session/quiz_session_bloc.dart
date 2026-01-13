@@ -42,13 +42,44 @@ class QuizSessionBloc extends Bloc<QuizSessionEvent, QuizSessionState> {
         status: 'in_progress',
       );
 
+      // Prepare submitted questions map from answered questions
+      final submittedQuestions = <String, bool>{};
+      for (var questionId in event.answeredQuestions.keys) {
+        submittedQuestions[questionId] = true;
+      }
+
+      // If resuming, start from the question after last answered, or first unanswered
+      int startIndex = event.startingQuestionIndex;
+      if (event.answeredQuestions.isNotEmpty && startIndex == 0) {
+        // Find first unanswered question
+        for (int i = 0; i < questions.length; i++) {
+          if (!event.answeredQuestions.containsKey(questions[i].id)) {
+            startIndex = i;
+            break;
+          }
+        }
+      }
+
+      // Make sure index is within bounds
+      if (startIndex >= questions.length) {
+        startIndex = questions.length - 1;
+      }
+
+      print(
+        '📚 [QuizSessionBloc] Loading session - Total questions: ${questions.length}',
+      );
+      print(
+        '✅ [QuizSessionBloc] Already answered: ${event.answeredQuestions.length}',
+      );
+      print('🎯 [QuizSessionBloc] Starting at question index: $startIndex');
+
       emit(
         QuizSessionLoaded(
           session: session,
           questions: questions,
-          currentQuestionIndex: 0,
-          selectedAnswers: const {},
-          submittedQuestions: const {},
+          currentQuestionIndex: startIndex,
+          selectedAnswers: Map<String, String>.from(event.answeredQuestions),
+          submittedQuestions: submittedQuestions,
         ),
       );
     } catch (e) {

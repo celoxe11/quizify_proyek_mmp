@@ -30,7 +30,9 @@ class StudentRepository {
           return list;
         }
       }
-      throw ApiException('Unexpected list response format from API: ${json.runtimeType}');
+      throw ApiException(
+        'Unexpected list response format from API: ${json.runtimeType}',
+      );
     } catch (e) {
       rethrow;
     }
@@ -57,6 +59,41 @@ class StudentRepository {
       return raw;
     }
     throw ApiException('Unexpected response format from startQuizByCode');
+  }
+
+  // Check if student has active session for this quiz code
+  Future<Map<String, dynamic>?> getActiveSessionByCode(String code) async {
+    try {
+      // First get quiz by code to get quiz_id
+      final quiz = await getQuizByCode(code);
+
+      // Then check if user has active session for this quiz
+      final sessions = await getMyQuizHistory();
+
+      for (var session in sessions) {
+        if (session.quizId == quiz.id && session.status == 'in_progress') {
+          // Found active session, get its answers
+          final answers = await getSubmissionAnswers(session.id);
+
+          return {
+            'session_id': session.id,
+            'quiz_id': quiz.id,
+            'is_resuming': true,
+            'answered_questions': {
+              for (var answer in answers)
+                answer.questionId: answer.selectedAnswer,
+            },
+            'current_question_index': answers.length,
+            'message': 'Melanjutkan quiz yang sedang berjalan',
+          };
+        }
+      }
+
+      return null; // No active session found
+    } catch (e) {
+      print('⚠️ [StudentRepository] Error checking active session: $e');
+      return null;
+    }
   }
 
   // GET /student/quiz/:quiz_id - Get quiz detail by ID
@@ -87,7 +124,8 @@ class StudentRepository {
       final queryParams = <String, dynamic>{
         if (search != null && search.isNotEmpty) 'search': search,
         if (category != null && category.isNotEmpty) 'category': category,
-        if (difficulty != null && difficulty.isNotEmpty) 'difficulty': difficulty,
+        if (difficulty != null && difficulty.isNotEmpty)
+          'difficulty': difficulty,
       };
 
       final queryString = queryParams.entries
@@ -95,7 +133,8 @@ class StudentRepository {
           .join('&');
 
       // Use the correct endpoint for public quizzes
-      final endpoint = '/users/landing/get_public_quiz${queryString.isNotEmpty ? '?$queryString' : ''}';
+      final endpoint =
+          '/users/landing/get_public_quiz${queryString.isNotEmpty ? '?$queryString' : ''}';
       final raw = await _client.get(endpoint);
       final listJson = _unwrapList(raw);
 

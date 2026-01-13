@@ -17,7 +17,7 @@ class Spaceship extends SpriteComponent
   @override
   FutureOr<void> onLoad() async {
     sprite = await game.loadSprite('spaceship.png');
-    size *= 0.3;
+    size *= 0.25;
 
     return super.onLoad();
   }
@@ -54,24 +54,30 @@ class Spaceship extends SpriteComponent
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
     // Calculate positions based on total options
+    final isDesktop = game.size.x > 600;
     if (totalOptions == 2) {
-      // For boolean questions (2 options) - center positions
-      availableX = [game.size.x * 0.3, game.size.x * 0.6];
-      // Reset to first position if currentIndex is invalid
-      if (currentIndex >= availableX.length) {
-        currentIndex = 0;
+      // currentIndex = 0; // First position for 2 options
+      if (isDesktop) {
+        availableX = [game.size.x * 0.3, game.size.x * 0.7];
+      } else {
+        availableX = [game.size.x / 30, game.size.x * 16 / 30];
       }
     } else {
-      // For multiple choice (4 options) - only 4 positions (skip middle)
-      availableX = [
-        game.size.x / 10, // Position 0 -> Alien A
-        game.size.x * 3 / 10, // Position 1 -> Alien B
-        game.size.x * 6 / 10, // Position 2 -> Alien C
-        game.size.x * 8 / 10, // Position 3 -> Alien D
-      ];
-      // Start at position 1 (second from left) for 4 options
-      if (currentIndex >= availableX.length) {
-        currentIndex = 1;
+      // currentIndex = 1; // Second position (Alien B) for 4 options
+      if (isDesktop) {
+        availableX = [
+          game.size.x / 10,
+          game.size.x * 3 / 10,
+          game.size.x * 6 / 10,
+          game.size.x * 8 / 10,
+        ];
+      } else {
+        availableX = [
+          game.size.x / 30,
+          game.size.x * 6 / 30,
+          game.size.x * 11 / 30,
+          game.size.x * 16 / 30,
+        ];
       }
     }
 
@@ -92,17 +98,32 @@ class Spaceship extends SpriteComponent
 
   void resetPosition() {
     // Reset to middle position for both 2 and 4 options
+    print('Resetting spaceship position');
+    final isDesktop = game.size.x > 600;
     if (totalOptions == 2) {
       currentIndex = 0; // First position for 2 options
-      availableX = [game.size.x * 0.3, game.size.x * 0.7];
+      if (isDesktop) {
+        availableX = [game.size.x * 0.3, game.size.x * 0.7];
+      } else {
+        availableX = [game.size.x / 30, game.size.x * 16 / 30];
+      }
     } else {
       currentIndex = 1; // Second position (Alien B) for 4 options
-      availableX = [
-        game.size.x / 10,
-        game.size.x * 3 / 10,
-        game.size.x * 6 / 10,
-        game.size.x * 8 / 10,
-      ];
+      if (isDesktop) {
+        availableX = [
+          game.size.x / 10,
+          game.size.x * 3 / 10,
+          game.size.x * 6 / 10,
+          game.size.x * 8 / 10,
+        ];
+      } else {
+        availableX = [
+          game.size.x / 30,
+          game.size.x * 6 / 30,
+          game.size.x * 11 / 30,
+          game.size.x * 16 / 30,
+        ];
+      }
     }
     if (availableX.isNotEmpty && currentIndex < availableX.length) {
       position.x = availableX[currentIndex];
@@ -112,8 +133,10 @@ class Spaceship extends SpriteComponent
   void moveLeft() {
     if (currentIndex > 0 && availableX.isNotEmpty) {
       currentIndex--;
+      print('Moved left to index $currentIndex');
       if (currentIndex >= 0 && currentIndex < availableX.length) {
         position.x = availableX[currentIndex];
+        print('Moved left to index $currentIndex');
       }
     }
   }
@@ -121,8 +144,10 @@ class Spaceship extends SpriteComponent
   void moveRight() {
     if (availableX.isNotEmpty && currentIndex < availableX.length - 1) {
       currentIndex++;
+      print('Moved right to index $currentIndex');
       if (currentIndex >= 0 && currentIndex < availableX.length) {
         position.x = availableX[currentIndex];
+        print('Moved right to index $currentIndex');
       }
     }
   }

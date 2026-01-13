@@ -1,7 +1,6 @@
 import '../../domain/entities/quiz.dart';
 
 class QuizModel extends Quiz {
-
   const QuizModel({
     required super.id,
     required super.title,
@@ -17,15 +16,15 @@ class QuizModel extends Quiz {
 
   factory QuizModel.fromJson(Map<String, dynamic> json) {
     return QuizModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? 'Untitled Quiz',
       description: json['description'] as String?,
       quizCode: json['quiz_code'] as String?,
       status: json['status'] as String? ?? 'private',
       category: json['category'] as String?,
       createdBy: json['created_by'] as String?,
       // Backend mungkin mengirim field ini jika melakukan JOIN user
-      creatorName: json['creator_name'] as String?, 
+      creatorName: json['creator_name'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
