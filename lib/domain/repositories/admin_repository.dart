@@ -39,5 +39,6 @@ abstract class AdminRepository {
   Future<Map<String, dynamic>> fetchStudentAnswers({
     required String studentId,
     required String quizId,
+    String? sessionId,
   });
 }

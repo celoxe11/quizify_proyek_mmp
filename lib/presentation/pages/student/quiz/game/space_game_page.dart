@@ -14,19 +14,31 @@ import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/quiz_page.dar
 class SpaceGamePage extends StatelessWidget {
   final String sessionId;
   final String quizId;
+  final Map<String, String>? answeredQuestions;
+  final int? startingQuestionIndex;
+  final bool isResuming;
 
   const SpaceGamePage({
     super.key,
     required this.sessionId,
     required this.quizId,
+    this.answeredQuestions,
+    this.startingQuestionIndex,
+    this.isResuming = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) =>
-          QuizSessionBloc(context.read<StudentRepository>())
-            ..add(LoadQuizSessionEvent(sessionId: sessionId, quizId: quizId)),
+          QuizSessionBloc(context.read<StudentRepository>())..add(
+            LoadQuizSessionEvent(
+              sessionId: sessionId,
+              quizId: quizId,
+              answeredQuestions: answeredQuestions ?? {},
+              startingQuestionIndex: startingQuestionIndex ?? 0,
+            ),
+          ),
       child: BlocConsumer<QuizSessionBloc, QuizSessionState>(
         listener: (context, state) {
           // Listen to state changes but don't rebuild during submission
@@ -43,10 +55,22 @@ class SpaceGamePage extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is QuizSessionLoading) {
-            return const Scaffold(
-              backgroundColor: Color(0xFF001233),
+            return Scaffold(
+              backgroundColor: const Color(0xFF001233),
               body: Center(
-                child: CircularProgressIndicator(color: Colors.white),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(color: Colors.white),
+                    if (isResuming) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Melanjutkan quiz...',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             );
           }
@@ -81,6 +105,8 @@ class SpaceGamePage extends StatelessWidget {
               sessionId: sessionId,
               quizId: quizId,
               questions: state.questions,
+              answeredQuestions: state.selectedAnswers,
+              startingQuestionIndex: state.currentQuestionIndex,
             );
           }
 
@@ -98,11 +124,15 @@ class _SpaceGameView extends StatefulWidget {
   final String sessionId;
   final String quizId;
   final List<QuestionModel> questions;
+  final Map<String, String> answeredQuestions;
+  final int startingQuestionIndex;
 
   const _SpaceGameView({
     required this.sessionId,
     required this.quizId,
     required this.questions,
+    this.answeredQuestions = const {},
+    this.startingQuestionIndex = 0,
   });
 
   @override
@@ -126,6 +156,8 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
       onAnswerSubmit: _onSingleAnswerSubmit,
       onAnswersSubmit: _onAnswersSubmit,
       onGameComplete: _onGameComplete,
+      startingQuestionIndex: widget.startingQuestionIndex,
+      answeredQuestions: widget.answeredQuestions,
     );
   }
 

@@ -304,9 +304,14 @@ class AdminRepositoryImpl implements AdminRepository {
   Future<Map<String, dynamic>> fetchStudentAnswers({
     required String studentId,
     required String quizId,
+    String? sessionId,
   }) async {
     try {
-      return await _adminService.getQuizAnswers(quizId, studentId);
+      return await _adminService.getQuizAnswers(
+        quizId,
+        studentId,
+        sessionId: sessionId,
+      );
     } catch (e) {
       throw Exception('Failed to fetch student answers: $e');
     }
@@ -315,14 +320,21 @@ class AdminRepositoryImpl implements AdminRepository {
   // Implementation
   @override
   Future<List<SubscriptionModel>> fetchSubscriptions() async {
-    
     final raw = await apiService.getSubscriptions();
     return raw.map((e) => SubscriptionModel.fromJson(e)).toList();
   }
 
   @override
-  Future<void> updateUser(String userId, String role, int subscriptionId) async {
-    await apiService.updateUser(userId, role: role, subscriptionId: subscriptionId);
+  Future<void> updateUser(
+    String userId,
+    String role,
+    int subscriptionId,
+  ) async {
+    await apiService.updateUser(
+      userId,
+      role: role,
+      subscriptionId: subscriptionId,
+    );
   }
 
   @override

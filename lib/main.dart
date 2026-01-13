@@ -492,6 +492,8 @@ class _AppView extends StatelessWidget {
                 final studentName = data['student_name'] as String;
                 final quizId = data['quiz_id'] as String;
                 final quizTitle = data['quiz_title'] as String;
+                final sessionId =
+                    data['session_id'] as String?; // Get session_id
 
                 return BlocProvider(
                   create: (context) => AdminStudentAnswersBloc(
@@ -502,6 +504,7 @@ class _AppView extends StatelessWidget {
                     studentName: studentName,
                     quizId: quizId,
                     quizTitle: quizTitle,
+                    sessionId: sessionId,
                   ),
                 );
               },
@@ -710,9 +713,7 @@ class _AppView extends StatelessWidget {
           ),
           // PAYMENT BLOC
           BlocProvider(
-            create: (context) => PaymentBloc(
-              context.read<PaymentRepository>(),
-            ),
+            create: (context) => PaymentBloc(context.read<PaymentRepository>()),
           ),
         ],
         child: BlocListener<AuthBloc, AuthState>(

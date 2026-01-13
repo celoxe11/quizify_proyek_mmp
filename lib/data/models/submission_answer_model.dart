@@ -16,26 +16,28 @@ class SubmissionAnswerModel extends SubmissionAnswer {
 
   factory SubmissionAnswerModel.fromJson(Map<String, dynamic> json) {
     return SubmissionAnswerModel(
-      id: json['id'] as String,
-      quizSessionId: json['quiz_session_id'] as String,
-      questionId: json['question_id'] as String,
-      selectedAnswer: json['selected_answer'] as String,
-      isCorrect: json['is_correct'] as bool,
-      answeredAt: json['answered_at'] != null 
+      id: json['id'] as String? ?? '',
+      quizSessionId: json['quiz_session_id'] as String? ?? '',
+      questionId: json['question_id'] as String? ?? '',
+      selectedAnswer: json['selected_answer'] as String? ?? '',
+      isCorrect: json['is_correct'] as bool? ?? false,
+      answeredAt: json['answered_at'] != null
           ? DateTime.parse(json['answered_at'] as String)
           : null,
     );
   }
 
   /// Factory for parsing response with nested Question object
-  factory SubmissionAnswerModel.fromJsonWithQuestion(Map<String, dynamic> json) {
+  factory SubmissionAnswerModel.fromJsonWithQuestion(
+    Map<String, dynamic> json,
+  ) {
     return SubmissionAnswerModel(
-      id: json['id'] as String,
-      quizSessionId: json['quiz_session_id'] as String,
-      questionId: json['question_id'] as String,
-      selectedAnswer: json['selected_answer'] as String,
-      isCorrect: json['is_correct'] as bool,
-      answeredAt: json['answered_at'] != null 
+      id: json['id'] as String? ?? '',
+      quizSessionId: json['quiz_session_id'] as String? ?? '',
+      questionId: json['question_id'] as String? ?? '',
+      selectedAnswer: json['selected_answer'] as String? ?? '',
+      isCorrect: json['is_correct'] as bool? ?? false,
+      answeredAt: json['answered_at'] != null
           ? DateTime.parse(json['answered_at'] as String)
           : null,
       question: json['Question'] != null

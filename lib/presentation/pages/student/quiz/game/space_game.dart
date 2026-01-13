@@ -12,6 +12,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/componen
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/shoot_button.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/shooting_star.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/spaceship.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/star.dart';
 
 class SpaceGame extends FlameGame
     with HasKeyboardHandlerComponents, HasCollisionDetection {
@@ -42,26 +43,67 @@ class SpaceGame extends FlameGame
     this.onAnswersSubmit,
     this.onAnswerSubmit,
     this.questions = const [],
-  });
+    int startingQuestionIndex = 0,
+    Map<String, String> answeredQuestions = const {},
+  }) {
+    // Set starting question index
+    currentQuestionIndex = startingQuestionIndex;
+
+    // Pre-populate answers from resumed session
+    if (answeredQuestions.isNotEmpty) {
+      print(
+        '🔄 [SpaceGame] Resuming with ${answeredQuestions.length} answered questions',
+      );
+      // Convert Map<String, String> (questionId -> answer) to Map<int, String> (index -> answer)
+      for (int i = 0; i < questions.length; i++) {
+        final questionId = questions[i].id;
+        if (answeredQuestions.containsKey(questionId)) {
+          // Get the answer text and convert it to option label (A, B, C, D)
+          final answerText = answeredQuestions[questionId]!;
+          final question = questions[i];
+
+          // Find which option matches the answer text
+          for (int j = 0; j < question.options.length; j++) {
+            if (question.options[j] == answerText) {
+              final optionLabel = ['A', 'B', 'C', 'D'][j];
+              answers[i] = optionLabel;
+              print(
+                '✅ [SpaceGame] Restored answer for Q${i + 1}: $optionLabel',
+              );
+              break;
+            }
+          }
+        }
+      }
+      print(
+        '📋 [SpaceGame] Starting from question ${currentQuestionIndex + 1}/${questions.length}',
+      );
+    }
+  }
 
   @override
   Future<void> onLoad() async {
     final background = RectangleComponent(
       size: size,
-      paint: Paint()..color = const Color(0xFF0A1628),
+      paint: Paint()..color = const Color.fromARGB(255, 0, 0, 0),
     );
     add(background);
 
-    // Add stars with varied sizes for depth
+    // Add moving stars with varied sizes and speeds for depth effect
     for (int i = 0; i < 80; i++) {
-      final star = CircleComponent(
-        radius: random.nextDouble() * 2.5 + 0.5,
+      final starRadius = random.nextDouble() * 2.5 + 0.5;
+      final speed = (starRadius / 3) * 30 + 10; // Larger stars move faster
+
+      final star = Star(
         position: Vector2(
           random.nextDouble() * size.x,
           random.nextDouble() * size.y,
         ),
-        paint: Paint()
-          ..color = Colors.white.withOpacity(random.nextDouble() * 0.5 + 0.5),
+        radius: starRadius,
+        speed: speed,
+        color: Colors.white.withOpacity(random.nextDouble() * 0.5 + 0.5),
+        maxY: size.y,
+        maxX: size.x,
       );
       add(star);
     }
@@ -171,7 +213,7 @@ class SpaceGame extends FlameGame
 
   void _createSpaceship() {
     spaceship = Spaceship();
-    spaceship.position = Vector2(size.x / 2 - 100, size.y - 220);
+    spaceship.position = Vector2(size.x / 2 - 100, size.y - 280);
     add(spaceship);
   }
 
