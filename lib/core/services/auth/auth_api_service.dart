@@ -30,6 +30,31 @@ class AuthApiService {
     return UserModel.fromJson(response);
   }
 
+  // Matches PUT /api/users/profile/:id (requires Authorization token)
+  Future<UserModel> updateUserProfile({
+    required String userId,
+    String? name,
+    String? username,
+    String? email,
+  }) async {
+    try {
+      // Build payload dengan hanya field yang ada (tidak null)
+      final payload = <String, dynamic>{};
+      if (name != null) payload['name'] = name;
+      if (username != null) payload['username'] = username;
+      if (email != null) payload['email'] = email;
+      
+      final response = await _client.put('/users/profile/$userId', payload);
+      
+      // Backend returns updated user object
+      final userModel = UserModel.fromJson(response);
+      
+      return userModel;
+    } catch (e, stackTrace) {
+      rethrow;
+    }
+  }
+
   // Matches GET /auth/check-google-user/:firebaseUid
   // Checks if a Google user exists in MySQL (returns user or null)
   Future<UserModel?> checkGoogleUserExists(String firebaseUid) async {

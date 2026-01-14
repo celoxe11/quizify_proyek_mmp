@@ -17,5 +17,33 @@ class HistoryDetailBloc extends Bloc<HistoryDetailEvent, HistoryDetailState> {
         emit(HistoryDetailError(e.toString()));
       }
     });
+    on<LoadGeminiEvaluation>((event, emit) async {
+      // Get current data from state
+      final currentState = state;
+      if (currentState is! HistoryDetailLoaded &&
+          currentState is! HistoryDetailGeminiEvaluationLoaded &&
+          currentState is! HistoryDetailGeminiEvaluationError) {
+        return;
+      }
+
+      final data = currentState is HistoryDetailLoaded
+          ? currentState.data
+          : currentState is HistoryDetailGeminiEvaluationLoaded
+          ? currentState.data
+          : (currentState as HistoryDetailGeminiEvaluationError).data;
+
+      emit(HistoryDetailGeminiEvaluationLoading(data));
+      try {
+        final evaluation = await repository.getGeminiEvaluation(
+          submissionAnswerId: event.submissionAnswerId,
+          language: event.language,
+          detailedFeedback: event.detailedFeedback,
+          questionType: event.questionType,
+        );
+        emit(HistoryDetailGeminiEvaluationLoaded(data, evaluation));
+      } catch (e) {
+        emit(HistoryDetailGeminiEvaluationError(data, e.toString()));
+      }
+    });
   }
 }

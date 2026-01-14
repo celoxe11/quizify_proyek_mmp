@@ -11,6 +11,7 @@ class AdminStudentAnswersPage extends StatefulWidget {
   final String studentName;
   final String quizId;
   final String quizTitle;
+  final String? sessionId; // Optional session ID for specific session
 
   const AdminStudentAnswersPage({
     super.key,
@@ -18,6 +19,7 @@ class AdminStudentAnswersPage extends StatefulWidget {
     required this.studentName,
     required this.quizId,
     required this.quizTitle,
+    this.sessionId,
   });
 
   @override
@@ -30,12 +32,14 @@ class AdminStudentAnswersPageState extends State<AdminStudentAnswersPage> {
   void initState() {
     super.initState();
     print("Loading answers for Student ID: ${widget.studentId}");
+    print("Session ID: ${widget.sessionId}");
 
     // Load student answers when page opens
     context.read<AdminStudentAnswersBloc>().add(
       LoadAdminStudentAnswersEvent(
         studentId: widget.studentId,
         quizId: widget.quizId,
+        sessionId: widget.sessionId,
       ),
     );
   }
@@ -344,6 +348,14 @@ class AdminStudentAnswersPageState extends State<AdminStudentAnswersPage> {
               ...state.answers.asMap().entries.map((entry) {
                 final index = entry.key;
                 final answer = entry.value;
+                print('[UI] Building answer item ${index + 1}:');
+                print('  Answer ID: ${answer.id}');
+                print('  Question ID: ${answer.questionId}');
+                print(
+                  '  Question Text: ${answer.question?.questionText ?? "NULL"}',
+                );
+                print('  Selected Answer: ${answer.selectedAnswer}');
+                print('  Is Correct: ${answer.isCorrect}');
                 return _buildAnswerItem(answer, index + 1);
               }).toList(),
             ],

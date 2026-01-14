@@ -24,13 +24,13 @@ class ExplosionEffect extends PositionComponent
       add(particle);
     }
 
-    // Add flash effect
+    // Add flash effect behind particles
     final flash = CircleComponent(
       radius: 50,
-      position: Vector2.zero(),
+      position: Vector2(-80, -100),
       anchor: Anchor.center,
       paint: Paint()..color = Colors.yellow.withOpacity(0.8),
-    );
+    )..priority = -1; // Lower priority to render behind
     add(flash);
 
     return super.onLoad();

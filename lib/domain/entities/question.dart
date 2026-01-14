@@ -14,8 +14,8 @@ class Question extends Equatable {
   final DateTime? updatedAt;
   final int correctCount;
   final int incorrectCount;
-  final QuestionImage? image; // Question image (stored separately in questionimage table)
-
+  final QuestionImage?
+  image; // Question image (stored separately in questionimage table)
 
   const Question({
     required this.id,
@@ -26,7 +26,7 @@ class Question extends Equatable {
     required this.correctAnswer,
     required this.options,
     this.isGenerated = false,
-    this.correctCount = 0, 
+    this.correctCount = 0,
     this.incorrectCount = 0,
     this.createdAt,
     this.updatedAt,
@@ -59,7 +59,8 @@ class Question extends Equatable {
     isGenerated,
     createdAt,
     updatedAt,
-    correctCount, 
+    correctCount,
     incorrectCount,
+    image,
   ];
 }

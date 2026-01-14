@@ -33,10 +33,10 @@ class UserModel extends User {
       currentAvatarId: _parseInt(json['current_avatar_id']), 
 
       createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'].toString())
+          ? DateTime.parse(json['created_at'].toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'].toString())
+          ? DateTime.parse(json['updated_at'].toString())
           : null,
     );
   }

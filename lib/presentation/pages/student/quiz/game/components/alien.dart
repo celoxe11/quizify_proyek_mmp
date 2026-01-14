@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/bullet.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/explosion_effect.dart';
@@ -19,7 +20,7 @@ class Alien extends PositionComponent
   double elapsedTime = 0;
   final double rotationAmplitude = 0.15;
   final double rotationSpeed = 2;
-  final alienSize = Vector2(160, 160);
+  Vector2 alienSize = Vector2(160, 160);
   bool isHit = false;
 
   Alien({
@@ -27,27 +28,46 @@ class Alien extends PositionComponent
     required this.optionText,
     this.totalOptions = 4,
     this.onHit,
-  });
+  }) {
+    // Set priority so explosion can appear behind alien
+    priority = 10;
+  }
 
   @override
   Future<void> onLoad() async {
     // Position calculation based on number of options
     late List<double> availableX;
-
+    final isDesktop = game.size.x > 600;
     if (totalOptions == 2) {
       // For boolean questions (2 options) - center them
-      availableX = [
-        game.size.x * 0.3, // Option A - left-center
-        game.size.x * 0.6, // Option B - right-center
-      ];
+      if (isDesktop) {
+        availableX = [
+          game.size.x * 0.3, // Option A - left-center
+          game.size.x * 0.6, // Option B - right-center
+        ];
+      } else {
+        availableX = [
+          game.size.x / 30, // Option A - left-center
+          game.size.x * 16 / 30, // Option B - right-center
+        ];
+      }
     } else {
       // For multiple choice (4 options) - spread across
-      availableX = [
-        game.size.x / 10, // Option A
-        game.size.x * 3 / 10, // Option B
-        game.size.x * 6 / 10, // Option C
-        game.size.x * 8 / 10, // Option D
-      ];
+      if (isDesktop) {
+        availableX = [
+          game.size.x / 10, // Option A
+          game.size.x * 3 / 10, // Option B
+          game.size.x * 6 / 10, // Option C
+          game.size.x * 8 / 10, // Option D
+        ];
+      } else {
+        availableX = [
+          game.size.x / 30, // Option A
+          game.size.x * 6 / 30, // Option B
+          game.size.x * 11 / 30, // Option C
+          game.size.x * 16 / 30, // Option D
+        ];
+      }
     }
 
     final spriteMap = {
@@ -82,7 +102,7 @@ class Alien extends PositionComponent
 
     add(
       RectangleHitbox(
-        size: alienSize,
+        size: alienSize * 0.7,
         position: Vector2.zero(),
         anchor: Anchor.center,
       ),
@@ -120,13 +140,13 @@ class Alien extends PositionComponent
     add(optionLabel);
 
     // Add option text with background for better readability
-    final optionTextBg = RectangleComponent(
-      size: Vector2(140, 50),
-      position: Vector2(0, alienSize.y / 2 + 30),
-      anchor: Anchor.center,
-      paint: Paint()..color = Colors.black54,
-    );
-    add(optionTextBg);
+    // final optionTextBg = RectangleComponent(
+    //   size: Vector2(140, 50),
+    //   position: Vector2(0, alienSize.y / 2 + 30),
+    //   anchor: Anchor.center,
+    //   paint: Paint()..color = Colors.black54,
+    // );
+    // add(optionTextBg);
 
     optionTextComponent = TextComponent(
       text: _truncateText(optionText, 20),
@@ -158,9 +178,17 @@ class Alien extends PositionComponent
     if (other is Bullet && !isHit && !game.gameCompleted) {
       isHit = true;
 
-      // Add explosion effect at alien position
-      final explosion = ExplosionEffect(explosionPosition: basePosition);
-      game.add(explosion);
+      // Add explosion effect at current alien position (not base position)
+      // Use absolutePosition to get world coordinates including bounce offset
+      final explosion = ExplosionEffect(
+        explosionPosition: Vector2(
+          absolutePosition.x,
+          absolutePosition.y + alienSize.y / 4,
+        ),
+      );
+      // Set priority lower than alien so explosion appears behind
+      explosion.priority = priority - 1;
+      // game.add(explosion);
 
       other.removeFromParent();
       onHit?.call();

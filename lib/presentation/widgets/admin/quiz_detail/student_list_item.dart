@@ -42,12 +42,24 @@ class StudentListItem extends StatelessWidget {
         print('  student_id: "${student['student_id']}"');
         print('  student_id (alt): "${student['id']}"');
         print('  user_id: "${student['user_id']}"');
+        print('  session_id: "${student['session_id']}"');
+        print('  quiz_session_id: "${student['quiz_session_id']}"');
+        print('  All keys: ${student.keys.toList()}');
 
         // Try multiple possible field names for student ID
         final studentId =
             student['student_id'] ?? student['id'] ?? student['user_id'] ?? '';
 
+        // Get session ID to ensure we load the correct session
+        // Try various possible field names
+        final sessionId =
+            student['session_id'] ??
+            student['quiz_session_id'] ??
+            student['id'] ?? // Sometimes backend uses 'id' for session
+            '';
+
         print('  Final studentId: "$studentId"');
+        print('  Final sessionId: "$sessionId"');
 
         // Navigate to student answers page
         context.push(
@@ -57,6 +69,7 @@ class StudentListItem extends StatelessWidget {
             'student_name': student['student'] ?? student['name'] ?? 'Unknown',
             'quiz_id': quizId,
             'quiz_title': quizTitle,
+            'session_id': sessionId, // Add session_id
           },
         );
       },
