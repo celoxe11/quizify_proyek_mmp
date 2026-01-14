@@ -10,6 +10,7 @@ class User extends Equatable {
   final int subscriptionId;
   final String? subscriptionStatus; 
   final bool isActive;
+  final int? currentAvatarId; 
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -23,6 +24,7 @@ class User extends Equatable {
     required this.subscriptionId,
     this.subscriptionStatus,
     this.isActive = true,
+    this.currentAvatarId,
     this.createdAt,
     this.updatedAt,
   });
@@ -37,6 +39,7 @@ class User extends Equatable {
     subscriptionId: 0,
     subscriptionStatus: '',
     isActive: false,
+    currentAvatarId: null, 
   );
 
   bool get isEmpty => this == User.empty;
@@ -53,6 +56,7 @@ class User extends Equatable {
     subscriptionId,
     subscriptionStatus, 
     isActive,
+    currentAvatarId, 
     createdAt,
     updatedAt,
   ];

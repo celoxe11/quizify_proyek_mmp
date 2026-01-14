@@ -1,35 +1,30 @@
-class TransactionModel {
-  final String id;
-  final String? userId; 
-  final String item;
-  final double amount;
-  final String status;
-  final String method;
-  final DateTime date;
+import '../../domain/entities/transaction.dart'; // Import Entity
 
-
-  TransactionModel({
-    required this.id,
-    this.userId,
-    required this.item,
-    required this.amount,
-    required this.status,
-    required this.method,
-    required this.date,
+class TransactionModel extends TransactionEntity {
+  const TransactionModel({
+    required super.id,
+    super.userId,
+    required super.itemName, // Pass ke parent
+    required super.category,
+    required super.amount,
+    required super.status,
+    required super.method,
+    required super.date,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
-    final amountString = json['amount']?.toString() ?? '0.0';
-    final amountValue = double.tryParse(amountString) ?? 0.0;
-
     return TransactionModel(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? null,
-      item: json['item'] ?? 'Unknown',
-      amount: amountValue, 
-      status: json['status'] ?? 'pending',
-      method: json['method'] ?? '-',
-      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString(),
+      
+      // [FIX] Mapping dari JSON 'item_name' ke variable 'itemName'
+      itemName: json['item_name']?.toString() ?? 'Unknown Item', 
+      
+      category: json['category']?.toString() ?? 'subscription',
+      amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
+      status: json['status']?.toString() ?? 'pending',
+      method: json['payment_method'] ?? '-',
+      date: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
     );
   }
 }
