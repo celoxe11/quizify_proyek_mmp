@@ -6,7 +6,6 @@ class PaymentSnapModel {
   final String? subscriptionPlan;
   final double amount;
   final String currency;
-  final DateTime createdAt;
 
   PaymentSnapModel({
     required this.snapToken,
@@ -16,23 +15,31 @@ class PaymentSnapModel {
     this.subscriptionPlan,
     required this.amount,
     required this.currency,
-    required this.createdAt,
   });
 
   factory PaymentSnapModel.fromJson(Map<String, dynamic> json) {
-    return PaymentSnapModel(
-      snapToken: json['snap_token'] as String? ?? json['token'] as String,
-      orderId: json['order_id'] as String,
-      type: json['type'] as String? ?? 'subscription',
-      avatarId: json['avatar_id'] as String?,
-      subscriptionPlan: json['subscription_plan'] as String?,
-      amount: (json['amount'] as num).toDouble(),
-      currency: json['currency'] as String? ?? 'IDR',
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-    );
-  }
+        final snapTokenValue = (json['snap_token'] ?? json['token']) as String?;
+        final orderIdValue = (json['order_id'] ?? json['transaction_id']) as String?;
+        dynamic amountValue = json['amount'];
+        if (amountValue == null && json['item'] is Map && json['item']['price'] != null) {
+          amountValue = json['item']['price'];
+        }
+
+        final currencyValue = json['currency'] as String? ?? 'IDR';
+        final subscriptionPlanValue = json['subscription_plan'] as String? ?? (json['item'] is Map ? json['item']['name'] as String? : null);
+
+        return PaymentSnapModel(
+          snapToken: snapTokenValue ?? 'NO_TOKEN',
+          orderId: orderIdValue ?? 'NO_ORDER_ID',
+          type: json['type'] as String? ?? 'subscription',
+          avatarId: json['avatar_id'] as String?,
+          subscriptionPlan: subscriptionPlanValue,
+          amount: amountValue != null 
+              ? (amountValue is num ? amountValue.toDouble() : double.tryParse(amountValue.toString()) ?? 0.0)
+              : 0.0,
+          currency: currencyValue,
+        );
+      }
 
   Map<String, dynamic> toJson() {
     return {
@@ -43,7 +50,6 @@ class PaymentSnapModel {
       'subscription_plan': subscriptionPlan,
       'amount': amount,
       'currency': currency,
-      'created_at': createdAt.toIso8601String(),
     };
   }
 }
