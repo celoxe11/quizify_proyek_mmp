@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
-import 'package:quizify_proyek_mmp/data/models/transaction_model.dart';
+import 'package:quizify_proyek_mmp/data/models/transaction_model.dart'; // Pastikan Model sudah diupdate ke itemName
 
-// Class dibuat Public
 class AdminTransactionMobilePage extends StatelessWidget {
   final List<TransactionModel> transactions;
   const AdminTransactionMobilePage({super.key, required this.transactions});
@@ -15,6 +14,12 @@ class AdminTransactionMobilePage extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final trx = transactions[index];
+        
+        // Logika Ikon berdasarkan Kategori
+        IconData categoryIcon = trx.category == 'subscription' 
+            ? Icons.card_membership 
+            : Icons.shopping_bag; // Ikon tas belanja untuk item
+
         return Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -27,34 +32,53 @@ class AdminTransactionMobilePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Baris Atas: ID & Status
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(trx.id, style: const TextStyle(fontFamily: 'monospace', color: Colors.grey, fontSize: 12)),
-                    StatusBadge(status: trx.status), // Panggil Helper
+                    StatusBadge(status: trx.status),
                   ],
                 ),
                 const SizedBox(height: 12),
+                
+                // Baris Bawah: Icon, Info, Harga
                 Row(
                   children: [
+                    // Icon Kategori (Dynamic)
                     CircleAvatar(
                       backgroundColor: AppColors.darkAzure.withOpacity(0.1),
-                      child: const Icon(Icons.person, color: AppColors.darkAzure, size: 20),
+                      child: Icon(categoryIcon, color: AppColors.darkAzure, size: 20),
                     ),
                     const SizedBox(width: 12),
+                    
+                    // Nama Item & User
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("User: ${trx.userId ?? 'Unknown'}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text(trx.item, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text(
+                            trx.itemName, // [FIX] Gunakan itemName (dari Entity/Model)
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "User: ${trx.userId ?? 'Unknown'}", 
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ),
                     ),
+                    
+                    // Harga & Tanggal
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(_formatCurrency(trx.amount), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(_formatCurrency(trx.amount), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         Text(trx.date.toString().substring(0, 10), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                       ],
                     ),
@@ -69,7 +93,7 @@ class AdminTransactionMobilePage extends StatelessWidget {
   }
 }
 
-// --- HELPER (Duplicate is fine here for separation, or use shared file) ---
+// --- HELPER (Tetap sama) ---
 
 class StatusBadge extends StatelessWidget {
   final String status;
