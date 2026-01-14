@@ -21,5 +21,13 @@ abstract class AuthenticationRepository {
 
   Future<void> logout();
 
+  /// Update user profile - only sends fields that have changed
+  Future<User> updateUserProfile({
+    required String userId,
+    String? name,
+    String? username,
+    String? email,
+  });
+
   bool isPremiumUser();
 }

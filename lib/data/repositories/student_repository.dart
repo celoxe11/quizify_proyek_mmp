@@ -1,5 +1,6 @@
-import 'package:dio/dio.dart'; 
+import 'package:dio/dio.dart';
 import 'package:quizify_proyek_mmp/core/api/api_client.dart';
+import 'package:quizify_proyek_mmp/core/api/dio_client.dart';
 import 'package:quizify_proyek_mmp/data/models/history_detail_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
@@ -9,15 +10,32 @@ import 'package:quizify_proyek_mmp/data/models/submission_answer_model.dart';
 
 class StudentRepository {
   final ApiClient _client;
-  final Dio _dio;          
-  
+  final Dio _dio;
+  final DioClient _dioClient;
 
-  StudentRepository(this._client, this._dio);
+  StudentRepository(this._client, this._dio, this._dioClient);
 
   List<dynamic> _unwrapList(dynamic json) {
-    if (json is List) return json;
-    if (json is Map && json['data'] is List) return json['data'] as List;
-    throw ApiException('Unexpected list response format from API');
+    try {
+      if (json is List) {
+        return json;
+      }
+      if (json is Map) {
+        if (json['data'] is List) {
+          final list = json['data'] as List;
+          return list;
+        }
+        if (json['quizzes'] is List) {
+          final list = json['quizzes'] as List;
+          return list;
+        }
+      }
+      throw ApiException(
+        'Unexpected list response format from API: ${json.runtimeType}',
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Map<String, dynamic> _unwrapObject(dynamic json) {
@@ -43,10 +61,89 @@ class StudentRepository {
     throw ApiException('Unexpected response format from startQuizByCode');
   }
 
+  // Check if student has active session for this quiz code
+  Future<Map<String, dynamic>?> getActiveSessionByCode(String code) async {
+    try {
+      // First get quiz by code to get quiz_id
+      final quiz = await getQuizByCode(code);
+
+      // Then check if user has active session for this quiz
+      final sessions = await getMyQuizHistory();
+
+      for (var session in sessions) {
+        if (session.quizId == quiz.id && session.status == 'in_progress') {
+          // Found active session, get its answers
+          final answers = await getSubmissionAnswers(session.id);
+
+          return {
+            'session_id': session.id,
+            'quiz_id': quiz.id,
+            'is_resuming': true,
+            'answered_questions': {
+              for (var answer in answers)
+                answer.questionId: answer.selectedAnswer,
+            },
+            'current_question_index': answers.length,
+            'message': 'Melanjutkan quiz yang sedang berjalan',
+          };
+        }
+      }
+
+      return null; // No active session found
+    } catch (e) {
+      print('⚠️ [StudentRepository] Error checking active session: $e');
+      return null;
+    }
+  }
+
+  // GET /student/quiz/:quiz_id - Get quiz detail by ID
+  Future<QuizModel> getQuizDetail(String quizId) async {
+    try {
+      final raw = await _client.get('/student/quiz/$quizId');
+      final map = _unwrapObject(raw);
+
+      return QuizModel.fromJson(map);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // GET /student/quiz/code/:code - Get quiz by code (legacy)
   Future<QuizModel> getQuizByCode(String code) async {
     final raw = await _client.get('/student/quiz/code/$code');
     final map = _unwrapObject(raw);
     return QuizModel.fromJson(map);
+  }
+
+  Future<List<QuizModel>> fetchPublicQuizzes({
+    String? search,
+    String? category,
+    String? difficulty,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (category != null && category.isNotEmpty) 'category': category,
+        if (difficulty != null && difficulty.isNotEmpty)
+          'difficulty': difficulty,
+      };
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}')
+          .join('&');
+
+      // Use the correct endpoint for public quizzes
+      final endpoint =
+          '/users/landing/get_public_quiz${queryString.isNotEmpty ? '?$queryString' : ''}';
+      final raw = await _client.get(endpoint);
+      final listJson = _unwrapList(raw);
+
+      return listJson
+          .map((e) => QuizModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception("Gagal mengambil daftar quiz: $e");
+    }
   }
 
   // Quiz Session
@@ -169,14 +266,33 @@ class StudentRepository {
         .toList();
   }
 
+  Future<Map<String, dynamic>> getGeminiEvaluation({
+    required String submissionAnswerId,
+    String language = 'id',
+    bool detailedFeedback = true,
+    String questionType = 'multiple',
+  }) async {
+    final response = await _dioClient.post(
+      '/student/question/gemini-evaluation',
+      data: {
+        'submission_answer_id': submissionAnswerId,
+        'language': language,
+        'detailed_feedback': detailedFeedback,
+        'question_type': questionType,
+      },
+    );
+    print(response.data["evaluation"]);
+    return Map<String, dynamic>.from(response.data['evaluation']);
+  }
+
   Future<List<StudentHistoryModel>> fetchHistory() async {
     try {
       // Pake _dio agar token 'Bearer ...' otomatis terkirim
-      final response = await _dio.get('/student/history'); 
-      
+      final response = await _dio.get('/student/history');
+
       // Dio response.data sudah berupa Object (List/Map), tidak perlu jsonDecode
       final data = response.data;
-      
+
       // Handle format { "data": [...] } atau [...]
       List<dynamic> listJson = [];
       if (data is Map && data['data'] is List) {
@@ -197,14 +313,13 @@ class StudentRepository {
     try {
       // Panggil API Backend
       final response = await _dio.get('/student/history/$sessionId');
-      
+
       // Ambil bagian 'data' dari JSON response
       final data = _unwrapObject(response.data);
-      
+
       return HistoryDetailModel.fromJson(data);
     } catch (e) {
       throw Exception("Gagal mengambil detail history: $e");
     }
   }
-
 }

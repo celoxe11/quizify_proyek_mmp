@@ -135,11 +135,14 @@ class AdminService {
   // endpoint for /admin/quiz/answers
   Future<Map<String, dynamic>> getQuizAnswers(
     String quizId,
-    String studentId,
-  ) async {
-    final response = await _client.get(
-      '/admin/quiz/answers/$quizId/$studentId',
-    );
+    String studentId, {
+    String? sessionId,
+  }) async {
+    // Use session-specific route if sessionId is provided
+    final endpoint = sessionId != null && sessionId.isNotEmpty
+        ? '/admin/quiz/answers/session/$sessionId/$studentId'
+        : '/admin/quiz/answers/$quizId/$studentId';
+    final response = await _client.get(endpoint);
     return response.data as Map<String, dynamic>;
   }
 

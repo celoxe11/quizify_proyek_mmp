@@ -43,11 +43,14 @@ class _QuestionCardState extends State<QuestionCard> {
     );
 
     // Load existing image if available (local path stored in imageUrl for new uploads)
-    if (widget.question.image != null &&
-        (widget.question.image!.imageUrl.startsWith('/') ||
-            widget.question.image!.imageUrl.contains(':'))) {
-      // Local file path
-      _selectedImage = File(widget.question.image!.imageUrl);
+    if (widget.question.image != null && !kIsWeb) {
+      final imageUrl = widget.question.image!.imageUrl;
+      // Only set _selectedImage for local file paths (not http URLs)
+      if (!imageUrl.startsWith('http') &&
+          (imageUrl.startsWith('/') || imageUrl.contains(':'))) {
+        // Local file path
+        _selectedImage = File(imageUrl);
+      }
     }
 
     // Initialize option controllers based on question type
@@ -91,6 +94,7 @@ class _QuestionCardState extends State<QuestionCard> {
       widget.question.copyWith(
         questionText: _questionTextController.text,
         options: updatedOptions,
+        image: widget.question.image, // Explicitly preserve image
       ),
     );
   }
@@ -100,48 +104,53 @@ class _QuestionCardState extends State<QuestionCard> {
       _selectedOptionIndex = index;
     });
     final answer = _optionControllers[index].text;
-    widget.onUpdate(widget.question.copyWith(correctAnswer: answer));
-  }
-
-  void _addOption() {
-    setState(() {
-      _optionControllers.add(TextEditingController(text: ''));
-    });
-    final updatedOptions = _optionControllers.map((c) => c.text).toList();
     widget.onUpdate(
       widget.question.copyWith(
-        questionText: _questionTextController.text,
-        options: updatedOptions,
+        correctAnswer: answer,
+        image: widget.question.image, // Explicitly preserve image
       ),
     );
   }
 
-  void _removeOption(int index) {
-    if (_optionControllers.length <= 2) return; // Minimum 2 options
-    setState(() {
-      _optionControllers[index].dispose();
-      _optionControllers.removeAt(index);
-      // Adjust selected index if needed
-      if (_selectedOptionIndex == index) {
-        _selectedOptionIndex = -1;
-      } else if (_selectedOptionIndex > index) {
-        _selectedOptionIndex--;
-      }
-    });
-    final updatedOptions = _optionControllers.map((c) => c.text).toList();
-    final newCorrectAnswer =
-        _selectedOptionIndex >= 0 &&
-            _selectedOptionIndex < updatedOptions.length
-        ? updatedOptions[_selectedOptionIndex]
-        : '';
-    widget.onUpdate(
-      widget.question.copyWith(
-        questionText: _questionTextController.text,
-        options: updatedOptions,
-        correctAnswer: newCorrectAnswer,
-      ),
-    );
-  }
+  // void _addOption() {
+  //   setState(() {
+  //     _optionControllers.add(TextEditingController(text: ''));
+  //   });
+  //   final updatedOptions = _optionControllers.map((c) => c.text).toList();
+  //   widget.onUpdate(
+  //     widget.question.copyWith(
+  //       questionText: _questionTextController.text,
+  //       options: updatedOptions,
+  //     ),
+  //   );
+  // }
+
+  // void _removeOption(int index) {
+  //   if (_optionControllers.length <= 2) return; // Minimum 2 options
+  //   setState(() {
+  //     _optionControllers[index].dispose();
+  //     _optionControllers.removeAt(index);
+  //     // Adjust selected index if needed
+  //     if (_selectedOptionIndex == index) {
+  //       _selectedOptionIndex = -1;
+  //     } else if (_selectedOptionIndex > index) {
+  //       _selectedOptionIndex--;
+  //     }
+  //   });
+  //   final updatedOptions = _optionControllers.map((c) => c.text).toList();
+  //   final newCorrectAnswer =
+  //       _selectedOptionIndex >= 0 &&
+  //           _selectedOptionIndex < updatedOptions.length
+  //       ? updatedOptions[_selectedOptionIndex]
+  //       : '';
+  //   widget.onUpdate(
+  //     widget.question.copyWith(
+  //       questionText: _questionTextController.text,
+  //       options: updatedOptions,
+  //       correctAnswer: newCorrectAnswer,
+  //     ),
+  //   );
+  // }
 
   Future<void> _pickImage() async {
     try {
@@ -291,7 +300,14 @@ class _QuestionCardState extends State<QuestionCard> {
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      widget.onUpdate(widget.question.copyWith(type: value));
+                      widget.onUpdate(
+                        widget.question.copyWith(
+                          type: value,
+                          image: widget
+                              .question
+                              .image, // Explicitly preserve image
+                        ),
+                      );
                     }
                   },
                 ),
@@ -307,7 +323,12 @@ class _QuestionCardState extends State<QuestionCard> {
                   onChanged: (value) {
                     if (value != null) {
                       widget.onUpdate(
-                        widget.question.copyWith(difficulty: value),
+                        widget.question.copyWith(
+                          difficulty: value,
+                          image: widget
+                              .question
+                              .image, // Explicitly preserve image
+                        ),
                       );
                     }
                   },
@@ -357,22 +378,32 @@ class _QuestionCardState extends State<QuestionCard> {
                     ],
                   ),
                   if (_selectedImage != null ||
-                      (kIsWeb &&
-                          widget.question.image != null &&
+                      (widget.question.image != null &&
                           widget.question.image!.imageUrl.isNotEmpty)) ...[
                     const SizedBox(height: 12),
                     Stack(
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: kIsWeb
-                              ? _buildWebImage()
-                              : Image.file(
+                          child: _selectedImage != null
+                              ? Image.file(
                                   _selectedImage!,
                                   height: 200,
                                   width: double.infinity,
                                   fit: BoxFit.cover,
-                                ),
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      height: 200,
+                                      color: Colors.grey.shade300,
+                                      child: const Center(
+                                        child: Text(
+                                          'Failed to load local image',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : _buildWebImage(),
                         ),
                         Positioned(
                           top: 8,
@@ -446,37 +477,40 @@ class _QuestionCardState extends State<QuestionCard> {
                                   questionText: _questionTextController.text,
                                   options: updatedOptions,
                                   correctAnswer: newCorrectAnswer,
+                                  image: widget
+                                      .question
+                                      .image, // Explicitly preserve image
                                 ),
                               );
                             },
                           ),
                         ),
-                        if (_optionControllers.length > 2)
-                          IconButton(
-                            icon: const Icon(
-                              Icons.remove_circle_outline,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => _removeOption(idx),
-                            tooltip: 'Remove option',
-                          ),
+                        // if (_optionControllers.length > 2)
+                        //   IconButton(
+                        //     icon: const Icon(
+                        //       Icons.remove_circle_outline,
+                        //       color: Colors.red,
+                        //     ),
+                        //     onPressed: () => _removeOption(idx),
+                        //     tooltip: 'Remove option',
+                        //   ),
                       ],
                     ),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _addOption,
-                  icon: const Icon(Icons.add, color: AppColors.darkAzure),
-                  label: const Text(
-                    'Add Option',
-                    style: TextStyle(color: AppColors.darkAzure),
-                  ),
-                ),
-              ),
+              // const SizedBox(height: 8),
+              // Align(
+              //   alignment: Alignment.centerLeft,
+              //   child: TextButton.icon(
+              //     onPressed: _addOption,
+              //     icon: const Icon(Icons.add, color: AppColors.darkAzure),
+              //     label: const Text(
+              //       'Add Option',
+              //       style: TextStyle(color: AppColors.darkAzure),
+              //     ),
+              //   ),
+              // ),
             ] else ...[
               // if the option is boolean only display two option without an add option button
               Column(
@@ -490,6 +524,9 @@ class _QuestionCardState extends State<QuestionCard> {
                           widget.question.copyWith(
                             correctAnswer: value,
                             options: ['True', 'False'],
+                            image: widget
+                                .question
+                                .image, // Explicitly preserve image
                           ),
                         );
                       }
@@ -505,6 +542,9 @@ class _QuestionCardState extends State<QuestionCard> {
                           widget.question.copyWith(
                             correctAnswer: value,
                             options: ['True', 'False'],
+                            image: widget
+                                .question
+                                .image, // Explicitly preserve image
                           ),
                         );
                       }

@@ -62,6 +62,11 @@ class CreateQuizBloc extends Bloc<CreateQuizEvent, CreateQuizState> {
       } else if (errorMessage.contains('Kode kuis sudah digunakan')) {
         errorMessage =
             'This quiz code is already in use. Please choose a different code.';
+      } else if (errorMessage.contains(
+        "Anda hanya dapat mengunggah maksimal 3 gambar per kuis",
+      )) {
+        errorMessage =
+            'You can only upload a maximum of 3 images per quiz. Please remove some images or upgrade to premium for more.';
       }
 
       emit(CreateQuizFailure(errorMessage));

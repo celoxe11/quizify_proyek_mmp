@@ -14,6 +14,7 @@ import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/core/config/app_database.dart';
 import 'package:quizify_proyek_mmp/data/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
+import 'package:quizify_proyek_mmp/data/repositories/payment_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/edit_quiz/admin_edit_quiz_bloc.dart';
@@ -25,6 +26,7 @@ import 'package:quizify_proyek_mmp/presentation/blocs/landing/landing_event.dart
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/generate_question_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/student_answers/admin_student_answers_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
@@ -56,7 +58,10 @@ import 'package:quizify_proyek_mmp/presentation/pages/auth/role_selection/role_s
 import 'package:quizify_proyek_mmp/presentation/pages/student/history/history_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/history_detail/history_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/home/home_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/profile/profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/join_quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/create_quiz_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/create_quiz/enter_quiz_name_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/home/home_page.dart';
@@ -64,6 +69,8 @@ import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_q
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/students_answers_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/profile_page.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/users/admin_users_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/users/admin_users_page.dart';
@@ -207,6 +214,13 @@ class _AppView extends StatelessWidget {
               builder: (context, state) => const StudentHomePage(),
             ),
             GoRoute(
+              path: '/student/quiz-detail',
+              builder: (context, state) {
+                final quiz = state.extra as QuizModel;
+                return QuizDetailPage(quiz: quiz);
+              },
+            ),
+            GoRoute(
               path: '/student/join-quiz',
               builder: (context, state) => const JoinQuizPage(),
             ),
@@ -221,7 +235,20 @@ class _AppView extends StatelessWidget {
                 return HistoryDetailPage(sessionId: sessionId);
               },
             ),
-
+            GoRoute(
+              path: '/student/quiz/:sessionId/:quizId',
+              builder: (context, state) {
+                final sessionId = state.pathParameters['sessionId']!;
+                final quizId = state.pathParameters['quizId']!;
+                return QuizPage(sessionId: sessionId, quizId: quizId);
+              },
+            ),
+            GoRoute(
+              path: '/student/profile',
+              builder: (context, state) {
+                return const StudentProfilePage();
+              },
+            ),
           ],
         ),
 
@@ -341,9 +368,23 @@ class _AppView extends StatelessWidget {
             ),
             GoRoute(
               path: '/teacher/profile',
-              builder: (context, state) => const Scaffold(
-                body: Center(child: Text('Teacher Profile Page')),
-              ),
+              redirect: (context, state) {
+                // Check if user is authenticated
+                final authRepo = context.read<AuthenticationRepositoryImpl>();
+                if (authRepo.currentUser.id.isEmpty) {
+                  return '/login';
+                }
+                return null; // Allow access
+              },
+              builder: (context, state) {
+                return BlocProvider(
+                  create: (context) => ProfileBloc(
+                    authRepository: context
+                        .read<AuthenticationRepositoryImpl>(),
+                  ),
+                  child: const TeacherProfilePage(),
+                );
+              },
             ),
           ],
         ),
@@ -451,6 +492,8 @@ class _AppView extends StatelessWidget {
                 final studentName = data['student_name'] as String;
                 final quizId = data['quiz_id'] as String;
                 final quizTitle = data['quiz_title'] as String;
+                final sessionId =
+                    data['session_id'] as String?; // Get session_id
 
                 return BlocProvider(
                   create: (context) => AdminStudentAnswersBloc(
@@ -461,6 +504,7 @@ class _AppView extends StatelessWidget {
                     studentName: studentName,
                     quizId: quizId,
                     quizTitle: quizTitle,
+                    sessionId: sessionId,
                   ),
                 );
               },
@@ -494,9 +538,9 @@ class _AppView extends StatelessWidget {
               path: '/admin/transactions',
               builder: (context, state) {
                 return BlocProvider(
-                  create: (context) => AdminTransactionBloc(
-                    context.read<AdminRepositoryImpl>(),
-                  )..add(LoadAdminTransactions()), // Load data saat dibuka
+                  create: (context) =>
+                      AdminTransactionBloc(context.read<AdminRepositoryImpl>())
+                        ..add(LoadAdminTransactions()), // Load data saat dibuka
                   child: const AdminTransactionPage(),
                 );
               },
@@ -512,7 +556,7 @@ class _AppView extends StatelessWidget {
                     adminRepository: context.read<AdminRepositoryImpl>(),
                   ),
                   // Asumsi nama class di dalam file admin_subscriptions_page.dart adalah AdminSettingsPage
-                  child: const AdminSettingsPage(), 
+                  child: const AdminSettingsPage(),
                 );
               },
             ),
@@ -564,7 +608,9 @@ class _AppView extends StatelessWidget {
             // 1. Siapkan Dio (Untuk History & Auth)
             final dio = Dio(
               BaseOptions(
-                baseUrl: PlatformConfig.getBaseUrl().replaceAll('/api', '') + '/api', // Sesuaikan URL
+                baseUrl:
+                    PlatformConfig.getBaseUrl().replaceAll('/api', '') +
+                    '/api', // Sesuaikan URL
                 headers: {'Content-Type': 'application/json'},
               ),
             );
@@ -578,10 +624,11 @@ class _AppView extends StatelessWidget {
                     final idToken = await user.getIdToken();
                     options.headers['Authorization'] = 'Bearer $idToken';
                   } else {
-                    options.headers['Authorization'] = 'Bearer RAHASIA_KITA_BERSAMA';
+                    options.headers['Authorization'] =
+                        'Bearer RAHASIA_KITA_BERSAMA';
                   }
                   print("🚀 [REQUEST] METHOD: ${options.method}");
-                  print("🔗 [REQUEST] FULL URL: ${options.uri}"); 
+                  print("🔗 [REQUEST] FULL URL: ${options.uri}");
                   return handler.next(options);
                 },
               ),
@@ -589,10 +636,11 @@ class _AppView extends StatelessWidget {
 
             // 2. Siapkan ApiClient Lama (Untuk Quiz dll)
             // ApiClient ini pakai http biasa di dalamnya
-            final apiClient = ApiClient(); 
+            final apiClient = ApiClient();
+            final dioClient = DioClient();
 
             // 3. Masukkan KEDUANYA ke Repository
-            return StudentRepository(apiClient, dio); 
+            return StudentRepository(apiClient, dio, dioClient);
           },
         ),
         RepositoryProvider(
@@ -650,6 +698,10 @@ class _AppView extends StatelessWidget {
             );
           },
         ),
+        // PAYMENT REPOSITORY
+        RepositoryProvider<PaymentRepository>(
+          create: (context) => PaymentRepository(ApiClient()),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -658,6 +710,10 @@ class _AppView extends StatelessWidget {
             create: (context) => AuthBloc(
               authRepository: context.read<AuthenticationRepositoryImpl>(),
             ),
+          ),
+          // PAYMENT BLOC
+          BlocProvider(
+            create: (context) => PaymentBloc(context.read<PaymentRepository>()),
           ),
         ],
         child: BlocListener<AuthBloc, AuthState>(
@@ -677,9 +733,9 @@ class _AppView extends StatelessWidget {
                 router.go('/login');
               }
             } else if (state is AuthAuthenticated) {
+              final token = await FirebaseAuth.instance.currentUser
+                  ?.getIdToken();
 
-              final token = await FirebaseAuth.instance.currentUser?.getIdToken();   
-          
               // Auto-navigate to appropriate home after login
               final currentLocation = router.routeInformationProvider.value.uri
                   .toString();

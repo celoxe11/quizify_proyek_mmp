@@ -10,11 +10,23 @@ abstract class QuizSessionEvent extends Equatable {
 class LoadQuizSessionEvent extends QuizSessionEvent {
   final String sessionId;
   final String quizId;
+  final Map<String, String> answeredQuestions; // For resuming session
+  final int startingQuestionIndex; // Start from specific question when resuming
 
-  const LoadQuizSessionEvent({required this.sessionId, required this.quizId});
+  const LoadQuizSessionEvent({
+    required this.sessionId,
+    required this.quizId,
+    this.answeredQuestions = const {},
+    this.startingQuestionIndex = 0,
+  });
 
   @override
-  List<Object?> get props => [sessionId, quizId];
+  List<Object?> get props => [
+    sessionId,
+    quizId,
+    answeredQuestions,
+    startingQuestionIndex,
+  ];
 }
 
 class SelectAnswerEvent extends QuizSessionEvent {

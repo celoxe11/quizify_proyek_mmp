@@ -20,15 +20,28 @@ class JoinQuizSuccess extends JoinQuizState {
   final String sessionId;
   final String quizId;
   final String message;
+  final bool isResuming;
+  final Map<String, String> answeredQuestions; // question_id -> selected_answer
+  final int currentQuestionIndex;
 
   const JoinQuizSuccess({
     required this.sessionId,
     required this.quizId,
     this.message = 'Quiz berhasil dimulai',
+    this.isResuming = false,
+    this.answeredQuestions = const {},
+    this.currentQuestionIndex = 0,
   });
 
   @override
-  List<Object?> get props => [sessionId, quizId, message];
+  List<Object?> get props => [
+    sessionId,
+    quizId,
+    message,
+    isResuming,
+    answeredQuestions,
+    currentQuestionIndex,
+  ];
 }
 
 class QuizInfoLoaded extends JoinQuizState {

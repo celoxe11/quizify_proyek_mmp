@@ -61,12 +61,26 @@ class _JoinQuizPageState extends State<JoinQuizPage> {
       child: BlocListener<JoinQuizBloc, JoinQuizState>(
         listener: (context, state) {
           if (state is JoinQuizSuccess) {
+            // Show message if resuming
+            if (state.isResuming) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => SpaceGamePage(
                   sessionId: state.sessionId,
                   quizId: state.quizId,
+                  answeredQuestions: state.answeredQuestions,
+                  startingQuestionIndex: state.currentQuestionIndex,
+                  isResuming: state.isResuming,
                 ),
               ),
             );
