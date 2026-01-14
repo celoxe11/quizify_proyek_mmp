@@ -92,22 +92,26 @@ class PaymentRepository {
 
   /// Check payment status
   Future<PaymentStatusModel> checkPaymentStatus(String orderId) async {
-    try {
-      print('📡 [PaymentRepository] Checking payment status: $orderId');
+  try {
+    print('📡 [PaymentRepository] Force Sync Status: $orderId');
 
-      final raw = await _client.get('/payment/status/$orderId');
-      print('✅ [PaymentRepository] Response type: ${raw.runtimeType}');
-
-      final map = _unwrapObject(raw);
-      final status = PaymentStatusModel.fromJson(map);
-      print('📊 [PaymentRepository] Payment status: ${status.status}');
-
-      return status;
-    } catch (e) {
-      print('❌ [PaymentRepository] Error checking payment status: $e');
-      throw Exception('Gagal mengecek status pembayaran: $e');
-    }
+    // Memanggil endpoint verify (GET) yang melakukan force sync di backend
+    final raw = await _client.get('/payment/verify/$orderId');
+    
+    // Pastikan _unwrapObject mengambil Map di dalam key 'data'
+    final map = _unwrapObject(raw);
+    
+    // Konversi ke Model
+    final status = PaymentStatusModel.fromJson(map);
+    
+    print('📊 [PaymentRepository] Status Terkini: ${status.status}');
+    return status;
+  } catch (e) {
+    print('❌ [PaymentRepository] Error: $e');
+    // Berikan pesan error yang lebih user-friendly
+    throw Exception('Gagal memperbarui status pembayaran. Silakan coba beberapa saat lagi.');
   }
+}
 
   /// Get user's payment history
   Future<List<PaymentStatusModel>> getPaymentHistory({
