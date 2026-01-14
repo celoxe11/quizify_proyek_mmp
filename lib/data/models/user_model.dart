@@ -11,22 +11,27 @@ class UserModel extends User {
     required super.subscriptionId,
     super.subscriptionStatus,
     super.isActive = true,
+    super.currentAvatarId, 
     super.createdAt,
     super.updatedAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: (json['id']?.toString() ?? ''),
-      name: (json['name']?.toString() ?? ''),
-      username: (json['username']?.toString() ?? ''),
-      email: (json['email']?.toString() ?? ''),
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'No Name',
+      username: json['username']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
       firebaseUid: json['firebase_uid']?.toString(),
-      role: (json['role']?.toString() ?? 'teacher'),
-      subscriptionId: json['subscription_id'] is int 
-          ? json['subscription_id'] 
-          : int.tryParse(json['subscription_id'].toString()) ?? 1,
-      isActive: json['is_active'] == 1 || json['is_active'] == true,
+      role: json['role']?.toString() ?? 'student',
+      
+      subscriptionId: _parseInt(json['subscription_id']) ?? 1,
+      subscriptionStatus: json['subscription_status']?.toString() ?? 'Free',
+      isActive: _parseBool(json['is_active']),
+
+      // [BARU] Parsing current_avatar_id
+      currentAvatarId: _parseInt(json['current_avatar_id']), 
+
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'].toString())
           : null,
@@ -35,6 +40,7 @@ class UserModel extends User {
           : null,
     );
   }
+
 
   // --- HELPER SAKTI ---
   static int? _parseInt(dynamic value) {
@@ -63,21 +69,8 @@ class UserModel extends User {
       'is_active': isActive ? 1 : 0,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'current_avatar_id': currentAvatarId.toString(), 
     };
   }
 
-  factory UserModel.fromEntity(User user) {
-    return UserModel(
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      firebaseUid: user.firebaseUid,
-      role: user.role,
-      subscriptionId: user.subscriptionId,
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    );
-  }
 }
