@@ -6,6 +6,8 @@ class PaymentStatusModel {
   final String? paymentMethod;
   final DateTime createdAt;
   final DateTime? paidAt;
+  final String? snapToken;
+  final String? itemName;
 
   PaymentStatusModel({
     required this.orderId,
@@ -15,14 +17,23 @@ class PaymentStatusModel {
     this.paymentMethod,
     required this.createdAt,
     this.paidAt,
+    this.snapToken,
+    this.itemName,
   });
 
   factory PaymentStatusModel.fromJson(Map<String, dynamic> json) {
+    final orderIdValue = json['order_id'] as String? ?? json['transaction_id'] as String? ?? '';
+    dynamic amountValue = json['amount'];
+    if (amountValue == null && json['item'] is Map && json['item']['price'] != null) {
+      amountValue = json['item']['price'];
+    }
     return PaymentStatusModel(
-      orderId: json['order_id'] as String,
+      orderId: orderIdValue,
       status: json['status'] as String? ?? 'pending',
       type: json['type'] as String? ?? 'subscription',
-      amount: (json['amount'] as num).toDouble(),
+      amount: amountValue != null
+          ? (amountValue is num ? amountValue.toDouble() : double.tryParse(amountValue.toString()) ?? 0.0)
+          : 0.0,
       paymentMethod: json['payment_method'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
@@ -30,6 +41,8 @@ class PaymentStatusModel {
       paidAt: json['paid_at'] != null
           ? DateTime.parse(json['paid_at'] as String)
           : null,
+      snapToken: json['snap_token'] as String?,
+      itemName: json['item_name'] as String?,
     );
   }
 
@@ -42,6 +55,8 @@ class PaymentStatusModel {
       'payment_method': paymentMethod,
       'created_at': createdAt.toIso8601String(),
       'paid_at': paidAt?.toIso8601String(),
+      'snap_token': snapToken,
+      'item_name': itemName,
     };
   }
 }
