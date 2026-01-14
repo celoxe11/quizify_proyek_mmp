@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
-import 'package:quizify_proyek_mmp/data/models/transaction_model.dart';
+import 'package:quizify_proyek_mmp/domain/entities/transaction.dart'; // Pakai Entity
 
-// Class dibuat Public (Hapus underscore _)
 class AdminTransactionDesktopPage extends StatelessWidget {
-  final List<TransactionModel> transactions;
+  final List<TransactionEntity> transactions; // Gunakan Entity
   const AdminTransactionDesktopPage({super.key, required this.transactions});
 
   @override
@@ -13,11 +12,8 @@ class AdminTransactionDesktopPage extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: Card(
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey.shade200),
-        ),
         color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
         child: SizedBox(
           width: double.infinity,
           child: DataTable(
@@ -29,9 +25,9 @@ class AdminTransactionDesktopPage extends StatelessWidget {
               DataColumn(label: Text('DATE')),
               DataColumn(label: Text('TRX ID')),
               DataColumn(label: Text('USER ID')),
-              DataColumn(label: Text('ITEM')),
+              DataColumn(label: Text('ITEM / PACKAGE')), // Judul Kolom
+              DataColumn(label: Text('TYPE')),           // Kolom Baru: Tipe
               DataColumn(label: Text('AMOUNT')),
-              DataColumn(label: Text('METHOD')),
               DataColumn(label: Text('STATUS')),
             ],
             rows: transactions.map((trx) {
@@ -40,10 +36,28 @@ class AdminTransactionDesktopPage extends StatelessWidget {
                   DataCell(Text(trx.date.toString().substring(0, 16))),
                   DataCell(Text(trx.id, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold))),
                   DataCell(Text(trx.userId ?? '-', style: const TextStyle(color: Colors.grey))),
-                  DataCell(Text(trx.item)),
+                  
+                  // KOLOM ITEM NAME
+                  DataCell(Text(trx.itemName, style: const TextStyle(fontWeight: FontWeight.w600))),
+                  
+                  // KOLOM CATEGORY (Icon + Text)
+                  DataCell(
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          trx.category == 'subscription' ? Icons.card_membership : Icons.checkroom, // Ikon beda
+                          size: 16, 
+                          color: Colors.grey
+                        ),
+                        const SizedBox(width: 8),
+                        Text(trx.category.toUpperCase(), style: const TextStyle(fontSize: 11)),
+                      ],
+                    )
+                  ),
+                  
                   DataCell(Text(_formatCurrency(trx.amount), style: const TextStyle(fontWeight: FontWeight.bold))),
-                  DataCell(Text(trx.method)),
-                  DataCell(StatusBadge(status: trx.status)), // Panggil Helper
+                  DataCell(StatusBadge(status: trx.status)),
                 ],
               );
             }).toList(),
@@ -54,6 +68,7 @@ class AdminTransactionDesktopPage extends StatelessWidget {
   }
 }
 
+// ... (Helper _StatusBadge dan _formatCurrency tetap sama) ...
 // --- HELPER DILETAKKAN DISINI AGAR BISA DIAKSES ---
 
 class StatusBadge extends StatelessWidget {

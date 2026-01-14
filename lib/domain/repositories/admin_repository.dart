@@ -4,6 +4,7 @@ import 'package:quizify_proyek_mmp/data/models/transaction_model.dart';
 import 'package:quizify_proyek_mmp/data/models/user_log_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/responses/quiz_detail_response.dart';
+import 'package:quizify_proyek_mmp/domain/entities/transaction.dart';
 
 import '../entities/user.dart';
 import '../entities/quiz.dart';
