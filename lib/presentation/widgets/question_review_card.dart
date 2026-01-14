@@ -28,26 +28,50 @@ class QuestionReviewCard extends StatelessWidget {
       return;
     }
 
-    // Capture the bloc before opening dialog
+    // Capture the bloc before opening dialog/sheet
     final bloc = context.read<HistoryDetailBloc>();
+    final screenWidth = MediaQuery.of(context).size.width;
+    const mobileBreakpoint = 600.0;
 
-    // Show configuration modal
-    showDialog(
-      context: context,
-      builder: (context) => GeminiConfigurationModal(
-        initialQuestionType: question.type,
-        onConfirm: (language, detailedFeedback, questionType) {
-          bloc.add(
-            LoadGeminiEvaluation(
-              question.submissionAnswerId!,
-              language: language,
-              detailedFeedback: detailedFeedback,
-              questionType: questionType,
-            ),
-          );
-        },
-      ),
-    );
+    // Callback function for both dialog and sheet
+    void onConfirm(
+      String language,
+      bool detailedFeedback,
+      String questionType,
+    ) {
+      bloc.add(
+        LoadGeminiEvaluation(
+          question.submissionAnswerId!,
+          language: language,
+          detailedFeedback: detailedFeedback,
+          questionType: questionType,
+        ),
+      );
+    }
+
+    // Show as bottom sheet on phone, as dialog on larger screens
+    if (screenWidth < mobileBreakpoint) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => GeminiConfigurationModal.buildAsSheet(
+          context,
+          initialQuestionType: question.type,
+          initialLanguage: 'id',
+          initialDetailedFeedback: true,
+          onConfirm: onConfirm,
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => GeminiConfigurationModal(
+          initialQuestionType: question.type,
+          onConfirm: onConfirm,
+        ),
+      );
+    }
   }
 
   @override
