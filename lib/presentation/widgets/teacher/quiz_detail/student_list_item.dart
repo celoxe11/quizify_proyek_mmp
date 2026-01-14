@@ -89,38 +89,73 @@ class StudentListItem extends StatelessWidget {
             const SizedBox(width: 16),
             // Student Info
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    student['student'] ?? 'Unknown',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Use vertical layout on smaller screens
+                  final isSmallScreen = constraints.maxWidth < 300;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Started: ${_formatDateTime(student['started_at'])}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textDark.withOpacity(0.6),
+                        student['student'] ?? 'Unknown',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Completed: ${_formatDateTime(student['ended_at'])}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textDark.withOpacity(0.6),
+                      const SizedBox(height: 4),
+                      if (isSmallScreen)
+                        // Vertical layout for small screens
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Started: ${_formatDateTime(student['started_at'])}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textDark.withOpacity(0.6),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Done: ${_formatDateTime(student['ended_at'])}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textDark.withOpacity(0.6),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        )
+                      else
+                        // Horizontal layout for larger screens
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 2,
+                          children: [
+                            Text(
+                              'Started: ${_formatDateTime(student['started_at'])}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textDark.withOpacity(0.6),
+                              ),
+                            ),
+                            Text(
+                              'Done: ${_formatDateTime(student['ended_at'])}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textDark.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
             ),
             // Score Badge
