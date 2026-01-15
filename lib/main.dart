@@ -16,6 +16,7 @@ import 'package:quizify_proyek_mmp/data/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
 import 'package:quizify_proyek_mmp/data/repositories/payment_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/landing_repository.dart';
+import 'package:quizify_proyek_mmp/domain/repositories/shop_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/avatar/admin_avatar_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/avatar/admin_avatar_event.dart';
@@ -667,6 +668,39 @@ class _AppView extends StatelessWidget {
 
             // 3. Masukkan KEDUANYA ke Repository
             return StudentRepository(apiClient, dio, dioClient);
+          },
+        ),
+        RepositoryProvider<ShopRepository>(
+          create: (context) {
+             // ... (Gunakan Dio yang sama seperti StudentRepository) ...
+             final dio = Dio(
+              BaseOptions(
+                baseUrl:
+                    PlatformConfig.getBaseUrl().replaceAll('/api', ''),
+                headers: {'Content-Type': 'application/json'},
+              ),
+            );
+
+            // Pasang Interceptor (Wajib buat History)
+            dio.interceptors.add(
+              InterceptorsWrapper(
+                onRequest: (options, handler) async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    final idToken = await user.getIdToken();
+                    options.headers['Authorization'] = 'Bearer $idToken';
+                  } else {
+                    options.headers['Authorization'] =
+                        'Bearer RAHASIA_KITA_BERSAMA';
+                  }
+                  print("🚀 [REQUEST] METHOD: ${options.method}");
+                  print("🔗 [REQUEST] FULL URL: ${options.uri}");
+                  return handler.next(options);
+                },
+              ),
+            );
+
+             return ShopRepository(dio);
           },
         ),
         RepositoryProvider(

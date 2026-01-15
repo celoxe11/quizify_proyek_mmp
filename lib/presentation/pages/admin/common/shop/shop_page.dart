@@ -1,31 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
-// Ganti dengan Bloc Shop yang sesuai nantinya
-// import 'package:quizify_proyek_mmp/presentation/blocs/shop/shop_bloc.dart'; 
+import 'package:quizify_proyek_mmp/data/models/avatar_model.dart';
+import 'package:quizify_proyek_mmp/domain/repositories/shop_repository.dart';
+// [FIX] Import Bloc yang benar
+import 'package:quizify_proyek_mmp/presentation/blocs/shop/shop_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/shop/shop_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/shop/shop_state.dart'; 
 
-class ShopPage extends StatefulWidget {
-  final bool isTeacher; // Opsional: Jika ingin membedakan konten sedikit
+class ShopPage extends StatelessWidget {
+  final bool isTeacher; 
   const ShopPage({super.key, this.isTeacher = false});
 
   @override
-  State<ShopPage> createState() => _ShopPageState();
+  Widget build(BuildContext context) {
+    // [FIX] Inject Bloc disini (Bungkus _ShopView dengan BlocProvider)
+    return BlocProvider(
+      create: (context) => ShopBloc(
+        // Pastikan ShopRepository sudah di-inject di main.dart
+        context.read<ShopRepository>(), 
+      )..add(LoadShopData()), // Gunakan nama event yang benar: LoadShopData
+      child: const _ShopView(),
+    );
+  }
 }
 
-class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin {
+class _ShopView extends StatefulWidget {
+  const _ShopView();
+
+  @override
+  State<_ShopView> createState() => _ShopViewState();
+}
+
+class _ShopViewState extends State<_ShopView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // context.read<ShopBloc>().add(LoadShopItems()); // Load data nanti
+  }
+  
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Off-white modern background
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Avatar Shop', style: TextStyle(fontWeight: FontWeight.w800)),
         backgroundColor: Colors.white,
@@ -45,43 +70,59 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _ShopGrid(isInventory: false), // Tab Belanja
-          _ShopGrid(isInventory: true),  // Tab Inventory
-        ],
+      // [FIX] Gunakan BlocBuilder untuk menampilkan data ASLI
+      body: BlocBuilder<ShopBloc, ShopState>(
+        builder: (context, state) {
+          if (state is ShopLoading) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.darkAzure));
+          }
+          if (state is ShopError) {
+            return Center(child: Text("Error: ${state.message}"));
+          }
+          if (state is ShopLoaded) {
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                _ShopGrid(items: state.shopItems, isInventory: false), // Data dari API
+                _ShopGrid(items: state.inventory, isInventory: true),  // Data dari API
+              ],
+            );
+          }
+          return const SizedBox();
+        },
       ),
     );
   }
 }
 
 class _ShopGrid extends StatelessWidget {
+  final List<AvatarModel> items; // [FIX] Terima List AvatarModel
   final bool isInventory;
-  const _ShopGrid({required this.isInventory});
+  
+  const _ShopGrid({required this.items, required this.isInventory});
 
   @override
   Widget build(BuildContext context) {
-    // [DUMMY DATA] Nanti diganti dengan state.avatars dari Bloc
-    final dummyAvatars = List.generate(8, (index) => index);
+    if (items.isEmpty) {
+      return Center(child: Text(isInventory ? "You don't own any items yet." : "Shop is empty."));
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsif Grid
         int crossAxisCount = constraints.maxWidth > 900 ? 4 : (constraints.maxWidth > 600 ? 3 : 2);
         
         return GridView.builder(
           padding: const EdgeInsets.all(20),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            childAspectRatio: 0.75, // Proporsi kartu memanjang ke bawah
+            childAspectRatio: 0.75, 
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-          itemCount: dummyAvatars.length,
+          itemCount: items.length,
           itemBuilder: (context, index) {
             return _ShopItemCard(
-              index: index,
+              avatar: items[index], // [FIX] Kirim object AvatarModel
               isInventory: isInventory,
             );
           },
@@ -92,10 +133,10 @@ class _ShopGrid extends StatelessWidget {
 }
 
 class _ShopItemCard extends StatefulWidget {
-  final int index;
+  final AvatarModel avatar;
   final bool isInventory;
 
-  const _ShopItemCard({required this.index, required this.isInventory});
+  const _ShopItemCard({required this.avatar, required this.isInventory});
 
   @override
   State<_ShopItemCard> createState() => _ShopItemCardState();
@@ -104,22 +145,36 @@ class _ShopItemCard extends StatefulWidget {
 class _ShopItemCardState extends State<_ShopItemCard> {
   bool _isHovered = false;
 
+  // [FIX] Fungsi untuk memperbaiki URL Gambar
+  String _getValidImageUrl(String url) {
+    // 1. Jika Dicebear SVG -> Ubah ke PNG
+    if (url.contains('dicebear.com') && url.contains('/svg')) {
+      return url.replaceAll('/svg', '/png');
+    }
+    
+    // 2. Jika Localhost di Android Emulator -> Ubah ke 10.0.2.2
+    // (Hanya jika Anda nanti upload gambar sendiri ke backend)
+    if (url.contains('localhost')) {
+      return url.replaceAll('localhost', '10.0.2.2');
+    }
+
+    return url;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Simulasi Rarity
-    final rarities = ['Common', 'Rare', 'Epic', 'Legendary'];
-    final rarity = rarities[widget.index % rarities.length];
+    final rarity = widget.avatar.rarity;
     
     Color rarityColor;
-    switch (rarity) {
-      case 'Rare': rarityColor = Colors.blue; break;
-      case 'Epic': rarityColor = Colors.purple; break;
-      case 'Legendary': rarityColor = Colors.amber; break;
+    switch (rarity.toLowerCase()) {
+      case 'rare': rarityColor = Colors.blue; break;
+      case 'epic': rarityColor = Colors.purple; break;
+      case 'legendary': rarityColor = Colors.amber; break;
       default: rarityColor = Colors.grey;
     }
 
-    // Simulasi Gambar (Dicebear)
-    final imageUrl = "https://api.dicebear.com/7.x/avataaars/png?seed=Avatar${widget.index}";
+    // [FIX] Gunakan fungsi helper di sini
+    final imageUrl = _getValidImageUrl(widget.avatar.imageUrl);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -138,7 +193,9 @@ class _ShopItemCardState extends State<_ShopItemCard> {
               offset: const Offset(0, 4),
             ),
           ],
-          border: _isHovered ? Border.all(color: AppColors.darkAzure.withOpacity(0.3), width: 2) : null,
+          border: (widget.isInventory && widget.avatar.isActive)
+              ? Border.all(color: Colors.green, width: 3)
+              : (_isHovered ? Border.all(color: AppColors.darkAzure.withOpacity(0.3), width: 2) : null),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -148,7 +205,6 @@ class _ShopItemCardState extends State<_ShopItemCard> {
               flex: 3,
               child: Stack(
                 children: [
-                  // Background lingkaran halus
                   Positioned.fill(
                     child: Container(
                       margin: const EdgeInsets.all(12),
@@ -158,14 +214,40 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                       ),
                     ),
                   ),
-                  // Gambar Avatar
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Image.network(imageUrl, fit: BoxFit.contain),
+                      // [FIX] Tampilkan Gambar
+                      child: Image.network(
+                        imageUrl, 
+                        fit: BoxFit.contain,
+                        // Loading Builder
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded / 
+                                    loadingProgress.expectedTotalBytes!
+                                  : null,
+                              strokeWidth: 2,
+                            ),
+                          );
+                        },
+                        // Error Builder (Fallback jika masih gagal)
+                        errorBuilder: (_, error, stackTrace) {
+                          print("Image Error: $error"); // Debugging di console
+                          return const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.broken_image, color: Colors.grey, size: 30),
+                              Text("Error", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
-                  // Badge Rarity
                   Positioned(
                     top: 12, left: 12,
                     child: Container(
@@ -173,7 +255,6 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                       decoration: BoxDecoration(
                         color: rarityColor,
                         borderRadius: BorderRadius.circular(8),
-                        boxShadow: [BoxShadow(color: rarityColor.withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 2))]
                       ),
                       child: Text(
                         rarity.toUpperCase(),
@@ -181,6 +262,11 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                       ),
                     ),
                   ),
+                  if (widget.isInventory && widget.avatar.isActive)
+                    const Positioned(
+                      top: 12, right: 12,
+                      child: Icon(Icons.check_circle, color: Colors.green, size: 24),
+                    )
                 ],
               ),
             ),
@@ -196,7 +282,7 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                     Column(
                       children: [
                         Text(
-                          "Cool Avatar ${widget.index}",
+                          widget.avatar.name,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -204,7 +290,7 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                         const SizedBox(height: 4),
                         if (!widget.isInventory)
                           Text(
-                            "Rp ${15000 + (widget.index * 5000)}",
+                            "Rp ${widget.avatar.price.toInt()}",
                             style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w900, fontSize: 14),
                           ),
                       ],
@@ -214,17 +300,24 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                     SizedBox(
                       width: double.infinity,
                       child: widget.isInventory
-                          ? OutlinedButton(
-                              onPressed: () {}, // Logic Equip
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.darkAzure,
-                                side: const BorderSide(color: AppColors.darkAzure),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              child: const Text("Equip"),
-                            )
+                          ? (widget.avatar.isActive 
+                              ? const Center(child: Text("Equipped", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)))
+                              : OutlinedButton(
+                                  onPressed: () {
+                                    context.read<ShopBloc>().add(EquipItemEvent(widget.avatar.id));
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.darkAzure,
+                                    side: const BorderSide(color: AppColors.darkAzure),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  child: const Text("Equip"),
+                                ))
                           : ElevatedButton(
-                              onPressed: () {}, // Logic Buy
+                              onPressed: () {
+                                // context.read<ShopBloc>().add(BuyItemEvent(widget.avatar.id));
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur beli belum aktif")));
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.darkAzure,
                                 foregroundColor: Colors.white,
