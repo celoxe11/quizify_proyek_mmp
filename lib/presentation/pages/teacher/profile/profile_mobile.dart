@@ -5,7 +5,9 @@ import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile_detail/edit_profile_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/payment_history_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile_detail/edit_profile_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/subscription/subscription_plan_page.dart';
 
 /// Mobile layout for the Teacher Profile page
 ///
@@ -61,7 +63,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
       case 2:
         return 'Premium';
       default:
-        return 'Free Tier';
+        return 'Gold';
     }
   }
 
@@ -89,9 +91,9 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
               // Navigate to login page
               context.go('/login');
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
             }
           } else if (state is ProfileError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -106,8 +108,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
           builder: (context, state) {
             if (state is ProfileLoading) {
               return const Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.darkAzure),
+                child: CircularProgressIndicator(color: AppColors.darkAzure),
               );
             }
 
@@ -121,8 +122,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
             }
 
             return const Center(
-              child:
-                  CircularProgressIndicator(color: AppColors.darkAzure),
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
             );
           },
         ),
@@ -151,11 +151,17 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
             const SizedBox(height: 24),
 
             // Subscribe Button (if not premium)
-            if (_getSubscriptionLevel(state.profile.subscriptionId) != 'Premium')
+            if (_getSubscriptionLevel(state.profile.subscriptionId) !=
+                'Premium')
               _buildSubscribeButton(context),
 
-            if (_getSubscriptionLevel(state.profile.subscriptionId) != 'Premium')
+            if (_getSubscriptionLevel(state.profile.subscriptionId) !=
+                'Premium')
               const SizedBox(height: 20),
+
+            // Transaction History Button
+            _buildHistoryButton(context, state.profile.id),
+            const SizedBox(height: 20),
 
             // Profile Information Section
             _buildProfileInfoSection(context, state),
@@ -179,8 +185,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
     );
   }
 
-  Widget _buildProfilePhotoSection(
-      BuildContext context, ProfileLoaded state) {
+  Widget _buildProfilePhotoSection(BuildContext context, ProfileLoaded state) {
     return Column(
       children: [
         Container(
@@ -188,13 +193,11 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.darkAzure,
-              width: 3,
-            ),
+            border: Border.all(color: AppColors.darkAzure, width: 3),
             image: DecorationImage(
               image: NetworkImage(
-                  'https://ui-avatars.com/api/?name=${state.profile.name}&background=random'),
+                'https://ui-avatars.com/api/?name=${state.profile.name}&background=random',
+              ),
               fit: BoxFit.cover,
             ),
           ),
@@ -209,11 +212,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
                   color: AppColors.darkAzure,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: const Icon(
-                  Icons.edit,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.edit, color: Colors.white, size: 20),
               ),
             ],
           ),
@@ -232,7 +231,9 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
   }
 
   Widget _buildRoleSubscriptionSection(
-      BuildContext context, ProfileLoaded state) {
+    BuildContext context,
+    ProfileLoaded state,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -259,8 +260,10 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.darkAzure.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -289,12 +292,14 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: _getSubscriptionColor(
-                              _getSubscriptionLevel(state.profile.subscriptionId))
-                          .withOpacity(0.1),
+                        _getSubscriptionLevel(state.profile.subscriptionId),
+                      ).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -303,7 +308,8 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: _getSubscriptionColor(
-                            _getSubscriptionLevel(state.profile.subscriptionId)),
+                          _getSubscriptionLevel(state.profile.subscriptionId),
+                        ),
                       ),
                     ),
                   ),
@@ -317,33 +323,75 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
   }
 
   Widget _buildSubscribeButton(BuildContext context) {
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        return SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              if (state is ProfileLoaded) {
+                // Navigate to subscription plan page dengan userId
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        SubscriptionPlanPage(userId: state.profile.id),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Subscribe',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoryButton(BuildContext context, String userId) {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
+      child: OutlinedButton.icon(
         onPressed: () {
-          context.read<ProfileBloc>().add(const SubscribeEvent('premium'));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PaymentHistoryPage(userId: userId),
+            ),
+          );
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: const Text(
-          'Subscribe to Premium',
+        icon: const Icon(Icons.history, color: AppColors.darkAzure),
+        label: const Text(
+          'Riwayat Transaksi',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.darkAzure,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: const BorderSide(color: AppColors.darkAzure, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileInfoSection(
-      BuildContext context, ProfileLoaded state) {
+  Widget _buildProfileInfoSection(BuildContext context, ProfileLoaded state) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -410,7 +458,8 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
                 final profileBloc = context.read<ProfileBloc>();
                 final state = profileBloc.state;
                 if (state is ProfileLoaded) {
-                  final authRepository = context.read<AuthenticationRepositoryImpl>();
+                  final authRepository = context
+                      .read<AuthenticationRepositoryImpl>();
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => EditProfilePage(
@@ -523,10 +572,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
     );
   }
 
-  Widget _buildEditField(
-    String label,
-    TextEditingController controller,
-  ) {
+  Widget _buildEditField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -542,8 +588,10 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -566,7 +614,9 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
   }
 
   Widget _buildChangePasswordModeControls(
-      BuildContext context, ProfileLoaded state) {
+    BuildContext context,
+    ProfileLoaded state,
+  ) {
     return Column(
       children: [
         _buildEditField('Old Password', _oldPasswordController),
@@ -668,7 +718,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
   void _showLogoutConfirmation(BuildContext context) {
     // Get ProfileBloc from context BEFORE creating the dialog
     final profileBloc = context.read<ProfileBloc>();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -687,10 +737,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
                 Navigator.of(dialogContext).pop();
                 profileBloc.add(const LogoutEvent());
               },
-              child: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -699,9 +746,12 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
   }
 
   void _showChangePasswordDialog(BuildContext context) {
+    // Capture parent context so we can read providers located above this widget
+    final parentContext = context;
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Change Password'),
           content: SingleChildScrollView(
@@ -720,7 +770,7 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 _oldPasswordController.clear();
                 _newPasswordController.clear();
                 _confirmPasswordController.clear();
@@ -729,14 +779,15 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
             ),
             TextButton(
               onPressed: () {
-                context.read<ProfileBloc>().add(
+                // Use parent context to access the ProfileBloc provider
+                parentContext.read<ProfileBloc>().add(
                   ChangePasswordEvent(
                     oldPassword: _oldPasswordController.text,
                     newPassword: _newPasswordController.text,
                     confirmPassword: _confirmPasswordController.text,
                   ),
                 );
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 _oldPasswordController.clear();
                 _newPasswordController.clear();
                 _confirmPasswordController.clear();
@@ -781,10 +832,35 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
     );
   }
 
-  Color _getSubscriptionColor(String level) {
-    if (level == 'Premium') {
-      return Colors.amber[700] ?? Colors.amber;
+  void _submitChangePassword() {
+    final oldPassword = _oldPasswordController.text.trim();
+    final newPassword = _newPasswordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Harap isi semua kolom')));
+      return;
     }
+
+    context.read<ProfileBloc>().add(
+      ChangePasswordEvent(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+      ),
+    );
+
+    // Bersihkan controller setelah submit
+    _oldPasswordController.clear();
+    _newPasswordController.clear();
+    _confirmPasswordController.clear();
+  }
+
+  Color _getSubscriptionColor(String level) {
+    if (level == 'Premium') return Colors.amber[700] ?? Colors.amber;
+    if (level == 'Gold') return Colors.orange[700] ?? Colors.orange;
     return Colors.blue;
   }
 }

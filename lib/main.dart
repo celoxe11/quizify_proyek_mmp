@@ -95,6 +95,8 @@ import 'package:quizify_proyek_mmp/core/config/platform_config.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:intl/date_symbol_data_local.dart';
+
 // --- Global Navigator Keys (REQUIRED for ShellRoute) ---
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _studentShellNavigatorKey = GlobalKey<NavigatorState>(
@@ -118,7 +120,7 @@ void main() async {
   if (!kIsWeb) {
     final appDatabase = AppDatabase.instance;
   }
-
+  await initializeDateFormatting('id', null);
   runApp(const MyApp());
 }
 

@@ -77,7 +77,8 @@ class QuizInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final quizCode = quiz.quizCode ??
+    final quizCode =
+        quiz.quizCode ??
         (quiz.id.length >= 8
             ? quiz.id.substring(0, 8).toUpperCase()
             : quiz.id.toUpperCase());
@@ -215,27 +216,33 @@ class QuizInfoCard extends StatelessWidget {
                   color: AppColors.textDark.withOpacity(0.5),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Created: ${_formatDate(quiz.createdAt!)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textDark.withOpacity(0.5),
+                Flexible(
+                  child: Text(
+                    'Created: ${_formatDate(quiz.createdAt!)}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textDark.withOpacity(0.5),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (quiz.updatedAt != null) ...[
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 8),
                   Text(
                     '•',
                     style: TextStyle(
                       color: AppColors.textDark.withOpacity(0.5),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Updated: ${_formatDate(quiz.updatedAt!)}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textDark.withOpacity(0.5),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Updated: ${_formatDate(quiz.updatedAt!)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textDark.withOpacity(0.5),
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

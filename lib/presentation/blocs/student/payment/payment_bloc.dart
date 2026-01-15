@@ -24,14 +24,13 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     emit(const PaymentLoading());
 
     try {
-      print('🔄 [PaymentBloc] Creating payment for type: ${event.type}');
-      
       final snap = await _repository.createPayment(
         type: event.type,
         subscriptionPlanId: event.planId,
         avatarId: event.avatarId,
+        amount: event.amount,
       );
-      
+
       print('✅ [PaymentBloc] Payment snap created: ${snap.orderId}');
       emit(PaymentSnapCreated(snap));
     } catch (e, stackTrace) {
@@ -50,9 +49,9 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
     try {
       print('🔄 [PaymentBloc] Checking payment status: ${event.orderId}');
-      
+
       final status = await _repository.checkPaymentStatus(event.orderId);
-      
+
       print('✅ [PaymentBloc] Payment status: ${status.status}');
       emit(PaymentStatusLoaded(status));
     } catch (e, stackTrace) {
@@ -71,18 +70,20 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
     try {
       print('🔄 [PaymentBloc] Fetching payment history...');
-      
+
       final payments = await _repository.getPaymentHistory(
         page: event.page,
         limit: event.limit,
       );
-      
+
       print('✅ [PaymentBloc] Fetched ${payments.length} payment records');
-      emit(PaymentHistoryLoaded(
-        payments: payments,
-        currentPage: event.page,
-        limit: event.limit,
-      ));
+      emit(
+        PaymentHistoryLoaded(
+          payments: payments,
+          currentPage: event.page,
+          limit: event.limit,
+        ),
+      );
     } catch (e, stackTrace) {
       print('❌ [PaymentBloc] Error fetching payment history: $e');
       print('Stack trace: $stackTrace');
@@ -97,15 +98,17 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   ) async {
     try {
       print('🔄 [PaymentBloc] Cancelling payment: ${event.orderId}');
-      
+
       await _repository.cancelPayment(event.orderId);
-      
+
       print('✅ [PaymentBloc] Payment cancelled successfully');
-      emit(const PaymentSuccess(
-        message: 'Pembayaran berhasil dibatalkan',
-        type: 'cancel',
-      ));
-      
+      emit(
+        const PaymentSuccess(
+          message: 'Pembayaran berhasil dibatalkan',
+          type: 'cancel',
+        ),
+      );
+
       // Emit back to initial state after 1 second
       await Future.delayed(const Duration(seconds: 1));
       emit(const PaymentInitial());
@@ -125,9 +128,9 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
     try {
       print('🔄 [PaymentBloc] Fetching avatars...');
-      
+
       final avatars = await _repository.getAvatars();
-      
+
       print('✅ [PaymentBloc] Fetched ${avatars.length} avatars');
       emit(AvatarLoaded(avatars));
     } catch (e, stackTrace) {
@@ -144,12 +147,12 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   ) async {
     try {
       print('🔄 [PaymentBloc] Setting active avatar: ${event.avatarId}');
-      
+
       final avatar = await _repository.setActiveAvatar(event.avatarId);
-      
+
       print('✅ [PaymentBloc] Avatar set as active: ${avatar.name}');
       emit(AvatarSetActive(avatar));
-      
+
       // Fetch avatars again to update list
       await Future.delayed(const Duration(milliseconds: 500));
       add(const FetchAvatarsEvent());
@@ -169,9 +172,9 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
     try {
       print('🔄 [PaymentBloc] Fetching subscription plans...');
-      
+
       final plans = await _repository.getSubscriptionPlans();
-      
+
       print('✅ [PaymentBloc] Fetched ${plans.length} subscription plans');
       emit(SubscriptionPlansLoaded(plans));
     } catch (e, stackTrace) {

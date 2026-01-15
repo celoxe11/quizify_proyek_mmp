@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
@@ -7,6 +8,7 @@ import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/quiz_detail/quiz_detail_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/quiz_detail/quiz_detail_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/quiz_detail/quiz_detail_state.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/space_game_page.dart';
 
 class QuizDetailPage extends StatefulWidget {
   final QuizModel quiz;
@@ -39,10 +41,21 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
       value: _detailBloc,
       child: BlocListener<QuizDetailBloc, QuizDetailState>(
         listener: (context, state) {
-          // Navigate to quiz page when session is started
+          // Navigate to space game page when session is started
           if (state is QuizSessionStarted && !_isStartingQuiz) {
             _isStartingQuiz = true;
-            context.push('/student/quiz/${state.sessionId}/${state.quizId}').then((_) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SpaceGamePage(
+                  sessionId: state.sessionId,
+                  quizId: state.quizId,
+                  answeredQuestions: null,
+                  startingQuestionIndex: 0,
+                  isResuming: false,
+                ),
+              ),
+            ).then((_) {
               if (mounted) {
                 setState(() => _isStartingQuiz = false);
               }
@@ -203,6 +216,7 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
                         color: AppColors.darkAzure,
                         onPressed: () {
                           // Copy to clipboard functionality
+                          Clipboard.setData(ClipboardData(text: widget.quiz.quizCode ?? widget.quiz.id));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Quiz code copied'),
@@ -258,11 +272,7 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
                         ),
                       ),
                       // Divider
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.grey[300],
-                      ),
+                      Container(width: 1, height: 40, color: Colors.grey[300]),
                       // Duration
                       Expanded(
                         child: Padding(
@@ -312,11 +322,7 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
                   // Created Info
                   Row(
                     children: [
-                      Icon(
-                        Icons.person,
-                        size: 18,
-                        color: Colors.grey[600],
-                      ),
+                      Icon(Icons.person, size: 18, color: Colors.grey[600]),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -357,10 +363,7 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
                 icon: const Icon(Icons.play_arrow),
                 label: const Text(
                   'Start Quiz',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -389,10 +392,7 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
           const SizedBox(height: 24),
           ElevatedButton(

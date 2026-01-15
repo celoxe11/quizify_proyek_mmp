@@ -29,5 +29,11 @@ abstract class AuthenticationRepository {
     String? email,
   });
 
+  Future<void> changePassword({
+    required String userId,
+    required String oldPassword,
+    required String newPassword,
+  });
+
   bool isPremiumUser();
 }

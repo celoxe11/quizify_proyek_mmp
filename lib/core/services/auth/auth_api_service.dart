@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../api/api_client.dart';
 import '../../../data/models/user_model.dart';
 
@@ -43,15 +45,31 @@ class AuthApiService {
       if (name != null) payload['name'] = name;
       if (username != null) payload['username'] = username;
       if (email != null) payload['email'] = email;
-      
+
       final response = await _client.put('/users/profile/$userId', payload);
-      
+
       // Backend returns updated user object
       final userModel = UserModel.fromJson(response);
-      
+
       return userModel;
     } catch (e, stackTrace) {
       rethrow;
+    }
+  }
+
+  Future<void> changePassword({
+    required String userId,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final response = await _client.put('/users/profile/$userId/password', {
+      'old_password': oldPassword,
+      'new_password': newPassword,
+    });
+    // Optional: cek response jika backend mengirim pesan error
+    // If backend returns an error structure, throw
+    if (response is Map<String, dynamic> && response.containsKey('error')) {
+      throw Exception(response['error'] ?? 'Gagal mengubah password');
     }
   }
 
