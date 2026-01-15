@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
@@ -215,6 +216,7 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
                         color: AppColors.darkAzure,
                         onPressed: () {
                           // Copy to clipboard functionality
+                          Clipboard.setData(ClipboardData(text: widget.quiz.quizCode ?? widget.quiz.id));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Quiz code copied'),
