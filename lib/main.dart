@@ -676,7 +676,7 @@ class _AppView extends StatelessWidget {
              final dio = Dio(
               BaseOptions(
                 baseUrl:
-                    PlatformConfig.getBaseUrl().replaceAll('/api', ''),
+                    PlatformConfig.getBaseUrl().replaceAll('/api', '')+ '/api',
                 headers: {'Content-Type': 'application/json'},
               ),
             );
