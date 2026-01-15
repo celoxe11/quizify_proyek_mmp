@@ -5,6 +5,7 @@ import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile_detail/edit_profile_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/profile/payment_history_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile_detail/edit_profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/subscription/subscription_plan_page.dart';
 
@@ -62,7 +63,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
       case 2:
         return 'Premium';
       default:
-        return 'Free Tier';
+        return 'Gold';
     }
   }
 
@@ -90,9 +91,9 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
               // Navigate to login page
               context.go('/login');
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
             }
           } else if (state is ProfileError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -107,8 +108,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
           builder: (context, state) {
             if (state is ProfileLoading) {
               return const Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.darkAzure),
+                child: CircularProgressIndicator(color: AppColors.darkAzure),
               );
             }
 
@@ -122,8 +122,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
             }
 
             return const Center(
-              child:
-                  CircularProgressIndicator(color: AppColors.darkAzure),
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
             );
           },
         ),
@@ -152,11 +151,17 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
             const SizedBox(height: 24),
 
             // Subscribe Button (if not premium)
-            if (_getSubscriptionLevel(state.profile.subscriptionId) != 'Premium')
+            if (_getSubscriptionLevel(state.profile.subscriptionId) !=
+                'Premium')
               _buildSubscribeButton(context),
 
-            if (_getSubscriptionLevel(state.profile.subscriptionId) != 'Premium')
+            if (_getSubscriptionLevel(state.profile.subscriptionId) !=
+                'Premium')
               const SizedBox(height: 20),
+
+            // Transaction History Button
+            _buildHistoryButton(context, state.profile.id),
+            const SizedBox(height: 20),
 
             // Profile Information Section
             _buildProfileInfoSection(context, state),
@@ -180,8 +185,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
     );
   }
 
-  Widget _buildProfilePhotoSection(
-      BuildContext context, ProfileLoaded state) {
+  Widget _buildProfilePhotoSection(BuildContext context, ProfileLoaded state) {
     return Column(
       children: [
         Container(
@@ -189,13 +193,11 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.darkAzure,
-              width: 3,
-            ),
+            border: Border.all(color: AppColors.darkAzure, width: 3),
             image: DecorationImage(
               image: NetworkImage(
-                  'https://ui-avatars.com/api/?name=${state.profile.name}&background=random'),
+                'https://ui-avatars.com/api/?name=${state.profile.name}&background=random',
+              ),
               fit: BoxFit.cover,
             ),
           ),
@@ -210,11 +212,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
                   color: AppColors.darkAzure,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: const Icon(
-                  Icons.edit,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.edit, color: Colors.white, size: 20),
               ),
             ],
           ),
@@ -233,7 +231,9 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
   }
 
   Widget _buildRoleSubscriptionSection(
-      BuildContext context, ProfileLoaded state) {
+    BuildContext context,
+    ProfileLoaded state,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -260,8 +260,10 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.darkAzure.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -290,12 +292,14 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: _getSubscriptionColor(
-                              _getSubscriptionLevel(state.profile.subscriptionId))
-                          .withOpacity(0.1),
+                        _getSubscriptionLevel(state.profile.subscriptionId),
+                      ).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -304,7 +308,8 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: _getSubscriptionColor(
-                            _getSubscriptionLevel(state.profile.subscriptionId)),
+                          _getSubscriptionLevel(state.profile.subscriptionId),
+                        ),
                       ),
                     ),
                   ),
@@ -328,7 +333,8 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
                 // Navigate to subscription plan page dengan userId
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => SubscriptionPlanPage(userId: state.profile.id),
+                    builder: (context) =>
+                        SubscriptionPlanPage(userId: state.profile.id),
                   ),
                 );
               }
@@ -354,8 +360,38 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
     );
   }
 
-  Widget _buildProfileInfoSection(
-      BuildContext context, ProfileLoaded state) {
+  Widget _buildHistoryButton(BuildContext context, String userId) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PaymentHistoryPage(userId: userId),
+            ),
+          );
+        },
+        icon: const Icon(Icons.history, color: AppColors.darkAzure),
+        label: const Text(
+          'Riwayat Transaksi',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.darkAzure,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: const BorderSide(color: AppColors.darkAzure, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileInfoSection(BuildContext context, ProfileLoaded state) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -422,7 +458,8 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
                 final profileBloc = context.read<ProfileBloc>();
                 final state = profileBloc.state;
                 if (state is ProfileLoaded) {
-                  final authRepository = context.read<AuthenticationRepositoryImpl>();
+                  final authRepository = context
+                      .read<AuthenticationRepositoryImpl>();
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => EditProfilePage(
@@ -535,10 +572,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
     );
   }
 
-  Widget _buildEditField(
-    String label,
-    TextEditingController controller,
-  ) {
+  Widget _buildEditField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -554,8 +588,10 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -578,7 +614,9 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
   }
 
   Widget _buildChangePasswordModeControls(
-      BuildContext context, ProfileLoaded state) {
+    BuildContext context,
+    ProfileLoaded state,
+  ) {
     return Column(
       children: [
         _buildEditField('Old Password', _oldPasswordController),
@@ -680,7 +718,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
   void _showLogoutConfirmation(BuildContext context) {
     // Get ProfileBloc from context BEFORE creating the dialog
     final profileBloc = context.read<ProfileBloc>();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -699,10 +737,7 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
                 Navigator.of(dialogContext).pop();
                 profileBloc.add(const LogoutEvent());
               },
-              child: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -794,9 +829,8 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
   }
 
   Color _getSubscriptionColor(String level) {
-    if (level == 'Premium') {
-      return Colors.amber[700] ?? Colors.amber;
-    }
+    if (level == 'Premium') return Colors.amber[700] ?? Colors.amber;
+    if (level == 'Gold') return Colors.orange[700] ?? Colors.orange;
     return Colors.blue;
   }
 }

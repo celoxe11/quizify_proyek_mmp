@@ -11,15 +11,17 @@ class CreatePaymentEvent extends PaymentEvent {
   final String type; // 'subscription' or 'avatar'
   final String? planId;
   final String? avatarId;
+  final double? amount; // Harga paket untuk verifikasi di backend
 
   const CreatePaymentEvent({
     required this.type,
     this.planId,
     this.avatarId,
+    this.amount,
   });
 
   @override
-  List<Object?> get props => [type, planId, avatarId];
+  List<Object?> get props => [type, planId, avatarId, amount];
 }
 
 class CheckPaymentStatusEvent extends PaymentEvent {

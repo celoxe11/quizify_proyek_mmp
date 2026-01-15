@@ -359,20 +359,24 @@ class _QuestionCardState extends State<QuestionCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Question Image (Optional)',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      ElevatedButton.icon(
-                        onPressed: _pickImage,
-                        icon: const Icon(Icons.add_photo_alternate, size: 20),
-                        label: const Text('Upload Image'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.darkAzure,
-                          foregroundColor: Colors.white,
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _pickImage,
+                          icon: const Icon(Icons.add_photo_alternate, size: 20),
+                          label: const Text('Upload Image'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.darkAzure,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                       ),
                     ],
