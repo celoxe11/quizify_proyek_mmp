@@ -486,23 +486,23 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
-              _showChangePasswordDialog(context);
-            },
-            icon: const Icon(Icons.lock),
-            label: const Text('Password'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
+        // const SizedBox(width: 8),
+        // Expanded(
+        //   child: ElevatedButton.icon(
+        //     onPressed: () {
+        //       _showChangePasswordDialog(context);
+        //     },
+        //     icon: const Icon(Icons.lock),
+        //     label: const Text('Password'),
+        //     style: ElevatedButton.styleFrom(
+        //       backgroundColor: Colors.orange,
+        //       padding: const EdgeInsets.symmetric(vertical: 14),
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.circular(12),
+        //       ),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
