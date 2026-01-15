@@ -177,4 +177,21 @@ class AdminApiService {
       throw Exception("Gagal mengambil transaksi: $e");
     }
   }
+
+  Future<List<dynamic>> getAvatars() async {
+    final response = await _dio.get('/api/admin/avatars');
+    return response.data['data'];
+  }
+
+  Future<void> createAvatar(Map<String, dynamic> data) async {
+    await _dio.post('/api/admin/avatars', data: data);
+  }
+
+  Future<void> updateAvatar(int id, Map<String, dynamic> data) async {
+    await _dio.put('/api/admin/avatars/$id', data: data);
+  }
+
+  Future<void> toggleAvatarStatus(int id) async {
+    await _dio.patch('/api/admin/avatars/$id/status');
+  }
 }

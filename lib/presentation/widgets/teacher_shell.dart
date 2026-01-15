@@ -10,7 +10,8 @@ class TeacherShell extends StatelessWidget {
 
   int _indexFromLocation(String loc) {
     if (loc.startsWith('/teacher/quizzes')) return 1;
-    if (loc.startsWith('/teacher/profile')) return 2;
+    if (loc.startsWith('/teacher/shop')) return 2;
+    if (loc.startsWith('/teacher/profile')) return 3;
     return 0;
   }
 
@@ -74,6 +75,9 @@ class TeacherShell extends StatelessWidget {
                     context.go('/teacher/quizzes');
                     break;
                   case 2:
+                    context.go('/teacher/shop');
+                    break;
+                  case 3:
                     context.go('/teacher/profile');
                     break;
                 }
@@ -103,6 +107,10 @@ class TeacherShell extends StatelessWidget {
                   label: Text('Quizzes'),
                 ),
                 NavigationRailDestination(
+                  icon: Icon(Icons.storefront), 
+                  label: Text('Shop')
+                ),
+                NavigationRailDestination(
                   icon: Icon(Icons.person),
                   label: Text('Profile'),
                 ),
@@ -124,9 +132,22 @@ class TeacherShell extends StatelessWidget {
         selectedItemColor: const Color(0xFF0D6B7A),
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quizzes'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home), 
+            label: 'Home'
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.quiz), 
+            label: 'Quizzes'
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.storefront), 
+            label: 'Shop'
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person), 
+            label: 'Profile'
+          ),
         ],
         onTap: (i) {
           switch (i) {
@@ -137,6 +158,9 @@ class TeacherShell extends StatelessWidget {
               context.go('/teacher/quizzes');
               break;
             case 2:
+              context.go('/teacher/shop');
+              break;
+            case 3:
               context.go('/teacher/profile');
               break;
           }

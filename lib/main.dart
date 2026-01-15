@@ -17,6 +17,8 @@ import 'package:quizify_proyek_mmp/data/repositories/student_repository.dart';
 import 'package:quizify_proyek_mmp/data/repositories/payment_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/landing_repository.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/teacher_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/avatar/admin_avatar_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/admin/avatar/admin_avatar_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/edit_quiz/admin_edit_quiz_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/quizzes/admin_quizzes_event.dart';
@@ -27,6 +29,8 @@ import 'package:quizify_proyek_mmp/presentation/blocs/teacher/generate_question/
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/student_answers/admin_student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/avatar/admin_avatar_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/admin/common/shop/shop_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
@@ -249,6 +253,10 @@ class _AppView extends StatelessWidget {
                 return const StudentProfilePage();
               },
             ),
+            GoRoute(
+              path: '/student/shop',
+              builder: (context, state) => const ShopPage(isTeacher: false),
+            ),
           ],
         ),
 
@@ -276,6 +284,10 @@ class _AppView extends StatelessWidget {
                   child: const TeacherQuizPage(),
                 );
               },
+            ),
+            GoRoute(
+              path: '/teacher/shop',
+              builder: (context, state) => const ShopPage(isTeacher: true),
             ),
             // Quiz Detail Page with BLoC Provider
             GoRoute(
@@ -572,6 +584,18 @@ class _AppView extends StatelessWidget {
                 );
               },
             ),
+            GoRoute(
+              path: '/admin/avatars',
+              builder: (context, state) {
+                return BlocProvider(
+                  create: (context) => AdminAvatarBloc(
+                    context.read<AdminRepositoryImpl>(),
+                  )..add(LoadAvatarsEvent()), // Load data saat dibuka
+                  child: const AdminAvatarPage(),
+                );
+              },
+            ),
+
           ],
         ),
       ],
