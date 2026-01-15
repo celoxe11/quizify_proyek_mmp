@@ -4,10 +4,56 @@ import 'package:quizify_proyek_mmp/domain/entities/transaction.dart'; // Pakai E
 
 class AdminTransactionDesktopPage extends StatelessWidget {
   final List<TransactionEntity> transactions; // Gunakan Entity
-  const AdminTransactionDesktopPage({super.key, required this.transactions});
+  final String groupBy; // 'None' | 'User' | 'Item'
+  const AdminTransactionDesktopPage({super.key, required this.transactions, this.groupBy = 'None'});
 
   @override
   Widget build(BuildContext context) {
+    // If grouping requested, show grouped summaries
+    if (groupBy != 'None') {
+      final Map<String, List<TransactionEntity>> groups = {};
+      for (var trx in transactions) {
+        final key = groupBy == 'User' ? (trx.userId ?? 'Unknown') : trx.itemName;
+        groups.putIfAbsent(key, () => []).add(trx);
+      }
+
+      final entries = groups.entries.toList()
+        ..sort((a, b) => b.value.map((e) => e.amount).reduce((x, y) => x + y).compareTo(
+              a.value.map((e) => e.amount).reduce((x, y) => x + y),
+            ));
+
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: entries.map((entry) {
+            final total = entry.value.fold<double>(0, (p, e) => p + e.amount);
+            return SizedBox(
+              width: 360,
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 8),
+                      Text('${entry.value.length} transactions', style: const TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 8),
+                      Text('Total: ${_formatCurrency(total)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Card(

@@ -4,10 +4,41 @@ import 'package:quizify_proyek_mmp/data/models/transaction_model.dart'; // Pasti
 
 class AdminTransactionMobilePage extends StatelessWidget {
   final List<TransactionModel> transactions;
-  const AdminTransactionMobilePage({super.key, required this.transactions});
+  final String groupBy; // 'None' | 'User' | 'Item'
+  const AdminTransactionMobilePage({super.key, required this.transactions, this.groupBy = 'None'});
 
   @override
   Widget build(BuildContext context) {
+    if (groupBy != 'None') {
+      final Map<String, List<TransactionModel>> groups = {};
+      for (var trx in transactions) {
+        final key = groupBy == 'User' ? (trx.userId ?? 'Unknown') : trx.itemName;
+        groups.putIfAbsent(key, () => []).add(trx);
+      }
+
+      final entries = groups.entries.toList()
+        ..sort((a, b) => b.value.fold<double>(0, (p, e) => p + e.amount).compareTo(a.value.fold<double>(0, (p, e) => p + e.amount)));
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: entries.length,
+        itemBuilder: (context, idx) {
+          final key = entries[idx].key;
+          final list = entries[idx].value;
+          final total = list.fold<double>(0, (p, e) => p + e.amount);
+          return Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+            child: ListTile(
+              title: Text(key, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('${list.length} transactions • Total: ${_formatCurrency(total)}'),
+              trailing: const Icon(Icons.chevron_right),
+            ),
+          );
+        },
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: transactions.length,
