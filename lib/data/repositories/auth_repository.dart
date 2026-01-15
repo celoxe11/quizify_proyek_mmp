@@ -171,7 +171,6 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
 
   @override
   Future<User> login({required String email, required String password}) async {
-
     if (email == 'admin') {
       print("🚀 MODE ADMIN BYPASS AKTIF");
 
@@ -182,22 +181,20 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
         name: 'Super Admin',
         username: 'admin',
         email: 'admin@quizify.com',
-        role: 'admin',          // <--- PENTING: Role harus 'admin'
-        subscriptionId: 1,      // 1 = Free, 2 = Premium
+        role: 'admin', // <--- PENTING: Role harus 'admin'
+        subscriptionId: 1, // 1 = Free, 2 = Premium
         isActive: true,
       );
 
       // 2. Simpan ke variabel lokal agar aplikasi tahu sedang login
       _currentUser = mockAdmin;
-      
+
       // 3. Kabari Bloc/Listener bahwa user berhasil login
       _controller.add(mockAdmin);
 
       // 4. Langsung return user palsu ini (Login Berhasil)
       return mockAdmin;
     }
-
-
 
     try {
       // 1. Authenticate with Firebase
@@ -348,7 +345,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     String? username,
     String? email,
   }) async {
-    try {      
+    try {
       // Call API to update user profile (only sends changed fields)
       final updatedUser = await _apiService.updateUserProfile(
         userId: userId,
@@ -356,7 +353,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
         username: username,
         email: email,
       );
-      
+
       // Update cached user
       _currentUser = updatedUser;
       _controller.add(updatedUser);
@@ -364,6 +361,38 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
       return updatedUser;
     } catch (e, stackTrace) {
       throw Exception('Gagal memperbarui profil: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String userId,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      // Pastikan user sudah login Firebase
+      if (_firebaseAuthService.currentUser == null) {
+        throw Exception('User not authenticated. Please login again.');
+      }
+      // Refresh token agar header Authorization valid
+      await _refreshAuthToken();
+
+      // Request ke backend
+      await _apiService.changePassword(
+        userId: userId,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+
+      // Refresh profile user setelah ganti password
+      final refreshed = await _apiService.getUserProfile();
+      _currentUser = refreshed;
+      await _cacheUserData(refreshed);
+      _controller.add(refreshed);
+    } catch (e) {
+      print('❌ [AuthRepository] Error updating password: $e');
+      rethrow;
     }
   }
 

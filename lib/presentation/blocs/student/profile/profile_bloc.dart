@@ -75,7 +75,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         final currentUser = authRepository.currentUser;
 
         if (currentUser.id.isEmpty) {
-          emit(const ProfileError('User not authenticated. Please login again.'));
+          emit(
+            const ProfileError('User not authenticated. Please login again.'),
+          );
           return;
         }
 
@@ -112,10 +114,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         // Note: User entity doesn't have photoUrl field
         // This can be extended if needed
 
-        emit(const ProfileSuccess(
-          message: 'Photo updated successfully',
-          action: 'photo_update',
-        ));
+        emit(
+          const ProfileSuccess(
+            message: 'Photo updated successfully',
+            action: 'photo_update',
+          ),
+        );
         // Reload loaded state after success message
         emit(ProfileLoaded(profile: currentState.profile));
       } catch (e) {
@@ -147,10 +151,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         );
 
         emit(currentState.copyWith(profile: updatedProfile));
-        emit(const ProfileSuccess(
-          message: 'Profile updated successfully',
-          action: 'update',
-        ));
+        emit(
+          const ProfileSuccess(
+            message: 'Profile updated successfully',
+            action: 'update',
+          ),
+        );
         // Reload loaded state after success message
         emit(ProfileLoaded(profile: updatedProfile));
       } catch (e) {
@@ -159,36 +165,48 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
   }
 
-  /// Change password
   Future<void> _onChangePassword(
     ChangePasswordEvent event,
     Emitter<ProfileState> emit,
   ) async {
     if (state is ProfileLoaded) {
       final currentState = state as ProfileLoaded;
+      emit(const ProfileLoading()); // Tampilkan loading saat proses
+
       try {
-        // TODO: Replace with actual API call
-        // Validate passwords
+        // 1. Validasi Client-side
         if (event.newPassword != event.confirmPassword) {
-          emit(const ProfileError('Passwords do not match'));
+          emit(const ProfileError('Konfirmasi password tidak cocok'));
+          emit(ProfileLoaded(profile: currentState.profile));
           return;
         }
 
         if (event.newPassword.length < 6) {
-          emit(const ProfileError('Password must be at least 6 characters'));
+          emit(const ProfileError('Password minimal 6 karakter'));
+          emit(ProfileLoaded(profile: currentState.profile));
           return;
         }
 
-        // TODO: Call API to change password
+        // 2. Panggil Repository
+        await authRepository.changePassword(
+          userId: currentState.profile.id,
+          oldPassword: event.oldPassword,
+          newPassword: event.newPassword,
+        );
 
-        emit(const ProfileSuccess(
-          message: 'Password changed successfully',
-          action: 'password_change',
-        ));
-        // Reload loaded state after success message
+        // 3. Emit Success
+        emit(
+          const ProfileSuccess(
+            message: 'Password berhasil diperbarui',
+            action: 'password_change',
+          ),
+        );
+
+        // Kembali ke state loaded
         emit(ProfileLoaded(profile: currentState.profile));
       } catch (e) {
         emit(ProfileError(e.toString()));
+        emit(ProfileLoaded(profile: currentState.profile));
       }
     }
   }
@@ -216,10 +234,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         );
 
         emit(currentState.copyWith(profile: updatedProfile));
-        emit(const ProfileSuccess(
-          message: 'Subscription activated',
-          action: 'subscribe',
-        ));
+        emit(
+          const ProfileSuccess(
+            message: 'Subscription activated',
+            action: 'subscribe',
+          ),
+        );
         // Reload loaded state after success message
         emit(ProfileLoaded(profile: updatedProfile));
       } catch (e) {
@@ -229,21 +249,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   /// Logout
-  Future<void> _onLogout(
-    LogoutEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _onLogout(LogoutEvent event, Emitter<ProfileState> emit) async {
     try {
       print('Logging out...');
-      
+
       // Call actual logout dari repository
       await authRepository.logout();
-      
+
       print('Logged out successfully');
-      emit(const ProfileSuccess(
-        message: 'Logged out successfully',
-        action: 'logout',
-      ));
+      emit(
+        const ProfileSuccess(
+          message: 'Logged out successfully',
+          action: 'logout',
+        ),
+      );
     } catch (e) {
       print('Logout error: $e');
       emit(ProfileError(e.toString()));
