@@ -892,9 +892,8 @@ class _TeacherProfileDesktopState extends State<TeacherProfileDesktop> {
   }
 
   Color _getSubscriptionColor(String level) {
-    if (level == 'Premium') {
-      return Colors.amber[700] ?? Colors.amber;
-    }
+    if (level == 'Premium') return Colors.amber[700] ?? Colors.amber;
+    if (level == 'Gold') return Colors.orange[700] ?? Colors.orange;
     return Colors.blue;
   }
 }
