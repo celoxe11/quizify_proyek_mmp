@@ -6,6 +6,8 @@ import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile_detail/edit_profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile_detail/edit_profile_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/subscription/subscription_plan_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/profile/payment_history_page.dart';
 
 /// Desktop layout for the Student Profile page
 ///
@@ -61,7 +63,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
       case 2:
         return 'Premium';
       default:
-        return 'Free Tier';
+        return 'Gold';
     }
   }
 
@@ -167,8 +169,11 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
                   const SizedBox(height: 32),
                   _buildRoleSubscriptionSection(context, state),
                   const SizedBox(height: 24),
-                  if (_getSubscriptionLevel(state.profile.subscriptionId) != 'Premium')
+                  if (_getSubscriptionLevel(state.profile.subscriptionId) != 'Premium') ...[
                     _buildSubscribeButton(context),
+                    const SizedBox(height: 16),
+                    _buildHistoryButton(context, state.profile.id),
+                  ],
                 ],
               ),
             ),
@@ -344,7 +349,15 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          context.read<ProfileBloc>().add(const SubscribeEvent('premium'));
+          // Navigate to subscription plan page with current userId (mobile behaviour)
+          final state = context.read<ProfileBloc>().state;
+          if (state is ProfileLoaded) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => SubscriptionPlanPage(userId: state.profile.id),
+              ),
+            );
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green,
@@ -354,11 +367,41 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
           ),
         ),
         child: const Text(
-          'Subscribe to Premium',
+          'Subscribe',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryButton(BuildContext context, String userId) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PaymentHistoryPage(userId: userId),
+            ),
+          );
+        },
+        icon: const Icon(Icons.history),
+        label: const Text(
+          'Riwayat Transaksi',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.darkAzure,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -533,30 +576,30 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
-              if (context.mounted) {
-                final state = context.read<ProfileBloc>().state;
-                if (state is ProfileLoaded) {
-                  // Emit event to toggle change password mode
-                  // This is handled by emitting a state that shows password fields
-                  _showChangePasswordDialog(context);
-                }
-              }
-            },
-            icon: const Icon(Icons.lock),
-            label: const Text('Change Password'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
+        // Expanded(
+        //   child: ElevatedButton.icon(
+        //     onPressed: () {
+        //       if (context.mounted) {
+        //         final state = context.read<ProfileBloc>().state;
+        //         if (state is ProfileLoaded) {
+        //           // Emit event to toggle change password mode
+        //           // This is handled by emitting a state that shows password fields
+        //           _showChangePasswordDialog(context);
+        //         }
+        //       }
+        //     },
+        //     icon: const Icon(Icons.lock),
+        //     label: const Text('Change Password'),
+        //     style: ElevatedButton.styleFrom(
+        //       backgroundColor: Colors.orange,
+        //       foregroundColor: Colors.white,
+        //       padding: const EdgeInsets.symmetric(vertical: 14),
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.circular(12),
+        //       ),
+        //     ),
+        //   ),
+        // ),
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton.icon(
