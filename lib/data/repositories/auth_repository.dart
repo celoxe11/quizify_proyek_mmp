@@ -445,6 +445,6 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   bool isPremiumUser() {
     print("Current User: ${_currentUser.toString()}");
     print('Subscription ID: ${_currentUser.subscriptionId}');
-    return _currentUser.subscriptionId == 2;
+    return _currentUser.subscriptionId == 2 || _currentUser.subscriptionId == 4;
   }
 }
