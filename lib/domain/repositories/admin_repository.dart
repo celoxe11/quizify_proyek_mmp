@@ -1,4 +1,5 @@
 import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
+import 'package:quizify_proyek_mmp/data/models/avatar_model.dart';
 import 'package:quizify_proyek_mmp/data/models/subscription_model.dart';
 import 'package:quizify_proyek_mmp/data/models/transaction_model.dart';
 import 'package:quizify_proyek_mmp/data/models/user_log_model.dart';
@@ -24,6 +25,10 @@ abstract class AdminRepository {
   Future<void> addSubscriptionTier(String name, double price);
   Future<void> updateSubscriptionTier(int id, String name, double price);
   Future<List<TransactionModel>> fetchAllTransactions();
+  Future<List<AvatarModel>> fetchAvatars();
+  Future<void> createAvatar(String name, String url, double price, String rarity);
+  Future<void> updateAvatar(int id, String name, String url, double price, String rarity);
+  Future<void> toggleAvatarStatus(int id);
 
   Future<Map<String, dynamic>> saveQuizWithQuestions({
     String? quizId,

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:quizify_proyek_mmp/core/api/api_client.dart';
 import 'package:quizify_proyek_mmp/core/api/dio_client.dart';
+import 'package:quizify_proyek_mmp/data/models/avatar_model.dart';
 import 'package:quizify_proyek_mmp/data/models/history_detail_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
@@ -191,6 +192,52 @@ class StudentRepository {
       'question_id': questionId,
       'selected_answer': selectedAnswer,
     });
+  }
+
+  // GET SHOP ITEMS (Avatar yang dijual)
+  Future<List<AvatarModel>> fetchShopAvatars() async {
+    try {
+      // Endpoint ini harusnya me-return semua avatar (sama kayak admin fetch avatars)
+      // Jika belum ada endpoint khusus student, bisa pakai endpoint public atau admin sementara
+      final response = await _dio.get('/api/student/shop/avatars'); 
+      final list = _unwrapList(response.data);
+      return list.map((e) => AvatarModel.fromJson(e)).toList();
+    } catch (e) {
+      throw Exception("Gagal load shop: $e");
+    }
+  }
+
+  // GET MY INVENTORY
+  Future<List<AvatarModel>> fetchMyInventory() async {
+    try {
+      final response = await _dio.get('/api/student/inventory');
+      final list = _unwrapList(response.data);
+      return list.map((e) => AvatarModel.fromJson(e)).toList();
+    } catch (e) {
+      throw Exception("Gagal load inventory: $e");
+    }
+  }
+
+  // EQUIP AVATAR
+  Future<void> equipAvatar(int avatarId) async {
+    try {
+      await _dio.post('/api/student/equip-avatar', data: {
+        'avatar_id': avatarId
+      });
+    } catch (e) {
+      throw Exception("Gagal ganti avatar: $e");
+    }
+  }
+
+  // BUY AVATAR
+  Future<void> buyAvatar(int avatarId) async {
+     try {
+      await _dio.post('/api/student/buy-avatar', data: {
+        'avatar_id': avatarId
+      });
+    } catch (e) {
+      throw Exception("Gagal beli avatar: $e");
+    }
   }
 
   Future<Map<String, dynamic>> endQuizSession(String sessionId) async {

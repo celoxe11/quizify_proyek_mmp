@@ -10,9 +10,10 @@ class StudentShell extends StatelessWidget {
 
   // 1. Update logika index untuk menyertakan History
   int _indexFromLocation(String loc) {
-    if (loc.startsWith('/student/join-quiz')) return 1;
-    if (loc.startsWith('/student/history')) return 2; // Tambahan History
-    if (loc.startsWith('/student/profile')) return 3;
+    if (loc.startsWith('/student/shop')) return 1;  
+    if (loc.startsWith('/student/join-quiz')) return 2;
+    if (loc.startsWith('/student/history')) return 3;
+    if (loc.startsWith('/student/profile')) return 4;
     return 0;
   }
 
@@ -70,14 +71,17 @@ class StudentShell extends StatelessWidget {
                   case 0:
                     context.go('/student/home');
                     break;
-                  case 1:
-                    context.go('/student/join-quiz');
+                  case 1: 
+                    context.go('/student/shop'); 
+                  break; 
+                  case 2: 
+                    context.go('/student/join-quiz'); 
                     break;
-                  case 2: // Tambahan logic navigasi desktop
-                    context.go('/student/history');
+                  case 3: 
+                    context.go('/student/history'); 
                     break;
-                  case 3:
-                    context.go('/student/profile');
+                  case 4: 
+                    context.go('/student/profile'); 
                     break;
                 }
               },
@@ -100,6 +104,10 @@ class StudentShell extends StatelessWidget {
                 NavigationRailDestination(
                   icon: Icon(Icons.home),
                   label: Text('Home'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.storefront), 
+                  label: Text('Shop')
                 ),
                 NavigationRailDestination(
                   icon: Icon(Icons.quiz),
@@ -136,6 +144,7 @@ class StudentShell extends StatelessWidget {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.storefront), label: 'Shop'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quizzes'),
           // 3. Tambahkan Item Mobile
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
@@ -143,9 +152,10 @@ class StudentShell extends StatelessWidget {
         ],
         onTap: (i) {
           if (i == 0) context.go('/student/home');
-          if (i == 1) context.go('/student/join-quiz');
-          if (i == 2) context.go('/student/history'); // Navigasi History
-          if (i == 3) context.go('/student/profile');
+          if (i == 1) context.go('/student/shop');
+          if (i == 2) context.go('/student/join-quiz');
+          if (i == 3) context.go('/student/history');
+          if (i == 4) context.go('/student/profile');
         },
       ),
     );
