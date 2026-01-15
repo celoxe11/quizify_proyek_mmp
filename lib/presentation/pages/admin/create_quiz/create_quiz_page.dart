@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import "package:quizify_proyek_mmp/core/constants/app_colors.dart";
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
@@ -267,6 +268,11 @@ class _AdminCreateQuizPageState extends State<AdminCreateQuizPage> {
                                   icon: const Icon(Icons.copy),
                                   onPressed: () {
                                     // Copy quiz code to clipboard
+                                    Clipboard.setData(
+                                      ClipboardData(
+                                        text: _codeController.text,
+                                      ),
+                                    );
                                   },
                                   tooltip: 'Copy Code',
                                 ),
