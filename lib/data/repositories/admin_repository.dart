@@ -1,6 +1,7 @@
 import 'package:quizify_proyek_mmp/core/local/quiz_storage.dart';
 import 'package:quizify_proyek_mmp/core/services/admin/admin_service.dart';
 import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
+import 'package:quizify_proyek_mmp/data/models/avatar_model.dart';
 import 'package:quizify_proyek_mmp/data/models/subscription_model.dart';
 import 'package:quizify_proyek_mmp/data/models/transaction_model.dart';
 import 'package:quizify_proyek_mmp/data/models/user_log_model.dart';
@@ -164,6 +165,12 @@ class AdminRepositoryImpl implements AdminRepository {
         .catchError((e) {
           print('Background sync quiz detail failed: $e');
         });
+  }
+
+  @override
+  Future<List<AvatarModel>> fetchAvatars() async {
+    final raw = await apiService.getAvatars();
+    return raw.map((e) => AvatarModel.fromJson(e)).toList();
   }
 
   @override
@@ -355,5 +362,30 @@ class AdminRepositoryImpl implements AdminRepository {
     } catch (e) {
       throw Exception("Repo Error Transactions: $e");
     }
+  }
+
+  @override
+  Future<void> createAvatar(String name, String url, double price, String rarity) async {
+    await apiService.createAvatar({
+      'name': name,
+      'image_url': url,
+      'price': price,
+      'rarity': rarity,
+    });
+  }
+
+  @override
+  Future<void> updateAvatar(int id, String name, String url, double price, String rarity) async {
+    await apiService.updateAvatar(id, {
+      'name': name,
+      'image_url': url,
+      'price': price,
+      'rarity': rarity,
+    });
+  }
+
+  @override
+  Future<void> toggleAvatarStatus(int id) async {
+    await apiService.toggleAvatarStatus(id);
   }
 }

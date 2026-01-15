@@ -13,6 +13,7 @@ class AdminShell extends StatelessWidget {
     if (loc.startsWith('/admin/quizzes')) return 2;
     if (loc.startsWith('/admin/analytics')) return 3;
     if (loc.startsWith('/admin/subscriptions')) return 4; 
+    if (loc.startsWith('/admin/avatars')) return 5;
     return 0;
   }
 
@@ -92,6 +93,9 @@ class AdminShell extends StatelessWidget {
                 case 4:
                   context.go('/admin/subscriptions');
                   break;
+                case 5:
+                  context.go('/admin/avatars'); // [BARU] Ke halaman Avatar
+                  break;
               }
             },
             labelType: NavigationRailLabelType.all,
@@ -129,6 +133,10 @@ class AdminShell extends StatelessWidget {
               NavigationRailDestination(
                 icon: Icon(Icons.card_membership),
                 label: Text('Subscriptions'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.checkroom), // Icon baju/avatar
+                label: Text('Avatars'),
               ),
             ],
           ),
