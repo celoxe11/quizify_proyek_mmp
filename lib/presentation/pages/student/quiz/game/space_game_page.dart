@@ -148,6 +148,10 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
   late StudentRepository _repository;
   BuildContext? _dialogContext;
 
+  // Image modal state
+  String? _imageModalUrl;
+  bool _isImageModalVisible = false;
+
   @override
   void initState() {
     super.initState();
@@ -156,6 +160,7 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
       onAnswerSubmit: _onSingleAnswerSubmit,
       onAnswersSubmit: _onAnswersSubmit,
       onGameComplete: _onGameComplete,
+      onShowImageModal: _showImageModal,
       startingQuestionIndex: widget.startingQuestionIndex,
       answeredQuestions: widget.answeredQuestions,
     );
@@ -175,6 +180,22 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
     print('🗑️ [SpaceGamePage] Disposing game');
     game.pauseEngine();
     super.dispose();
+  }
+
+  void _showImageModal(String imageUrl) {
+    setState(() {
+      _imageModalUrl = imageUrl;
+      _isImageModalVisible = true;
+    });
+  }
+
+  void _hideImageModal() {
+    setState(() {
+      _isImageModalVisible = false;
+      _imageModalUrl = null;
+    });
+    // Notify game that modal is closed
+    game.closeImageModal();
   }
 
   // Submit single answer immediately when question is answered
@@ -376,7 +397,151 @@ class _SpaceGameViewState extends State<_SpaceGameView> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFF001233),
-        body: GameWidget(key: _gameKey, game: game),
+        body: Stack(
+          children: [
+            GameWidget(key: _gameKey, game: game),
+            // Image modal overlay
+            if (_isImageModalVisible && _imageModalUrl != null)
+              _ImageModalOverlay(
+                imageUrl: _imageModalUrl!,
+                onClose: _hideImageModal,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Image modal overlay widget
+class _ImageModalOverlay extends StatelessWidget {
+  final String imageUrl;
+  final VoidCallback onClose;
+
+  const _ImageModalOverlay({required this.imageUrl, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    print('🖼️ [ImageModal] Attempting to load image from: $imageUrl');
+
+    return GestureDetector(
+      onTap: onClose,
+      child: Container(
+        color: Colors.black.withOpacity(0.85),
+        child: Center(
+          child: GestureDetector(
+            onTap: () {}, // Prevent closing when tapping on the content
+            child: Container(
+              margin: const EdgeInsets.all(20),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Close button
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(left: 8.0),
+                          child: Text(
+                            'Gambar Soal',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: onClose,
+                          color: Colors.red,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Image
+                  Flexible(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 200,
+                            padding: const EdgeInsets.all(40),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          print('❌ [ImageModal] Error loading image: $error');
+                          print('❌ [ImageModal] URL was: $imageUrl');
+                          return Container(
+                            height: 200,
+                            padding: const EdgeInsets.all(20),
+                            color: Colors.grey.shade300,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.broken_image,
+                                    size: 48,
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Gagal memuat gambar',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    imageUrl,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

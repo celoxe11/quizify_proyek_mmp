@@ -1,4 +1,4 @@
-import 'dart:convert'; 
+import 'dart:convert';
 import '../../domain/entities/question.dart';
 import '../../domain/entities/question_image.dart';
 import 'question_image_model.dart';
@@ -21,12 +21,20 @@ class QuestionModel extends Question {
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
+    // Debug: Print all keys to see what's available
+    print('🔍 [QuestionModel] Parsing question: ${json['id']}');
+    print('🔍 [QuestionModel] Available keys: ${json.keys.toList()}');
+    print('🔍 [QuestionModel] image_url value: ${json['image_url']}');
+
     // Parse question image if exists
     QuestionImage? questionImage;
     if (json['image_url'] != null) {
       try {
         final imageData = json['image_url'];
-        
+        print(
+          '✅ [QuestionModel] Found image_url: $imageData (type: ${imageData.runtimeType})',
+        );
+
         // Case 1: Backend returns string URL directly
         if (imageData is String && imageData.isNotEmpty) {
           questionImage = QuestionImageModel(
@@ -36,10 +44,16 @@ class QuestionModel extends Question {
             imageUrl: imageData,
             uploadedAt: null,
           );
+          print(
+            '✅ [QuestionModel] Created image from string: ${questionImage.imageUrl}',
+          );
         }
         // Case 2: Backend returns object with image details
         else if (imageData is Map<String, dynamic>) {
           questionImage = QuestionImageModel.fromJson(imageData);
+          print(
+            '✅ [QuestionModel] Created image from object: ${questionImage.imageUrl}',
+          );
         }
         // Case 3: Backend returns array with image object
         else if (imageData is List && imageData.isNotEmpty) {
@@ -51,15 +65,23 @@ class QuestionModel extends Question {
               imageUrl: imageData[0] as String,
               uploadedAt: null,
             );
+            print(
+              '✅ [QuestionModel] Created image from array[string]: ${questionImage.imageUrl}',
+            );
           } else if (imageData[0] is Map<String, dynamic>) {
             questionImage = QuestionImageModel.fromJson(imageData[0]);
+            print(
+              '✅ [QuestionModel] Created image from array[object]: ${questionImage.imageUrl}',
+            );
           }
         }
       } catch (e) {
-        print('Error parsing questionimage: $e');
+        print('❌ [QuestionModel] Error parsing questionimage: $e');
       }
+    } else {
+      print('⚠️ [QuestionModel] No image_url field found in response');
     }
-    
+
     return QuestionModel(
       id: json['id']?.toString() ?? '',
       quizId: json['quiz_id']?.toString(),
@@ -71,12 +93,18 @@ class QuestionModel extends Question {
       isGenerated: _parseBool(json['is_generated']),
 
       // Statistics (handle null)
-      correctCount: int.tryParse(json['correct_answers']?.toString() ?? '0') ?? 0,
-      incorrectCount: int.tryParse(json['incorrect_answers']?.toString() ?? '0') ?? 0,
+      correctCount:
+          int.tryParse(json['correct_answers']?.toString() ?? '0') ?? 0,
+      incorrectCount:
+          int.tryParse(json['incorrect_answers']?.toString() ?? '0') ?? 0,
 
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null,
-      
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'].toString())
+          : null,
+
       image: questionImage,
     );
   }
@@ -85,7 +113,7 @@ class QuestionModel extends Question {
   /// Expected format: {"question": {...}}
   factory QuestionModel.fromGeneratedResponse(Map<String, dynamic> response) {
     final questionData = response['question'] as Map<String, dynamic>;
-    
+
     return QuestionModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(), // Generate temp ID
       type: questionData['type']?.toString() ?? 'multiple',
@@ -103,8 +131,8 @@ class QuestionModel extends Question {
     // Case 1: Backend sends String "["a", "b", ...]"
     if (value is String) {
       try {
-        final decoded = jsonDecode(value); 
-        
+        final decoded = jsonDecode(value);
+
         if (decoded is List) {
           return decoded.map((e) => e.toString()).toList();
         }

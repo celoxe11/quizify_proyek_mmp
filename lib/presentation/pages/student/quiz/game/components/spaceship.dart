@@ -58,7 +58,7 @@ class Spaceship extends SpriteComponent
     if (totalOptions == 2) {
       // currentIndex = 0; // First position for 2 options
       if (isDesktop) {
-        availableX = [game.size.x * 0.3, game.size.x * 0.7];
+        availableX = [game.size.x * 0.3, game.size.x * 0.6];
       } else {
         availableX = [game.size.x / 30, game.size.x * 16 / 30];
       }
@@ -98,7 +98,6 @@ class Spaceship extends SpriteComponent
 
   void resetPosition() {
     // Reset to middle position for both 2 and 4 options
-    print('Resetting spaceship position');
     final isDesktop = game.size.x > 600;
     if (totalOptions == 2) {
       currentIndex = 0; // First position for 2 options
@@ -133,10 +132,8 @@ class Spaceship extends SpriteComponent
   void moveLeft() {
     if (currentIndex > 0 && availableX.isNotEmpty) {
       currentIndex--;
-      print('Moved left to index $currentIndex');
       if (currentIndex >= 0 && currentIndex < availableX.length) {
         position.x = availableX[currentIndex];
-        print('Moved left to index $currentIndex');
       }
     }
   }
@@ -144,10 +141,8 @@ class Spaceship extends SpriteComponent
   void moveRight() {
     if (availableX.isNotEmpty && currentIndex < availableX.length - 1) {
       currentIndex++;
-      print('Moved right to index $currentIndex');
       if (currentIndex >= 0 && currentIndex < availableX.length) {
         position.x = availableX[currentIndex];
-        print('Moved right to index $currentIndex');
       }
     }
   }

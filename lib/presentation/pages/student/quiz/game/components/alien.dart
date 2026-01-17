@@ -3,6 +3,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/bullet.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/components/explosion_effect.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/quiz/game/space_game.dart';
@@ -14,7 +15,7 @@ class Alien extends PositionComponent
   int totalOptions; // Total number of options (2 for boolean, 4 for multiple)
   Function()? onHit;
   late TextComponent optionLabel;
-  late TextComponent optionTextComponent;
+  late TextBoxComponent optionTextComponent;
   late SpriteComponent alienSprite;
   late Vector2 basePosition;
   double elapsedTime = 0;
@@ -109,35 +110,35 @@ class Alien extends PositionComponent
     );
 
     // Add option label (A, B, C, D) with background
-    final labelBg =
-        RectangleComponent(
-          size: Vector2(40, 40),
-          position: Vector2(0, -alienSize.y / 2 - 40),
-          anchor: Anchor.center,
-          paint: Paint()..color = Colors.yellow.withOpacity(0.9),
-        )..add(
-          RectangleComponent(
-            size: Vector2(36, 36),
-            position: Vector2(20, 20),
-            anchor: Anchor.center,
-            paint: Paint()..color = const Color(0xFF004A59),
-          ),
-        );
-    add(labelBg);
+    // final labelBg =
+    //     RectangleComponent(
+    //       size: Vector2(40, 40),
+    //       position: Vector2(0, -alienSize.y / 2 - 40),
+    //       anchor: Anchor.center,
+    //       paint: Paint()..color = Colors.yellow.withOpacity(0.9),
+    //     )..add(
+    //       RectangleComponent(
+    //         size: Vector2(36, 36),
+    //         position: Vector2(20, 20),
+    //         anchor: Anchor.center,
+    //         paint: Paint()..color = const Color(0xFF004A59),
+    //       ),
+    //     );
+    // add(labelBg);
 
-    optionLabel = TextComponent(
-      text: optionValue,
-      position: Vector2(0, -alienSize.y / 2 - 40),
-      anchor: Anchor.center,
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Colors.yellowAccent,
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-    add(optionLabel);
+    // optionLabel = TextComponent(
+    //   text: optionValue,
+    //   position: Vector2(0, -alienSize.y / 2 - 40),
+    //   anchor: Anchor.center,
+    //   textRenderer: TextPaint(
+    //     style: const TextStyle(
+    //       color: Colors.yellowAccent,
+    //       fontSize: 28,
+    //       fontWeight: FontWeight.bold,
+    //     ),
+    //   ),
+    // );
+    // add(optionLabel);
 
     // Add option text with background for better readability
     // final optionTextBg = RectangleComponent(
@@ -148,17 +149,26 @@ class Alien extends PositionComponent
     // );
     // add(optionTextBg);
 
-    optionTextComponent = TextComponent(
-      text: _truncateText(optionText, 20),
-      position: Vector2(0, alienSize.y / 2 + 15),
-      anchor: Anchor.topCenter,
+    // Responsive sizing based on screen width
+    final textBoxWidth = isDesktop ? 160.0 : 70.0;
+    final textBoxHeight = isDesktop ? 200.0 : 100.0;
+    final fontSize = isDesktop ? 14.0 : 8.0;
+
+    optionTextComponent = TextBoxComponent(
+      text: optionText,
+      position: Vector2(-textBoxWidth / 2, alienSize.y / 2 + 15),
+      size: Vector2(textBoxWidth, textBoxHeight),
       textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+        style: GoogleFonts.oxanium(
+          textStyle: TextStyle(
+            color: Colors.white,
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            height: 1.1,
+          ),
         ),
       ),
+      align: Anchor.topCenter,
     );
     add(optionTextComponent);
   }
