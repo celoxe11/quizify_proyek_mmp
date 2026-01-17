@@ -35,12 +35,6 @@ class TeacherRepositoryImpl extends TeacherRepository {
   }
 
   @override
-  Future<void> endQuiz(String sessionId) {
-    // TODO: implement endQuiz
-    throw UnimplementedError();
-  }
-
-  @override
   Future<QuestionModel> generateQuestion({
     String? type,
     String? difficulty,
@@ -161,9 +155,20 @@ class TeacherRepositoryImpl extends TeacherRepository {
   }
 
   @override
-  Future<dynamic> getQuizAccuracy(String quizId) {
-    // TODO: implement getQuizAccuracy
-    throw UnimplementedError();
+  Future<List<Map<String, dynamic>>> getQuizAccuracy(String quizId) async {
+    try {
+      final response = await _teacherService.getQuizAccuracy(quizId);
+      print('Quiz accuracy response: $response');
+
+      final stats = response['question_stats'] as List<dynamic>?;
+      if (stats != null) {
+        return stats.map((e) => e as Map<String, dynamic>).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error getting quiz accuracy: $e');
+      rethrow;
+    }
   }
 
   @override

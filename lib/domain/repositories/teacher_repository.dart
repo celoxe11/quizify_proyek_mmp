@@ -23,8 +23,6 @@ abstract class TeacherRepository {
 
   Future<void> deleteQuiz(String quizId);
 
-  Future<void> endQuiz(String sessionId);
-
   /// Generate AI-powered question
   /// - type: "multiple" or "boolean" (default: "multiple")
   /// - difficulty: "easy", "medium", or "hard" (default: "medium")

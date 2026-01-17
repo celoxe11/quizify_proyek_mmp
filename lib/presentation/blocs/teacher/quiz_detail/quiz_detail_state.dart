@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:quizify_proyek_mmp/data/models/question_accuracy_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 
@@ -22,10 +23,7 @@ class QuizDetailLoaded extends QuizDetailState {
   final QuizModel quiz;
   final List<QuestionModel> questions;
 
-  const QuizDetailLoaded({
-    required this.quiz,
-    this.questions = const [],
-  });
+  const QuizDetailLoaded({required this.quiz, this.questions = const []});
 
   /// Create a copy with updated values
   QuizDetailLoaded copyWith({
@@ -41,10 +39,7 @@ class QuizDetailLoaded extends QuizDetailState {
   }
 
   @override
-  List<Object?> get props => [
-    quiz,
-    questions,
-  ];
+  List<Object?> get props => [quiz, questions];
 }
 
 /// Error state when something goes wrong
@@ -86,7 +81,7 @@ class StudentsError extends QuizDetailState {
 class AccuracyLoading extends QuizDetailState {}
 
 class AccuracyLoaded extends QuizDetailState {
-  final List<Map<String, dynamic>> accuracyResults; // Accuracy results data
+  final List<QuestionAccuracy> accuracyResults; // Accuracy results data
 
   const AccuracyLoaded({required this.accuracyResults});
 

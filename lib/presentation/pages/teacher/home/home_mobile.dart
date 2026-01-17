@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
+import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/home/home_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/home/home_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/home/home_state.dart';
 
+/// Mobile layout for the Teacher Home page
+///
+/// Displays recommended quizzes and all public quizzes with search functionality
 class TeacherHomeMobile extends StatefulWidget {
   const TeacherHomeMobile({super.key});
 
@@ -10,71 +20,14 @@ class TeacherHomeMobile extends StatefulWidget {
 }
 
 class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
-  final TextEditingController _searchController = TextEditingController();
+  late TextEditingController _searchController;
 
-  // Dummy data for recommended quizzes
-  final List<Map<String, dynamic>> _recommendedQuizzes = [
-    {
-      'title': 'Math Quiz 101',
-      'description': 'Basic algebra and geometry',
-      'questions': 20,
-      'participants': 45,
-      'color': const Color(0xFF7DD3C0),
-    },
-    {
-      'title': 'Science Challenge',
-      'description': 'Physics and Chemistry basics',
-      'questions': 15,
-      'participants': 32,
-      'color': const Color(0xFF5DB4C4),
-    },
-    {
-      'title': 'History Trivia',
-      'description': 'World War II events',
-      'questions': 25,
-      'participants': 28,
-      'color': const Color(0xFFA8D8D8),
-    },
-  ];
-
-  // Dummy data for all quizzes
-  final List<Map<String, dynamic>> _allQuizzes = [
-    {
-      'title': 'English Grammar',
-      'subject': 'English',
-      'questions': 30,
-      'duration': '45 min',
-      'difficulty': 'Medium',
-    },
-    {
-      'title': 'Biology Basics',
-      'subject': 'Science',
-      'questions': 20,
-      'duration': '30 min',
-      'difficulty': 'Easy',
-    },
-    {
-      'title': 'Advanced Calculus',
-      'subject': 'Math',
-      'questions': 25,
-      'duration': '60 min',
-      'difficulty': 'Hard',
-    },
-    {
-      'title': 'World Geography',
-      'subject': 'Geography',
-      'questions': 18,
-      'duration': '25 min',
-      'difficulty': 'Easy',
-    },
-    {
-      'title': 'Programming Fundamentals',
-      'subject': 'Computer Science',
-      'questions': 22,
-      'duration': '40 min',
-      'difficulty': 'Medium',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    // LoadPublicQuizzesEvent should be called in TeacherHomePage
+  }
 
   @override
   void dispose() {
@@ -89,190 +42,251 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
       appBar: AppBar(
         backgroundColor: AppColors.darkAzure,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
-          'Quizify',
+          'Quizify Teacher',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-            onPressed: () {
-              // TODO: Navigate to shop
-            },
-          ),
-        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           context.go('/teacher/new-quiz');
         },
-        child: const Icon(Icons.add),
+        backgroundColor: AppColors.darkAzure,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Recommended Quizzes Section
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Recommended Quizzes',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkAzure,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 180,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _recommendedQuizzes.length,
-                      itemBuilder: (context, index) {
-                        final quiz = _recommendedQuizzes[index];
-                        return _buildRecommendedCard(quiz);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      body: BlocBuilder<TeacherHomeBloc, TeacherHomeState>(
+        builder: (context, state) {
+          if (state is TeacherHomeLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
+            );
+          }
 
-            const SizedBox(height: 8),
+          if (state is TeacherHomeError) {
+            return _buildErrorState(context, state.message);
+          }
 
-            // All Quizzes Section with Search
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'All Quizzes',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkAzure,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+          if (state is TeacherHomeLoaded) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Recommended Quizzes Section
+                    _buildRecommendedSection(context, state),
+                    const SizedBox(height: 32),
 
-                  // Search Bar
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search quizzes...',
-                      prefixIcon: const Icon(
-                        Icons.search,
+                    // All Quizzes Section
+                    const Text(
+                      'All Quizzes',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                         color: AppColors.darkAzure,
                       ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Search Bar
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (query) {
+                        context.read<TeacherHomeBloc>().add(
+                          SearchQuizzesEvent(query),
+                        );
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search quizzes...',
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: AppColors.darkAzure,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Quiz Cards List
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _allQuizzes.length,
-                    itemBuilder: (context, index) {
-                      final quiz = _allQuizzes[index];
-                      return _buildQuizCard(quiz);
-                    },
-                  ),
-                ],
+                    // Quiz Cards List
+                    if (state.filteredQuizzes.isEmpty)
+                      _buildEmptyState()
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: state.filteredQuizzes.length,
+                        itemBuilder: (context, index) {
+                          final quiz = state.filteredQuizzes[index];
+                          return _buildQuizCard(context, quiz);
+                        },
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            );
+          }
+
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildRecommendedCard(Map<String, dynamic> quiz) {
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: quiz['color'],
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+  Widget _buildRecommendedSection(
+    BuildContext context,
+    TeacherHomeLoaded state,
+  ) {
+    // Get top 10 quizzes as recommended
+    final recommended = state.quizzes.take(10).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recommended Quizzes',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.darkAzure,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+        ),
+        const SizedBox(height: 16),
+        if (recommended.isEmpty)
+          _buildEmptyState()
+        else
+          SizedBox(
+            height: 180,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: recommended.length,
+              itemBuilder: (context, index) {
+                final quiz = recommended[index];
+                return _buildRecommendedCard(context, quiz);
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendedCard(BuildContext context, QuizModel quiz) {
+    final colors = [
+      const Color(0xFF80D8DA),
+      const Color(0xFF81C784),
+      const Color(0xFF64B5F6),
+      const Color(0xFFFFB74D),
+    ];
+    final color = colors[quiz.id.hashCode % colors.length];
+
+    return GestureDetector(
+      onTap: () {
+        final authState = context.read<AuthBloc>().state;
+        String? currentUserId;
+        if (authState is AuthAuthenticated) {
+          currentUserId = authState.user.id;
+        }
+
+        if (quiz.createdBy == currentUserId) {
+          context.push('/teacher/quiz-detail', extra: quiz);
+        } else {
+          context.push('/teacher/other-quiz-detail', extra: quiz);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        width: 160,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Title and Description
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  quiz['title'],
+                  quiz.title,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  quiz['description'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                  quiz.description ?? quiz.category ?? 'General',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w400,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
+            // Stats Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.quiz, color: Colors.white, size: 18),
+                    const Icon(
+                      Icons.description,
+                      size: 14,
+                      color: Colors.white,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      '${quiz['questions']} Q',
+                      '${quiz.description?.split(' ').length ?? 0} Q',
                       style: const TextStyle(
+                        fontSize: 12,
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                Row(
+                const Row(
                   children: [
-                    const Icon(Icons.people, color: Colors.white, size: 18),
-                    const SizedBox(width: 4),
+                    Icon(Icons.people, size: 14, color: Colors.white),
+                    SizedBox(width: 2),
                     Text(
-                      '${quiz['participants']}',
-                      style: const TextStyle(
+                      '12',
+                      style: TextStyle(
+                        fontSize: 12,
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -285,88 +299,146 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
     );
   }
 
-  Widget _buildQuizCard(Map<String, dynamic> quiz) {
-    Color difficultyColor;
-    switch (quiz['difficulty']) {
-      case 'Easy':
-        difficultyColor = Colors.green;
-        break;
-      case 'Medium':
-        difficultyColor = Colors.orange;
-        break;
-      case 'Hard':
-        difficultyColor = Colors.red;
-        break;
-      default:
-        difficultyColor = Colors.grey;
-    }
+  Widget _buildQuizCard(BuildContext context, QuizModel quiz) {
+    return GestureDetector(
+      onTap: () {
+        final authState = context.read<AuthBloc>().state;
+        String? currentUserId;
+        if (authState is AuthAuthenticated) {
+          currentUserId = authState.user.id;
+        }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
+        if (quiz.createdBy == currentUserId) {
+          context.push('/teacher/quiz-detail', extra: quiz);
+        } else {
+          context.push('/teacher/other-quiz-detail', extra: quiz);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    quiz['title'],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    quiz.title,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.darkAzure,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                  const SizedBox(height: 8),
+                  Text(
+                    quiz.category ?? 'General',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
-                  decoration: BoxDecoration(
-                    color: difficultyColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.help_outline,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${quiz.description?.split(' ').length ?? 0} questions',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '30 min',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    quiz['difficulty'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: difficultyColor,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            _buildDifficultyBadge('Medium'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDifficultyBadge(String difficulty) {
+    Color bgColor;
+    Color textColor;
+
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        bgColor = Colors.green[100]!;
+        textColor = Colors.green[700]!;
+        break;
+      case 'hard':
+        bgColor = Colors.red[100]!;
+        textColor = Colors.red[700]!;
+        break;
+      case 'medium':
+      default:
+        bgColor = Colors.orange[100]!;
+        textColor = Colors.orange[700]!;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        difficulty,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          children: [
+            Icon(Icons.quiz, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              'No quizzes found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              quiz['subject'],
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _buildQuizInfo(
-                  Icons.quiz_outlined,
-                  '${quiz['questions']} questions',
-                ),
-                const SizedBox(width: 16),
-                _buildQuizInfo(Icons.access_time, quiz['duration']),
-              ],
+              'Try adjusting your search or filters',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -374,13 +446,41 @@ class _TeacherHomeMobileState extends State<TeacherHomeMobile> {
     );
   }
 
-  Widget _buildQuizInfo(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-      ],
+  Widget _buildErrorState(BuildContext context, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load quizzes',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<TeacherHomeBloc>().add(const RefreshQuizzesEvent());
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.darkAzure,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

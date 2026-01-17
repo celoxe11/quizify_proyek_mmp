@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:quizify_proyek_mmp/data/models/question_accuracy_model.dart';
 import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
 import 'package:quizify_proyek_mmp/domain/repositories/admin_repository.dart';
@@ -114,12 +115,14 @@ class AdminQuizDetailBloc
 
     try {
       final response = await adminRepository.fetchAccuracyResults(event.quizId);
-      final List<dynamic> results = response['results'] ?? [];
-      emit(
-        AdminAccuracyLoaded(
-          accuracyResults: results.cast<Map<String, dynamic>>(),
-        ),
-      );
+      final List<dynamic> resultsData =
+          response['question_stats'] ?? response['results'] ?? [];
+
+      final results = resultsData
+          .map((e) => QuestionAccuracy.fromJson(e))
+          .toList();
+
+      emit(AdminAccuracyLoaded(accuracyResults: results));
     } catch (e) {
       emit(
         AdminAccuracyError(

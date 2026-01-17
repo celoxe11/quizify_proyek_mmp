@@ -203,7 +203,7 @@ class _TeacherQuizDetailPageState extends State<TeacherQuizDetailPage>
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => context.go("/teacher/quizzes"),
+        onPressed: () => context.pop(),
       ),
       automaticallyImplyLeading: false,
       title: const Text(

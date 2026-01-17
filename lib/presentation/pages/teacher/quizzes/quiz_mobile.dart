@@ -205,7 +205,7 @@ class TeacherQuizMobile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            context.go('/teacher/quiz-detail', extra: quiz);
+            context.push('/teacher/quiz-detail', extra: quiz);
           },
           child: Padding(
             padding: const EdgeInsets.all(16),

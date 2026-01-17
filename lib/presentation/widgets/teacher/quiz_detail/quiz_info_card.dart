@@ -295,24 +295,16 @@ class QuizInfoCard extends StatelessWidget {
           onCopy: (context) => _copyCodeToClipboard(context, quizCode),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _QuizDetailItem(
-                icon: Icons.category,
-                label: 'Category',
-                value: quiz.category ?? 'Uncategorized',
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _QuizDetailItem(
-                icon: Icons.quiz,
-                label: 'Questions',
-                value: '$questionsCount',
-              ),
-            ),
-          ],
+        _QuizDetailItem(
+          icon: Icons.category,
+          label: 'Category',
+          value: quiz.category ?? 'Uncategorized',
+        ),
+        const SizedBox(height: 16),
+        _QuizDetailItem(
+          icon: Icons.quiz,
+          label: 'Questions',
+          value: '$questionsCount',
         ),
       ],
     );

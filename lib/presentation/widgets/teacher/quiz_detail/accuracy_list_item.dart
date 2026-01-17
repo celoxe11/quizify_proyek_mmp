@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
+import 'package:quizify_proyek_mmp/data/models/question_accuracy_model.dart';
 
 class AccuracyListItem extends StatelessWidget {
-  final Map<String, dynamic> result;
+  final QuestionAccuracy result;
   final int index;
 
   const AccuracyListItem({
@@ -13,12 +14,15 @@ class AccuracyListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accuracy = result['accuracy'] as int;
-    final correctAnswers = result['correct_answers'] as int;
-    final totalAnswered = result['total_answered'] as int;
-    final accuracyColor = accuracy >= 80
+    final accuracyValue = result.accuracy;
+    final correctAnswers = result.correctAnswers;
+    final totalAnswered = result.totalAnswered;
+    final incorrectAnswers = result.incorrectAnswers;
+    final meanValue = result.mean;
+
+    final accuracyColor = accuracyValue >= 80
         ? Colors.green
-        : (accuracy >= 60 ? Colors.orange : Colors.red);
+        : (accuracyValue >= 60 ? Colors.orange : Colors.red);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -60,7 +64,9 @@ class AccuracyListItem extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  result['question_text'] ?? 'Question ${index + 1}',
+                  result.question.isNotEmpty
+                      ? result.question
+                      : 'Question ${index + 1}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -82,7 +88,7 @@ class AccuracyListItem extends StatelessWidget {
                   border: Border.all(color: accuracyColor, width: 1.5),
                 ),
                 child: Text(
-                  '$accuracy%',
+                  '${accuracyValue.toStringAsFixed(0)}%',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -105,7 +111,7 @@ class AccuracyListItem extends StatelessWidget {
               _buildStatRow(
                 Icons.cancel,
                 'Wrong Answers',
-                '${totalAnswered - correctAnswers}',
+                '$incorrectAnswers',
                 Colors.red,
               ),
               const SizedBox(height: 8),
@@ -115,6 +121,13 @@ class AccuracyListItem extends StatelessWidget {
                 '$totalAnswered',
                 AppColors.darkAzure,
               ),
+              const SizedBox(height: 8),
+              _buildStatRow(
+                Icons.calculate,
+                'Mean Score',
+                meanValue.toStringAsFixed(2),
+                Colors.blueGrey,
+              ),
             ],
           ),
         ],
@@ -122,12 +135,7 @@ class AccuracyListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildStatRow(
-    IconData icon,
-    String label,
-    String value,
-    Color color,
-  ) {
+  Widget _buildStatRow(IconData icon, String label, String value, Color color) {
     return Row(
       children: [
         Icon(icon, size: 16, color: color),
