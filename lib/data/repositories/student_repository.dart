@@ -168,14 +168,46 @@ class StudentRepository {
     return listJson.map((e) {
       final question = e as Map<String, dynamic>;
 
+      print('🔍 [StudentRepo] Processing question: ${question['id']}');
+      print('🔍 [StudentRepo] Raw question keys: ${question.keys.toList()}');
+
       // Backend returns 'possible_answers' instead of 'options'
       if (question['possible_answers'] != null && question['options'] == null) {
         question['options'] = question['possible_answers'];
+        print('✅ [StudentRepo] Mapped possible_answers to options');
       }
 
       // Add a default correct_answer since backend doesn't send it
       if (question['correct_answer'] == null) {
         question['correct_answer'] = '';
+        print('⚠️ [StudentRepo] Added default correct_answer');
+      }
+
+      // Check if backend sends image in different field names
+      // Try: image, image_path, question_image, etc.
+      if (question['image_url'] == null) {
+        if (question['image'] != null) {
+          question['image_url'] = question['image'];
+          print(
+            '✅ [StudentRepo] Mapped image to image_url: ${question['image_url']}',
+          );
+        } else if (question['image_path'] != null) {
+          question['image_url'] = question['image_path'];
+          print(
+            '✅ [StudentRepo] Mapped image_path to image_url: ${question['image_url']}',
+          );
+        } else if (question['question_image'] != null) {
+          question['image_url'] = question['question_image'];
+          print(
+            '✅ [StudentRepo] Mapped question_image to image_url: ${question['image_url']}',
+          );
+        } else {
+          print('ℹ️ [StudentRepo] No image found for question');
+        }
+      } else {
+        print(
+          '✅ [StudentRepo] image_url already present: ${question['image_url']}',
+        );
       }
 
       return QuestionModel.fromJson(question);
@@ -199,7 +231,7 @@ class StudentRepository {
     try {
       // Endpoint ini harusnya me-return semua avatar (sama kayak admin fetch avatars)
       // Jika belum ada endpoint khusus student, bisa pakai endpoint public atau admin sementara
-      final response = await _dio.get('/api/student/shop/avatars'); 
+      final response = await _dio.get('/api/student/shop/avatars');
       final list = _unwrapList(response.data);
       return list.map((e) => AvatarModel.fromJson(e)).toList();
     } catch (e) {
@@ -221,9 +253,10 @@ class StudentRepository {
   // EQUIP AVATAR
   Future<void> equipAvatar(int avatarId) async {
     try {
-      await _dio.post('/api/student/equip-avatar', data: {
-        'avatar_id': avatarId
-      });
+      await _dio.post(
+        '/api/student/equip-avatar',
+        data: {'avatar_id': avatarId},
+      );
     } catch (e) {
       throw Exception("Gagal ganti avatar: $e");
     }
@@ -231,10 +264,8 @@ class StudentRepository {
 
   // BUY AVATAR
   Future<void> buyAvatar(int avatarId) async {
-     try {
-      await _dio.post('/api/student/buy-avatar', data: {
-        'avatar_id': avatarId
-      });
+    try {
+      await _dio.post('/api/student/buy-avatar', data: {'avatar_id': avatarId});
     } catch (e) {
       throw Exception("Gagal beli avatar: $e");
     }

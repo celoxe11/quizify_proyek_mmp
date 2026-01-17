@@ -44,9 +44,9 @@ class RightArrow extends PositionComponent
     add(innerCircle);
 
     // Arrow icon
-    arrow = TextComponent(
+    arrow = TextBoxComponent(
       text: '▶',
-      position: Vector2(40, 40),
+      position: Vector2(42, 38),
       anchor: Anchor.center,
       textRenderer: TextPaint(
         style: const TextStyle(
@@ -55,6 +55,7 @@ class RightArrow extends PositionComponent
           fontWeight: FontWeight.bold,
         ),
       ),
+      align: Anchor.center,
     );
     add(arrow);
 
