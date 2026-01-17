@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
-import 'package:quizify_proyek_mmp/data/models/question_model.dart';
 import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_state.dart';
+import 'package:quizify_proyek_mmp/presentation/widgets/teacher/quiz_detail/question_list_item.dart';
 
-class QuizInfoCard extends StatelessWidget {
+class OtherTeacherQuizDetailPage extends StatelessWidget {
+  static const double _kMobileBreakpoint = 600;
+  static const double _kDesktopMaxWidth = 900;
+
+  const OtherTeacherQuizDetailPage({super.key, required this.quiz});
+
   final QuizModel quiz;
-  final int questionsCount;
-  final bool isDesktop;
-  final List<QuestionModel> questions;
-
-  const QuizInfoCard({
-    super.key,
-    required this.quiz,
-    required this.questionsCount,
-    required this.isDesktop,
-    required this.questions,
-  });
 
   void _copyCodeToClipboard(BuildContext context, String code) {
     Clipboard.setData(ClipboardData(text: code));
@@ -57,31 +55,139 @@ class QuizInfoCard extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= _kMobileBreakpoint;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxWidth = isDesktop ? _kDesktopMaxWidth : double.infinity;
+
+    return Scaffold(
+      backgroundColor: AppColors.dirtyCyan,
+      appBar: AppBar(
+        backgroundColor: AppColors.darkAzure,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Quiz Preview',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: BlocBuilder<QuizDetailBloc, QuizDetailState>(
+        builder: (context, state) {
+          if (state is QuizDetailLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
+            );
+          }
+
+          if (state is QuizDetailError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load quiz details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textDark.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<QuizDetailBloc>().add(
+                        LoadQuizDetailEvent(quizId: quiz.id),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.darkAzure,
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (state is QuizDetailLoaded) {
+            return SingleChildScrollView(
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  width: screenWidth,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 16.0 : 12.0,
+                    vertical: 16.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context, state, isDesktop),
+                      const SizedBox(height: 24.0),
+
+                      // Questions Section
+                      const Text(
+                        'Questions',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.darkAzure,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (state.questions.isEmpty)
+                        const Center(child: Text('No questions available'))
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: state.questions.length,
+                          itemBuilder: (context, index) {
+                            return QuestionListItem(
+                              question: state.questions[index],
+                              index: index,
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    QuizDetailLoaded state,
+    bool isDesktop,
+  ) {
     final quizCode =
-        quiz.quizCode ??
-        (quiz.id.length >= 8
-            ? quiz.id.substring(0, 8).toUpperCase()
-            : quiz.id.toUpperCase());
+        state.quiz.quizCode ??
+        (state.quiz.id.length >= 8
+            ? state.quiz.id.substring(0, 8).toUpperCase()
+            : state.quiz.id.toUpperCase());
 
     return Container(
       padding: const EdgeInsets.all(24.0),
@@ -99,7 +205,7 @@ class QuizInfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title and Status Row
+          // Title and Status Badge
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -108,7 +214,7 @@ class QuizInfoCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      quiz.title,
+                      state.quiz.title,
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -123,10 +229,12 @@ class QuizInfoCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(quiz.status).withOpacity(0.15),
+                        color: _getStatusColor(
+                          state.quiz.status,
+                        ).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: _getStatusColor(quiz.status),
+                          color: _getStatusColor(state.quiz.status),
                           width: 1.5,
                         ),
                       ),
@@ -134,19 +242,19 @@ class QuizInfoCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            quiz.status.toLowerCase() == 'public'
+                            state.quiz.status.toLowerCase() == 'public'
                                 ? Icons.public
                                 : Icons.lock,
                             size: 16,
-                            color: _getStatusColor(quiz.status),
+                            color: _getStatusColor(state.quiz.status),
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            _getStatusLabel(quiz.status),
+                            _getStatusLabel(state.quiz.status),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: _getStatusColor(quiz.status),
+                              color: _getStatusColor(state.quiz.status),
                             ),
                           ),
                         ],
@@ -155,36 +263,15 @@ class QuizInfoCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Edit Button in Header
-              ElevatedButton.icon(
-                onPressed: () {
-                  context.go(
-                    '/admin/quiz-detail/edit',
-                    extra: {'quiz': quiz, 'questions': questions},
-                  );
-                },
-                icon: const Icon(Icons.edit, size: 18),
-                label: const Text('Edit'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.darkAzure,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
             ],
           ),
 
           // Description
-          if (quiz.description != null && quiz.description!.isNotEmpty) ...[
+          if (state.quiz.description != null &&
+              state.quiz.description!.isNotEmpty) ...[
             const SizedBox(height: 20.0),
             Text(
-              quiz.description!,
+              state.quiz.description!,
               style: TextStyle(
                 fontSize: 16,
                 color: AppColors.textDark.withOpacity(0.8),
@@ -197,58 +284,21 @@ class QuizInfoCard extends StatelessWidget {
           const Divider(height: 1, color: AppColors.lightCyan),
           const SizedBox(height: 20.0),
 
-          // Quiz Details Grid
+          // Details Grid
           if (isDesktop)
-            _buildDesktopDetailsGrid(quizCode)
+            _buildDesktopDetailsGrid(context, state, quizCode)
           else
-            _buildMobileDetailsColumn(quizCode),
-
-          // Created/Updated Date
-          if (quiz.createdAt != null) ...[
-            const SizedBox(height: 20.0),
-            const Divider(height: 1, color: AppColors.lightCyan),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: AppColors.textDark.withOpacity(0.5),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Created: ${_formatDate(quiz.createdAt!)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textDark.withOpacity(0.5),
-                  ),
-                ),
-                if (quiz.updatedAt != null) ...[
-                  const SizedBox(width: 16),
-                  Text(
-                    '•',
-                    style: TextStyle(
-                      color: AppColors.textDark.withOpacity(0.5),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Updated: ${_formatDate(quiz.updatedAt!)}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textDark.withOpacity(0.5),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
+            _buildMobileDetailsColumn(context, state, quizCode),
         ],
       ),
     );
   }
 
-  Widget _buildDesktopDetailsGrid(String quizCode) {
+  Widget _buildDesktopDetailsGrid(
+    BuildContext context,
+    QuizDetailLoaded state,
+    String quizCode,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -264,7 +314,7 @@ class QuizInfoCard extends StatelessWidget {
           child: _QuizDetailItem(
             icon: Icons.category,
             label: 'Category',
-            value: quiz.category ?? 'Uncategorized',
+            value: state.quiz.category ?? 'Uncategorized',
           ),
         ),
         const SizedBox(width: 16),
@@ -272,14 +322,18 @@ class QuizInfoCard extends StatelessWidget {
           child: _QuizDetailItem(
             icon: Icons.quiz,
             label: 'Questions',
-            value: '$questionsCount',
+            value: '${state.questions.length}',
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMobileDetailsColumn(String quizCode) {
+  Widget _buildMobileDetailsColumn(
+    BuildContext context,
+    QuizDetailLoaded state,
+    String quizCode,
+  ) {
     return Column(
       children: [
         _QuizDetailItem(
@@ -292,13 +346,13 @@ class QuizInfoCard extends StatelessWidget {
         _QuizDetailItem(
           icon: Icons.category,
           label: 'Category',
-          value: quiz.category ?? 'Uncategorized',
+          value: state.quiz.category ?? 'Uncategorized',
         ),
         const SizedBox(height: 16),
         _QuizDetailItem(
           icon: Icons.quiz,
           label: 'Questions',
-          value: '$questionsCount',
+          value: '${state.questions.length}',
         ),
       ],
     );

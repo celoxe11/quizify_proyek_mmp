@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
+import 'package:quizify_proyek_mmp/data/models/quiz_model.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/home/home_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/home/home_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/teacher/home/home_state.dart';
 
+/// Desktop layout for the Teacher Home page
+///
+/// Displays recommended quizzes and all public quizzes with search functionality
 class TeacherHomeDesktop extends StatefulWidget {
   const TeacherHomeDesktop({super.key});
 
@@ -9,71 +20,14 @@ class TeacherHomeDesktop extends StatefulWidget {
 }
 
 class _TeacherHomeDesktopState extends State<TeacherHomeDesktop> {
-  final TextEditingController _searchController = TextEditingController();
+  late TextEditingController _searchController;
 
-  // Dummy data for recommended quizzes
-  final List<Map<String, dynamic>> _recommendedQuizzes = [
-    {
-      'title': 'Math Quiz 101',
-      'description': 'Basic algebra and geometry',
-      'questions': 20,
-      'participants': 45,
-      'color': const Color(0xFF7DD3C0),
-    },
-    {
-      'title': 'Science Challenge',
-      'description': 'Physics and Chemistry basics',
-      'questions': 15,
-      'participants': 32,
-      'color': const Color(0xFF5DB4C4),
-    },
-    {
-      'title': 'History Trivia',
-      'description': 'World War II events',
-      'questions': 25,
-      'participants': 28,
-      'color': const Color(0xFFA8D8D8),
-    },
-  ];
-
-  // Dummy data for all quizzes
-  final List<Map<String, dynamic>> _allQuizzes = [
-    {
-      'title': 'English Grammar',
-      'subject': 'English',
-      'questions': 30,
-      'duration': '45 min',
-      'difficulty': 'Medium',
-    },
-    {
-      'title': 'Biology Basics',
-      'subject': 'Science',
-      'questions': 20,
-      'duration': '30 min',
-      'difficulty': 'Easy',
-    },
-    {
-      'title': 'Advanced Calculus',
-      'subject': 'Math',
-      'questions': 25,
-      'duration': '60 min',
-      'difficulty': 'Hard',
-    },
-    {
-      'title': 'World Geography',
-      'subject': 'Geography',
-      'questions': 18,
-      'duration': '25 min',
-      'difficulty': 'Easy',
-    },
-    {
-      'title': 'Programming Fundamentals',
-      'subject': 'Computer Science',
-      'questions': 22,
-      'duration': '40 min',
-      'difficulty': 'Medium',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    // LoadPublicQuizzesEvent should be called in TeacherHomePage
+  }
 
   @override
   void dispose() {
@@ -90,184 +44,216 @@ class _TeacherHomeDesktopState extends State<TeacherHomeDesktop> {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
-          'Quizify',
+          'Teacher Dashboard',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-            onPressed: () {
-              // TODO: Navigate to shop
-            },
-          ),
-          const SizedBox(width: 16),
-        ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Recommended Quizzes Section
-              const Text(
-                'Recommended Quizzes',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.darkAzure,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 200,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _recommendedQuizzes.length,
-                  itemBuilder: (context, index) {
-                    final quiz = _recommendedQuizzes[index];
-                    return _buildRecommendedCard(quiz);
-                  },
-                ),
-              ),
-              const SizedBox(height: 40),
+      body: BlocBuilder<TeacherHomeBloc, TeacherHomeState>(
+        builder: (context, state) {
+          if (state is TeacherHomeLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
+            );
+          }
 
-              // All Quizzes Section
-              const Text(
-                'All Quizzes',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.darkAzure,
-                ),
-              ),
-              const SizedBox(height: 24),
+          if (state is TeacherHomeError) {
+            return _buildErrorState(context, state.message);
+          }
 
-              // Search Bar
-              SizedBox(
-                width: 600,
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search quizzes...',
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AppColors.darkAzure,
+          if (state is TeacherHomeLoaded) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Recommended Quizzes Section
+                    const Text(
+                      'Recommended Quizzes',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.darkAzure,
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                    const SizedBox(height: 24),
+                    _buildRecommendedSection(context, state),
+                    const SizedBox(height: 48),
 
-              // Quiz Grid
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                  childAspectRatio: 1.5,
+                    // All Quizzes Section
+                    const Text(
+                      'All Quizzes',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.darkAzure,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Search Bar
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 500),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (query) {
+                          context.read<TeacherHomeBloc>().add(
+                            SearchQuizzesEvent(query),
+                          );
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search quizzes...',
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: AppColors.darkAzure,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Quiz Cards List in Grid
+                    if (state.filteredQuizzes.isEmpty)
+                      _buildEmptyState()
+                    else
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 24,
+                              mainAxisSpacing: 24,
+                              childAspectRatio: 1.3,
+                            ),
+                        itemCount: state.filteredQuizzes.length,
+                        itemBuilder: (context, index) {
+                          final quiz = state.filteredQuizzes[index];
+                          return _buildQuizCard(context, quiz);
+                        },
+                      ),
+                  ],
                 ),
-                itemCount: _allQuizzes.length,
-                itemBuilder: (context, index) {
-                  final quiz = _allQuizzes[index];
-                  return _buildQuizCard(quiz);
-                },
               ),
-            ],
-          ),
-        ),
+            );
+          }
+
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildRecommendedCard(Map<String, dynamic> quiz) {
-    return Container(
-      width: 320,
-      margin: const EdgeInsets.only(right: 20),
-      decoration: BoxDecoration(
-        color: quiz['color'],
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  Widget _buildRecommendedSection(
+    BuildContext context,
+    TeacherHomeLoaded state,
+  ) {
+    // Get top 10 quizzes as recommended
+    final recommended = state.quizzes.take(10).toList();
+
+    if (recommended.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: recommended.length,
+        itemBuilder: (context, index) {
+          final quiz = recommended[index];
+          return _buildRecommendedCard(context, quiz);
+        },
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    );
+  }
+
+  Widget _buildRecommendedCard(BuildContext context, QuizModel quiz) {
+    final colors = [
+      const Color(0xFF80D8DA),
+      const Color(0xFF81C784),
+      const Color(0xFF64B5F6),
+      const Color(0xFFFFB74D),
+    ];
+    final color = colors[quiz.id.hashCode % colors.length];
+
+    return GestureDetector(
+      onTap: () {
+        final authState = context.read<AuthBloc>().state;
+        String? currentUserId;
+        if (authState is AuthAuthenticated) {
+          currentUserId = authState.user.id;
+        }
+
+        if (quiz.createdBy == currentUserId) {
+          context.push('/teacher/quiz-detail', extra: quiz);
+        } else {
+          context.push('/teacher/other-quiz-detail', extra: quiz);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 20),
+        width: 200,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  quiz['title'],
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  quiz['description'],
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ],
+            Text(
+              quiz.title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              quiz.category ?? 'General',
+              style: const TextStyle(fontSize: 13, color: Colors.white70),
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.quiz, color: Colors.white, size: 20),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${quiz['questions']} Questions',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
+                const Icon(Icons.help_outline, size: 16, color: Colors.white70),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${quiz.description?.split(' ').length ?? 0} Q',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.people, color: Colors.white, size: 20),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${quiz['participants']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -277,86 +263,110 @@ class _TeacherHomeDesktopState extends State<TeacherHomeDesktop> {
     );
   }
 
-  Widget _buildQuizCard(Map<String, dynamic> quiz) {
-    Color difficultyColor;
-    switch (quiz['difficulty']) {
-      case 'Easy':
-        difficultyColor = Colors.green;
-        break;
-      case 'Medium':
-        difficultyColor = Colors.orange;
-        break;
-      case 'Hard':
-        difficultyColor = Colors.red;
-        break;
-      default:
-        difficultyColor = Colors.grey;
-    }
+  Widget _buildQuizCard(BuildContext context, QuizModel quiz) {
+    return GestureDetector(
+      onTap: () {
+        final authState = context.read<AuthBloc>().state;
+        String? currentUserId;
+        if (authState is AuthAuthenticated) {
+          currentUserId = authState.user.id;
+        }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+        if (quiz.createdBy == currentUserId) {
+          context.push('/teacher/quiz-detail', extra: quiz);
+        } else {
+          context.push('/teacher/other-quiz-detail', extra: quiz);
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    quiz['title'],
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkAzure,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        quiz.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.darkAzure,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        quiz.category ?? 'General',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: difficultyColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    quiz['difficulty'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: difficultyColor,
-                    ),
-                  ),
-                ),
+                const SizedBox(width: 12),
+                _buildDifficultyBadge('Medium'),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              quiz['subject'],
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-            const Spacer(),
+            const SizedBox(height: 16),
             Row(
               children: [
-                _buildQuizInfo(Icons.quiz_outlined, '${quiz['questions']} Q'),
-                const SizedBox(width: 16),
-                _buildQuizInfo(Icons.access_time, quiz['duration']),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.help_outline,
+                        size: 18,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${quiz.description?.split(' ').length ?? 0} questions',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Text(
+                        '30 min',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ],
@@ -365,13 +375,105 @@ class _TeacherHomeDesktopState extends State<TeacherHomeDesktop> {
     );
   }
 
-  Widget _buildQuizInfo(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-      ],
+  Widget _buildDifficultyBadge(String difficulty) {
+    Color bgColor;
+    Color textColor;
+
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        bgColor = Colors.green[100]!;
+        textColor = Colors.green[700]!;
+        break;
+      case 'hard':
+        bgColor = Colors.red[100]!;
+        textColor = Colors.red[700]!;
+        break;
+      case 'medium':
+      default:
+        bgColor = Colors.orange[100]!;
+        textColor = Colors.orange[700]!;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        difficulty,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60),
+        child: Column(
+          children: [
+            Icon(Icons.quiz, size: 80, color: Colors.grey[300]),
+            const SizedBox(height: 24),
+            Text(
+              'No quizzes found',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Try adjusting your search or filters',
+              style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 100, color: Colors.red[300]),
+          const SizedBox(height: 24),
+          Text(
+            'Failed to load quizzes',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<TeacherHomeBloc>().add(const RefreshQuizzesEvent());
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.darkAzure,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

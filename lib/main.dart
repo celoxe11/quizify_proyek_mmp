@@ -74,6 +74,7 @@ import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/edit_q
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/quiz_detail_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quiz_detail/students_answers_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/quizzes/quiz_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/other_quiz_detail/other_quiz_detail.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/home/home.dart';
@@ -302,6 +303,18 @@ class _AppView extends StatelessWidget {
                       QuizDetailBloc()
                         ..add(LoadQuizDetailEvent(quizId: quiz.id)),
                   child: TeacherQuizDetailPage(quiz: quiz),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/teacher/other-quiz-detail',
+              builder: (context, state) {
+                final quiz = state.extra as QuizModel;
+                return BlocProvider(
+                  create: (context) =>
+                      QuizDetailBloc()
+                        ..add(LoadQuizDetailEvent(quizId: quiz.id)),
+                  child: OtherTeacherQuizDetailPage(quiz: quiz),
                 );
               },
             ),
@@ -591,14 +604,13 @@ class _AppView extends StatelessWidget {
               path: '/admin/avatars',
               builder: (context, state) {
                 return BlocProvider(
-                  create: (context) => AdminAvatarBloc(
-                    context.read<AdminRepositoryImpl>(),
-                  )..add(LoadAvatarsEvent()), // Load data saat dibuka
+                  create: (context) =>
+                      AdminAvatarBloc(context.read<AdminRepositoryImpl>())
+                        ..add(LoadAvatarsEvent()), // Load data saat dibuka
                   child: const AdminAvatarPage(),
                 );
               },
             ),
-
           ],
         ),
       ],
@@ -672,11 +684,11 @@ class _AppView extends StatelessWidget {
         ),
         RepositoryProvider<ShopRepository>(
           create: (context) {
-             // ... (Gunakan Dio yang sama seperti StudentRepository) ...
-             final dio = Dio(
+            // ... (Gunakan Dio yang sama seperti StudentRepository) ...
+            final dio = Dio(
               BaseOptions(
                 baseUrl:
-                    PlatformConfig.getBaseUrl().replaceAll('/api', '')+ '/api',
+                    PlatformConfig.getBaseUrl().replaceAll('/api', '') + '/api',
                 headers: {'Content-Type': 'application/json'},
               ),
             );
@@ -700,7 +712,7 @@ class _AppView extends StatelessWidget {
               ),
             );
 
-             return ShopRepository(dio);
+            return ShopRepository(dio);
           },
         ),
         RepositoryProvider(

@@ -77,7 +77,7 @@ class AdminStudentsError extends AdminQuizDetailState {
 class AdminAccuracyLoading extends AdminQuizDetailState {}
 
 class AdminAccuracyLoaded extends AdminQuizDetailState {
-  final List<Map<String, dynamic>> accuracyResults; // Accuracy results data
+  final List<QuestionAccuracy> accuracyResults; // Accuracy results data
 
   const AdminAccuracyLoaded({required this.accuracyResults});
 

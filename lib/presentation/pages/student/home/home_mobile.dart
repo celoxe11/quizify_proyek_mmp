@@ -52,91 +52,91 @@ class _StudentHomeMobileState extends State<StudentHomeMobile> {
         ),
       ),
       body: BlocBuilder<StudentHomeBloc, StudentHomeState>(
-          builder: (context, state) {
-            if (state is StudentHomeLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.darkAzure),
-              );
-            }
-
-            if (state is StudentHomeError) {
-              return _buildErrorState(context, state.message);
-            }
-
-            if (state is StudentHomeLoaded) {
-              return SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Recommended Quizzes Section
-                      _buildRecommendedSection(context, state),
-                      const SizedBox(height: 32),
-
-                      // All Quizzes Section
-                      const Text(
-                        'All Quizzes',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.darkAzure,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Search Bar
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (query) {
-                          context.read<StudentHomeBloc>().add(
-                            SearchQuizzesEvent(query),
-                          );
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Search quizzes...',
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: AppColors.darkAzure,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Quiz Cards List
-                      if (state.filteredQuizzes.isEmpty)
-                        _buildEmptyState()
-                      else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: state.filteredQuizzes.length,
-                          itemBuilder: (context, index) {
-                            final quiz = state.filteredQuizzes[index];
-                            return _buildQuizCard(context, quiz);
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
+        builder: (context, state) {
+          if (state is StudentHomeLoading) {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.darkAzure),
             );
-          },
-        ),
+          }
+
+          if (state is StudentHomeError) {
+            return _buildErrorState(context, state.message);
+          }
+
+          if (state is StudentHomeLoaded) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Recommended Quizzes Section
+                    _buildRecommendedSection(context, state),
+                    const SizedBox(height: 32),
+
+                    // All Quizzes Section
+                    const Text(
+                      'All Quizzes',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.darkAzure,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Search Bar
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (query) {
+                        context.read<StudentHomeBloc>().add(
+                          SearchQuizzesEvent(query),
+                        );
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search quizzes...',
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: AppColors.darkAzure,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Quiz Cards List
+                    if (state.filteredQuizzes.isEmpty)
+                      _buildEmptyState()
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: state.filteredQuizzes.length,
+                        itemBuilder: (context, index) {
+                          final quiz = state.filteredQuizzes[index];
+                          return _buildQuizCard(context, quiz);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.darkAzure),
+          );
+        },
+      ),
     );
   }
 
@@ -144,8 +144,8 @@ class _StudentHomeMobileState extends State<StudentHomeMobile> {
     BuildContext context,
     StudentHomeLoaded state,
   ) {
-    // Get top 3 quizzes as recommended
-    final recommended = state.quizzes.take(3).toList();
+    // Get top 10 quizzes as recommended
+    final recommended = state.quizzes.take(10).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,6 +166,7 @@ class _StudentHomeMobileState extends State<StudentHomeMobile> {
             height: 180,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               itemCount: recommended.length,
               itemBuilder: (context, index) {
                 final quiz = recommended[index];
@@ -244,8 +245,11 @@ class _StudentHomeMobileState extends State<StudentHomeMobile> {
                 // Questions Count
                 Row(
                   children: [
-                    const Icon(Icons.description,
-                        size: 14, color: Colors.white),
+                    const Icon(
+                      Icons.description,
+                      size: 14,
+                      color: Colors.white,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${quiz.description?.split(' ').length ?? 0} Q',
@@ -320,34 +324,27 @@ class _StudentHomeMobileState extends State<StudentHomeMobile> {
                   const SizedBox(height: 8),
                   Text(
                     quiz.category ?? 'General',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(Icons.help_outline,
-                          size: 16, color: Colors.grey[600]),
+                      Icon(
+                        Icons.help_outline,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${quiz.description?.split(' ').length ?? 0} questions',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                       const SizedBox(width: 16),
-                      Icon(Icons.schedule,
-                          size: 16, color: Colors.grey[600]),
+                      Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
                       const SizedBox(width: 4),
                       Text(
                         '30 min',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -417,10 +414,7 @@ class _StudentHomeMobileState extends State<StudentHomeMobile> {
             const SizedBox(height: 8),
             Text(
               'Try adjusting your search or filters',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -447,10 +441,7 @@ class _StudentHomeMobileState extends State<StudentHomeMobile> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(

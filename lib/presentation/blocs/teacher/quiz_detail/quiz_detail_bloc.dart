@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:quizify_proyek_mmp/data/models/question_accuracy_model.dart';
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/data/repositories/teacher_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/quiz_detail/quiz_detail_event.dart';
@@ -34,12 +35,7 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
       final quiz = response.quiz;
       final questions = response.questions;
 
-      emit(
-        QuizDetailLoaded(
-          quiz: quiz,
-          questions: questions,
-        ),
-      );
+      emit(QuizDetailLoaded(quiz: quiz, questions: questions));
     } catch (e) {
       emit(QuizDetailError(message: 'Failed to load quiz: ${e.toString()}'));
     }
@@ -78,38 +74,13 @@ class QuizDetailBloc extends Bloc<QuizDetailEvent, QuizDetailState> {
     emit(AccuracyLoading());
 
     try {
-      // TODO: Replace with actual backend call
-      // Use the getQuizAccuracy endpoint: GET /api/teacher/quiz/:quiz_id/accuracy
-      // final response = await http.get('/api/teacher/quiz/${event.quizId}/accuracy');
-      // final results = response.question_stats;
-
-      // Simulated delay
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // TODO: Replace with actual data
-      final accuracyResults = <Map<String, dynamic>>[
-        {
-          'question_id': 'Q001',
-          'question': 'What is 2 + 2?',
-          'total_answered': 10,
-          'correct_answers': 9,
-          'accuracy': 90,
-        },
-        {
-          'question_id': 'Q002',
-          'question': 'What is the capital of France?',
-          'total_answered': 10,
-          'correct_answers': 7,
-          'accuracy': 70,
-        },
-        {
-          'question_id': 'Q003',
-          'question': 'What is H2O?',
-          'total_answered': 10,
-          'correct_answers': 10,
-          'accuracy': 100,
-        },
-      ];
+      final accuracyResultsData = await teacherRepository.getQuizAccuracy(
+        event.quizId,
+      );
+      final accuracyResults = accuracyResultsData
+          .map((e) => QuestionAccuracy.fromJson(e))
+          .toList();
+      print('Accuracy results: $accuracyResults');
 
       emit(AccuracyLoaded(accuracyResults: accuracyResults));
     } catch (e) {

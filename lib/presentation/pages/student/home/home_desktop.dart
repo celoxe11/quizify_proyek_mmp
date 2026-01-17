@@ -134,11 +134,11 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 24,
-                          mainAxisSpacing: 24,
-                          childAspectRatio: 1.3,
-                        ),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 24,
+                              mainAxisSpacing: 24,
+                              childAspectRatio: 1.3,
+                            ),
                         itemCount: state.filteredQuizzes.length,
                         itemBuilder: (context, index) {
                           final quiz = state.filteredQuizzes[index];
@@ -163,8 +163,8 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
     BuildContext context,
     StudentHomeLoaded state,
   ) {
-    // Get top 3 quizzes as recommended
-    final recommended = state.quizzes.take(3).toList();
+    // Get top 10 quizzes as recommended
+    final recommended = state.quizzes.take(10).toList();
 
     if (recommended.isEmpty) {
       return _buildEmptyState();
@@ -174,6 +174,7 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
       height: 220,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: recommended.length,
         itemBuilder: (context, index) {
           final quiz = recommended[index];
@@ -227,10 +228,7 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
             ),
             Text(
               quiz.category ?? 'General',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.white70,
-              ),
+              style: const TextStyle(fontSize: 13, color: Colors.white70),
             ),
             Row(
               children: [
@@ -315,8 +313,11 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
                 Expanded(
                   child: Row(
                     children: [
-                      Icon(Icons.help_outline,
-                          size: 18, color: Colors.grey[600]),
+                      Icon(
+                        Icons.help_outline,
+                        size: 18,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '${quiz.description?.split(' ').length ?? 0} questions',
@@ -332,8 +333,7 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
                 Expanded(
                   child: Row(
                     children: [
-                      Icon(Icons.schedule,
-                          size: 18, color: Colors.grey[600]),
+                      Icon(Icons.schedule, size: 18, color: Colors.grey[600]),
                       const SizedBox(width: 8),
                       Text(
                         '30 min',
@@ -409,10 +409,7 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
             const SizedBox(height: 12),
             Text(
               'Try adjusting your search or filters',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -439,10 +436,7 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -454,10 +448,7 @@ class _StudentHomeDesktopState extends State<StudentHomeDesktop> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.darkAzure,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
             ),
           ),
         ],
