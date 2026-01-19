@@ -31,7 +31,7 @@ import 'package:quizify_proyek_mmp/presentation/blocs/teacher/student_answers/st
 import 'package:quizify_proyek_mmp/presentation/blocs/admin/student_answers/admin_student_answers_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/avatar/admin_avatar_page.dart';
-import 'package:quizify_proyek_mmp/presentation/pages/admin/common/shop/shop_page.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/common/shop/shop_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/admin/logs/admin_logs_page.dart';
 
 // Import Bloc and Repository
@@ -807,6 +807,9 @@ class _AppView extends StatelessWidget {
             } else if (state is AuthAuthenticated) {
               final token = await FirebaseAuth.instance.currentUser
                   ?.getIdToken();
+
+              print("ini token setelah login:");
+              print(token);
 
               // Auto-navigate to appropriate home after login
               final currentLocation = router.routeInformationProvider.value.uri

@@ -3,8 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile_detail/edit_profile_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/profile/profile_photo.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile/payment_history_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile_detail/edit_profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/subscription/subscription_plan_page.dart';
@@ -188,47 +191,56 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
   Widget _buildProfilePhotoSection(BuildContext context, ProfileLoaded state) {
     return Column(
       children: [
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.darkAzure, width: 3),
-            image: DecorationImage(
-              image: NetworkImage(
-                'https://ui-avatars.com/api/?name=${state.profile.name}&background=random',
-              ),
-              fit: BoxFit.cover,
+        // [UPDATE] Gunakan Widget ProfilePhoto
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            BlocBuilder<AuthBloc, AuthState>(
+              buildWhen: (prev, curr) =>
+                  curr is AuthAuthenticated &&
+                  prev is AuthAuthenticated &&
+                  prev.user.currentAvatarUrl != curr.user.currentAvatarUrl,
+              builder: (context, authState) {
+                if (authState is AuthAuthenticated) {
+                  return ProfilePhoto(
+                    name: authState.user.name,
+                    currentAvatarId: authState.user.currentAvatarId,
+                    currentAvatarUrl: authState.user.currentAvatarUrl,
+                    size: 120,
+                  );
+                }
+                return const SizedBox();
+              },
             ),
-          ),
-          child: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.darkAzure,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+            // Tombol Edit Kecil
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.darkAzure,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-            ],
-          ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.storefront, color: Colors.white, size: 20), // Ikon Toko
+                onPressed: () {
+                   // Shortcut ke Shop buat ganti avatar
+                   context.go('/student/shop');
+                }, 
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Text(
           state.profile.name,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppColors.darkAzure,
-          ),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.darkAzure),
         ),
       ],
     );
   }
+
 
   Widget _buildRoleSubscriptionSection(
     BuildContext context,

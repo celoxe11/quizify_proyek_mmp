@@ -310,6 +310,15 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     }
   }
 
+  @override
+  Future<User> getUserProfile() async {
+    // Panggil API /me atau endpoint yang mengembalikan data user lengkap
+    final userModel = await _apiService.getUserProfile();
+    _currentUser = userModel;
+    _controller.add(userModel); // Update stream
+    return userModel;
+  }
+
   // New method for completing Google sign-in with role (called from role selection)
   Future<User> completeGoogleSignInWithRole({
     required String firebaseUid,
@@ -447,4 +456,5 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     print('Subscription ID: ${_currentUser.subscriptionId}');
     return _currentUser.subscriptionId == 2 || _currentUser.subscriptionId == 4;
   }
+  
 }

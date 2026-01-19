@@ -24,13 +24,20 @@ class AdminAvatarBloc extends Bloc<AdminAvatarEvent, AdminAvatarState> {
     // 2. ADD AVATAR
     on<AddAvatarEvent>((event, emit) async {
       try {
-        await repo.createAvatar(event.name, event.url, event.price, event.rarity);
+        await repo.createAvatar(
+          event.name,
+          event.url,
+          event.price,
+          event.rarity,
+          file: event.file,
+        );
         add(LoadAvatarsEvent());
       } catch (e) {
         emit(AvatarError("Gagal tambah: $e"));
         add(LoadAvatarsEvent());
       }
     });
+
 
     // 3. EDIT AVATAR
     on<EditAvatarEvent>((event, emit) async {

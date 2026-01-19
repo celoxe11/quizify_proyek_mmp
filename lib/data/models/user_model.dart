@@ -12,6 +12,7 @@ class UserModel extends User {
     super.subscriptionStatus,
     super.isActive = true,
     super.currentAvatarId, 
+    super.currentAvatarUrl,
     super.createdAt,
     super.updatedAt,
   });
@@ -32,6 +33,9 @@ class UserModel extends User {
       // [BARU] Parsing current_avatar_id
       currentAvatarId: _parseInt(json['current_avatar_id']), 
 
+      currentAvatarUrl: json['current_avatar_url']?.toString(), 
+
+
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'].toString())
           : null,
@@ -41,6 +45,24 @@ class UserModel extends User {
     );
   }
 
+  factory UserModel.fromEntity(User user) {
+    return UserModel(
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      firebaseUid: user.firebaseUid,
+      role: user.role,
+      subscriptionId: user.subscriptionId,
+      subscriptionStatus: user.subscriptionStatus,
+      isActive: user.isActive,
+      // Mapping field baru
+      currentAvatarId: user.currentAvatarId,
+      currentAvatarUrl: user.currentAvatarUrl,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    );
+  }
 
   // --- HELPER SAKTI ---
   static int? _parseInt(dynamic value) {

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AdminApiService {
   final Dio _dio;
@@ -183,9 +186,45 @@ class AdminApiService {
     return response.data['data'];
   }
 
-  Future<void> createAvatar(Map<String, dynamic> data) async {
-    await _dio.post('/api/admin/avatars', data: data);
+  Future<void> createAvatar({
+    required String name,
+    required String imageUrl,
+    required double price,
+    required String rarity,
+    XFile? imageFile,
+  }) async {
+    try {
+      // 1. Buat FormData
+      final formData = FormData.fromMap({
+        'name': name,
+        'price': price,
+        'rarity': rarity,
+        // Kirim URL jika ada (dan file tidak ada)
+        if (imageFile == null && imageUrl.isNotEmpty)
+          'image_url': imageUrl,
+      });
+
+      // 2. Jika ada File, masukkan ke FormData
+      if (imageFile != null) {
+        formData.files.add(MapEntry(
+          'avatar_file', // <--- Pastikan nama field ini sama dengan di Backend (Multer)
+          await MultipartFile.fromFile(
+            imageFile.path,
+            filename: imageFile.path.split('/').last,
+          ),
+        ));
+      }
+
+      // 3. Kirim ke Backend
+      await _dio.post(
+        '/api/admin/avatars', // Endpoint
+        data: formData,
+      );
+    } catch (e) {
+      throw Exception("Gagal buat avatar: $e");
+    }
   }
+
 
   Future<void> updateAvatar(int id, Map<String, dynamic> data) async {
     await _dio.put('/api/admin/avatars/$id', data: data);

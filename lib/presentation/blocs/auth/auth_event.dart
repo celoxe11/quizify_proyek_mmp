@@ -93,3 +93,17 @@ class PasswordResetRequested extends AuthEvent {
   @override
   List<Object?> get props => [email];
 }
+
+class RefreshUserEvent extends AuthEvent {
+  const RefreshUserEvent();
+}
+
+class UpdateAvatarEvent extends AuthEvent {
+  final int avatarId;
+  final String avatarUrl;
+
+  const UpdateAvatarEvent({
+    required this.avatarId,
+    required this.avatarUrl,
+  });
+}

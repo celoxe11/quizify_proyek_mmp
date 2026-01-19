@@ -17,12 +17,13 @@ class AvatarModel {
 
   factory AvatarModel.fromJson(Map<String, dynamic> json) {
     return AvatarModel(
-      id: json['id'] ?? 0,
+      id: json['id'] ?? '0',
       name: json['name'] ?? 'Unknown',
       imageUrl: json['image_url'] ?? '',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       rarity: json['rarity'] ?? 'common',
-      isActive: (json['is_active'] == 1 || json['is_active'] == true),
+      isActive: (json['is_equipped'] == true || json['is_equipped'] == 1) || 
+                (json['is_active'] == true || json['is_active'] == 1),
     );
   }
 }

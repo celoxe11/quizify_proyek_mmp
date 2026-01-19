@@ -53,9 +53,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         role: currentUser.role,
         subscriptionId: currentUser.subscriptionId,
         isActive: currentUser.isActive,
+        currentAvatarId: currentUser.currentAvatarId,
+        currentAvatarUrl: currentUser.currentAvatarUrl,
         createdAt: currentUser.createdAt,
         updatedAt: currentUser.updatedAt,
       );
+
 
       emit(ProfileLoaded(profile: profile));
     } catch (e) {
@@ -71,29 +74,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     if (state is ProfileLoaded) {
       emit(const ProfileLoading());
       try {
-        // Get updated current user from repository
-        final currentUser = authRepository.currentUser;
+        final updatedUser = await authRepository.getUserProfile(); 
 
-        if (currentUser.id.isEmpty) {
-          emit(
-            const ProfileError('User not authenticated. Please login again.'),
-          );
-          return;
-        }
+      // Konversi ke UserModel (jika repo mengembalikan Entity)
+      final profile = UserModel.fromEntity(updatedUser);
 
-        // Convert User entity to UserModel
-        final profile = UserModel(
-          id: currentUser.id,
-          name: currentUser.name,
-          username: currentUser.username,
-          email: currentUser.email,
-          firebaseUid: currentUser.firebaseUid,
-          role: currentUser.role,
-          subscriptionId: currentUser.subscriptionId,
-          isActive: currentUser.isActive,
-          createdAt: currentUser.createdAt,
-          updatedAt: currentUser.updatedAt,
-        );
 
         emit(ProfileLoaded(profile: profile));
       } catch (e) {
@@ -146,9 +131,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           role: currentState.profile.role,
           subscriptionId: currentState.profile.subscriptionId,
           isActive: currentState.profile.isActive,
+
+          // WAJIB
+          currentAvatarId: currentState.profile.currentAvatarId,
+          currentAvatarUrl: currentState.profile.currentAvatarUrl,
+
           createdAt: currentState.profile.createdAt,
           updatedAt: DateTime.now(),
         );
+
 
         emit(currentState.copyWith(profile: updatedProfile));
         emit(

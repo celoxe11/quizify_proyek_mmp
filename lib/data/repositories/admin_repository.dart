@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
 import 'package:quizify_proyek_mmp/core/local/quiz_storage.dart';
 import 'package:quizify_proyek_mmp/core/services/admin/admin_service.dart';
 import 'package:quizify_proyek_mmp/data/models/admin_analytics_model.dart';
@@ -365,14 +368,16 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<void> createAvatar(String name, String url, double price, String rarity) async {
-    await apiService.createAvatar({
-      'name': name,
-      'image_url': url,
-      'price': price,
-      'rarity': rarity,
-    });
+  Future<void> createAvatar(String name, String url, double price, String rarity, {XFile? file}) async {
+    await apiService.createAvatar(
+      name: name,
+      imageUrl: url,
+      price: price,
+      rarity: rarity,
+      imageFile: file, // [UBAH] Teruskan XFile
+    );
   }
+
 
   @override
   Future<void> updateAvatar(int id, String name, String url, double price, String rarity) async {
