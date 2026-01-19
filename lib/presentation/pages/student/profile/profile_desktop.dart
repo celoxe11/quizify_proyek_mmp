@@ -3,8 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile/profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile_detail/edit_profile_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/student/profile/profile_photo.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile_detail/edit_profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/subscription/subscription_plan_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile/payment_history_page.dart';
@@ -79,9 +82,9 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
               // Navigate to login page
               context.go('/login');
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
             }
           } else if (state is ProfileError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -96,8 +99,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
           builder: (context, state) {
             if (state is ProfileLoading) {
               return const Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.darkAzure),
+                child: CircularProgressIndicator(color: AppColors.darkAzure),
               );
             }
 
@@ -111,8 +113,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
             }
 
             return const Center(
-              child:
-                  CircularProgressIndicator(color: AppColors.darkAzure),
+              child: CircularProgressIndicator(color: AppColors.darkAzure),
             );
           },
         ),
@@ -169,7 +170,8 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
                   const SizedBox(height: 32),
                   _buildRoleSubscriptionSection(context, state),
                   const SizedBox(height: 24),
-                  if (_getSubscriptionLevel(state.profile.subscriptionId) != 'Premium') ...[
+                  if (_getSubscriptionLevel(state.profile.subscriptionId) !=
+                      'Premium') ...[
                     _buildSubscribeButton(context),
                     const SizedBox(height: 16),
                     _buildHistoryButton(context, state.profile.id),
@@ -211,45 +213,49 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
     );
   }
 
-  Widget _buildProfilePhotoSection(
-      BuildContext context, ProfileLoaded state) {
+  Widget _buildProfilePhotoSection(BuildContext context, ProfileLoaded state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 200,
-          height: 200,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.darkAzure,
-              width: 4,
+        // [UPDATE] Gunakan Widget ProfilePhoto dengan ukuran lebih besar
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            BlocBuilder<AuthBloc, AuthState>(
+              buildWhen: (prev, curr) =>
+                  curr is AuthAuthenticated &&
+                  prev is AuthAuthenticated &&
+                  prev.user.currentAvatarUrl != curr.user.currentAvatarUrl,
+              builder: (context, authState) {
+                if (authState is AuthAuthenticated) {
+                  return ProfilePhoto(
+                    name: authState.user.name,
+                    currentAvatarId: authState.user.currentAvatarId,
+                    currentAvatarUrl: authState.user.currentAvatarUrl,
+                    size: 200,
+                  );
+                }
+                return const SizedBox();
+              },
             ),
-            image: DecorationImage(
-              image: NetworkImage(
-                  'https://ui-avatars.com/api/?name=${state.profile.name}&size=200&background=random'),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.darkAzure,
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-                child: const Icon(
-                  Icons.edit,
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.darkAzure,
+                border: Border.all(color: Colors.white, width: 3),
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.storefront,
                   color: Colors.white,
                   size: 24,
                 ),
+                onPressed: () => context.go('/student/shop'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         Text(
@@ -263,17 +269,16 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
         const SizedBox(height: 8),
         Text(
           '@${state.profile.username}',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
       ],
     );
   }
 
   Widget _buildRoleSubscriptionSection(
-      BuildContext context, ProfileLoaded state) {
+    BuildContext context,
+    ProfileLoaded state,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -306,7 +311,9 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
           _buildStatusRow(
             'Subscription',
             _getSubscriptionLevel(state.profile.subscriptionId),
-            _getSubscriptionColor(_getSubscriptionLevel(state.profile.subscriptionId)),
+            _getSubscriptionColor(
+              _getSubscriptionLevel(state.profile.subscriptionId),
+            ),
           ),
         ],
       ),
@@ -354,7 +361,8 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
           if (state is ProfileLoaded) {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => SubscriptionPlanPage(userId: state.profile.id),
+                builder: (context) =>
+                    SubscriptionPlanPage(userId: state.profile.id),
               ),
             );
           }
@@ -392,10 +400,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
         icon: const Icon(Icons.history),
         label: const Text(
           'Riwayat Transaksi',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.darkAzure,
@@ -408,8 +413,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
     );
   }
 
-  Widget _buildProfileInfoSection(
-      BuildContext context, ProfileLoaded state) {
+  Widget _buildProfileInfoSection(BuildContext context, ProfileLoaded state) {
     if (state.isEditMode) {
       return _buildEditFields();
     }
@@ -495,10 +499,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
     );
   }
 
-  Widget _buildEditField(
-    String label,
-    TextEditingController controller,
-  ) {
+  Widget _buildEditField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -514,8 +515,10 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -547,7 +550,8 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
                 final profileBloc = context.read<ProfileBloc>();
                 final state = profileBloc.state;
                 if (state is ProfileLoaded) {
-                  final authRepository = context.read<AuthenticationRepositoryImpl>();
+                  final authRepository = context
+                      .read<AuthenticationRepositoryImpl>();
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => EditProfilePage(
@@ -647,10 +651,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
                 ),
                 child: const Text(
                   'Save Changes',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -683,7 +684,9 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
   }
 
   Widget _buildChangePasswordModeControls(
-      BuildContext context, ProfileLoaded state) {
+    BuildContext context,
+    ProfileLoaded state,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -734,10 +737,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
                   ),
                   child: const Text(
                     'Change Password',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -745,9 +745,9 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    context
-                        .read<ProfileBloc>()
-                        .add(const RefreshProfileEvent());
+                    context.read<ProfileBloc>().add(
+                      const RefreshProfileEvent(),
+                    );
                     _oldPasswordController.clear();
                     _newPasswordController.clear();
                     _confirmPasswordController.clear();
@@ -829,7 +829,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
   void _showLogoutConfirmation(BuildContext context) {
     // Get ProfileBloc from context BEFORE creating the dialog
     final profileBloc = context.read<ProfileBloc>();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -848,10 +848,7 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
                 Navigator.of(dialogContext).pop();
                 profileBloc.add(const LogoutEvent());
               },
-              child: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
             ),
           ],
         );

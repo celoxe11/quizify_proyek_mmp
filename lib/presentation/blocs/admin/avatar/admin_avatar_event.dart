@@ -1,9 +1,14 @@
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
+
 abstract class AdminAvatarEvent {}
 class LoadAvatarsEvent extends AdminAvatarEvent {}
 class AddAvatarEvent extends AdminAvatarEvent {
   final String name, url, rarity;
   final double price;
-  AddAvatarEvent(this.name, this.url, this.price, this.rarity);
+  final XFile? file;
+  AddAvatarEvent(this.name, this.url, this.price, this.rarity, {this.file});
 }
 class EditAvatarEvent extends AdminAvatarEvent {
   final int id;

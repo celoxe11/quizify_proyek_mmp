@@ -36,4 +36,6 @@ abstract class AuthenticationRepository {
   });
 
   bool isPremiumUser();
+
+  Future<User> getUserProfile(); 
 }

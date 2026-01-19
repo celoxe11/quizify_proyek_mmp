@@ -27,6 +27,15 @@ class ShopRepository {
     }
   }
 
+  // Di ShopRepository
+  Future<void> buyAvatar(int avatarId) async {
+     try {
+      await _dio.post('/shop/buy', data: {'avatar_id': avatarId});
+    } catch (e) {
+      throw Exception("Gagal beli avatar: $e");
+    }
+  }
+
   // [FIX] Hapus '/api' di depan
   Future<List<AvatarModel>> fetchMyInventory() async {
     try {

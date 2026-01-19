@@ -22,6 +22,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<UpdateProfileRequested>(_onUpdateProfileRequested);
     on<PasswordResetRequested>(_onPasswordResetRequested);
 
+    on<UpdateAvatarEvent>((event, emit) {
+      if (state is! AuthAuthenticated) return;
+
+      final authState = state as AuthAuthenticated;
+      final currentUser = authState.user;
+
+      final updatedUser = currentUser.copyWith(
+        currentAvatarId: event.avatarId,
+        currentAvatarUrl: event.avatarUrl,
+      );
+
+      emit(AuthAuthenticated(updatedUser));
+    });
+
+
+
+    on<RefreshUserEvent>((event, emit) async {
+      try {
+        // Ambil data user terbaru dari backend (/api/me)
+        final updatedUser = await _authRepository.getUserProfile(); // Pastikan fungsi ini ada di repo
+        
+        // Update state dengan user baru
+        emit(AuthAuthenticated(updatedUser));
+      } catch (e) {
+        print("Gagal refresh user: $e");
+        // Jangan emit AuthFailure, biarkan state lama jika gagal refresh background
+      }
+    });
+
     // Listen to repository user stream for automatic state updates
     // This handles token refresh and session persistence automatically
     _authRepository.user.listen((user) {
@@ -190,4 +219,5 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthFailure(e.toString()));
     }
   }
+  
 }

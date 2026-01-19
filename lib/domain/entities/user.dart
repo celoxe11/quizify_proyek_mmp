@@ -11,6 +11,7 @@ class User extends Equatable {
   final String? subscriptionStatus; 
   final bool isActive;
   final int? currentAvatarId; 
+  final String? currentAvatarUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -25,6 +26,7 @@ class User extends Equatable {
     this.subscriptionStatus,
     this.isActive = true,
     this.currentAvatarId,
+    this.currentAvatarUrl, 
     this.createdAt,
     this.updatedAt,
   });
@@ -40,6 +42,7 @@ class User extends Equatable {
     subscriptionStatus: '',
     isActive: false,
     currentAvatarId: null, 
+    currentAvatarUrl: null,
   );
 
   bool get isEmpty => this == User.empty;
@@ -57,7 +60,30 @@ class User extends Equatable {
     subscriptionStatus, 
     isActive,
     currentAvatarId, 
+    currentAvatarUrl,
     createdAt,
     updatedAt,
   ];
-}
+
+    User copyWith({
+      String? id,
+      String? name,
+      String? username,
+      String? email,
+      String? role,
+      int? currentAvatarId,
+      String? currentAvatarUrl,
+      int? subscriptionId,
+    }) {
+      return User(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        username: username ?? this.username,
+        email: email ?? this.email,
+        role: role ?? this.role,
+        subscriptionId: subscriptionId ?? 0,
+        currentAvatarId: currentAvatarId ?? this.currentAvatarId,
+        currentAvatarUrl: currentAvatarUrl ?? this.currentAvatarUrl,
+      );
+    }
+  }
