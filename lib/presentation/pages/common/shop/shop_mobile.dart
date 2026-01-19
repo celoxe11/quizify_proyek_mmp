@@ -68,7 +68,7 @@ class _ShopMobileState extends State<ShopMobile> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2, // Mobile 2 Kolom
-        childAspectRatio: 0.7, 
+        childAspectRatio: 0.6, 
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),

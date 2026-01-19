@@ -13,7 +13,11 @@ class ShopItemCard extends StatefulWidget {
   final AvatarModel avatar;
   final bool isInventory;
 
-  const ShopItemCard({super.key, required this.avatar, required this.isInventory});
+  const ShopItemCard({
+    super.key,
+    required this.avatar,
+    required this.isInventory,
+  });
 
   @override
   State<ShopItemCard> createState() => _ShopItemCardState();
@@ -35,14 +39,21 @@ class _ShopItemCardState extends State<ShopItemCard> {
   @override
   Widget build(BuildContext context) {
     final rarity = widget.avatar.rarity.toLowerCase();
-    
+
     // [FITUR BARU] Warna Rarity
     Color rarityColor;
     switch (rarity) {
-      case 'rare': rarityColor = Colors.blue; break;
-      case 'epic': rarityColor = Colors.purple; break;
-      case 'legendary': rarityColor = Colors.amber; break;
-      default: rarityColor = Colors.grey; // Common
+      case 'rare':
+        rarityColor = Colors.blue;
+        break;
+      case 'epic':
+        rarityColor = Colors.purple;
+        break;
+      case 'legendary':
+        rarityColor = Colors.amber;
+        break;
+      default:
+        rarityColor = Colors.grey; // Common
     }
 
     final imageUrl = _getValidImageUrl(widget.avatar.imageUrl);
@@ -53,22 +64,29 @@ class _ShopItemCardState extends State<ShopItemCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        transform: _isHovered ? (Matrix4.identity()..scale(1.03)) : Matrix4.identity(),
+        transform: _isHovered
+            ? (Matrix4.identity()..scale(1.03))
+            : Matrix4.identity(),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: rarityColor.withOpacity(_isHovered ? 0.2 : 0.05), // Shadow ikutan warna rarity
+              color: rarityColor.withOpacity(
+                _isHovered ? 0.2 : 0.05,
+              ), // Shadow ikutan warna rarity
               blurRadius: _isHovered ? 20 : 8,
               offset: const Offset(0, 4),
             ),
           ],
           // [FITUR BARU] Border berwarna sesuai Rarity
           border: Border.all(
-            color: widget.isInventory && widget.avatar.isActive 
-                ? Colors.green // Jika Equipped -> Hijau
-                : (_isHovered ? rarityColor : Colors.transparent), // Jika Hover -> Warna Rarity
+            color: widget.isInventory && widget.avatar.isActive
+                ? Colors
+                      .green // Jika Equipped -> Hijau
+                : (_isHovered
+                      ? rarityColor
+                      : Colors.transparent), // Jika Hover -> Warna Rarity
             width: 3,
           ),
         ),
@@ -84,7 +102,9 @@ class _ShopItemCardState extends State<ShopItemCard> {
                     child: Container(
                       margin: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: rarityColor.withOpacity(0.05), // Background tipis sesuai rarity
+                        color: rarityColor.withOpacity(
+                          0.05,
+                        ), // Background tipis sesuai rarity
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -95,22 +115,31 @@ class _ShopItemCardState extends State<ShopItemCard> {
                       child: Image.network(
                         imageUrl,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.broken_image, color: Colors.grey),
                       ),
                     ),
                   ),
                   // Badge Rarity
                   Positioned(
-                    top: 12, left: 12,
+                    top: 12,
+                    left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: rarityColor,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         widget.avatar.rarity.toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -130,42 +159,87 @@ class _ShopItemCardState extends State<ShopItemCard> {
                       children: [
                         Text(
                           widget.avatar.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         if (!widget.isInventory)
-                          Text("Rp ${widget.avatar.price.toInt()}", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w900)),
+                          Text(
+                            "Rp ${widget.avatar.price.toInt()}",
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                       ],
                     ),
-                    
+
                     // BUTTONS
                     SizedBox(
                       width: double.infinity,
                       child: widget.isInventory
                           ? (widget.avatar.isActive
-                              ? Center(child: Text("EQUIPPED", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, letterSpacing: 1)))
-                              : OutlinedButton(
-                                  onPressed: () {
-                                    context.read<ShopBloc>().add(EquipItemEvent(widget.avatar.id));
-                                    context.read<AuthBloc>().add(
-                                      UpdateAvatarEvent(
-                                        avatarId: widget.avatar.id,
-                                        avatarUrl: widget.avatar.imageUrl,
+                                ? Center(
+                                    child: Text(
+                                      "EQUIPPED",
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1,
                                       ),
-                                    );
-                                    Future.delayed(const Duration(milliseconds: 500), () {
-                                      if (context.mounted) context.read<AuthBloc>().add(const RefreshUserEvent());
-                                    });
-                                  },
-                                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.darkAzure, side: const BorderSide(color: AppColors.darkAzure)),
-                                  child: const Text("Equip"),
-                                ))
+                                    ),
+                                  )
+                                : OutlinedButton(
+                                    onPressed: () {
+                                      context.read<ShopBloc>().add(
+                                        EquipItemEvent(widget.avatar.id),
+                                      );
+                                      context.read<AuthBloc>().add(
+                                        UpdateAvatarEvent(
+                                          avatarId: widget.avatar.id,
+                                          avatarUrl: widget.avatar.imageUrl,
+                                        ),
+                                      );
+                                      Future.delayed(
+                                        const Duration(milliseconds: 500),
+                                        () {
+                                          if (context.mounted)
+                                            context.read<AuthBloc>().add(
+                                              const RefreshUserEvent(),
+                                            );
+                                        },
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.darkAzure,
+                                      side: const BorderSide(
+                                        color: AppColors.darkAzure,
+                                      ),
+                                    ),
+                                    child: const Text("Equip"),
+                                  ))
                           : ElevatedButton(
                               onPressed: () {
-                                context.read<PaymentBloc>().add(CreatePaymentEvent(type: 'avatar', avatarId: widget.avatar.id.toString(), amount: widget.avatar.price));
+                                context.read<PaymentBloc>().add(
+                                  CreatePaymentEvent(
+                                    type: 'avatar',
+                                    avatarId: widget.avatar.id.toString(),
+                                    amount: widget.avatar.price,
+                                  ),
+                                );
                               },
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.darkAzure, foregroundColor: Colors.white),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.darkAzure,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
                               child: const Text("Buy Now"),
                             ),
                     ),
