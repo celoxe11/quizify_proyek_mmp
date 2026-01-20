@@ -254,7 +254,10 @@ class _AppView extends StatelessWidget {
             GoRoute(
               path: '/student/profile',
               builder: (context, state) {
-                return const StudentProfilePage();
+                // Use ValueKey with timestamp to force rebuild when navigating
+                return StudentProfilePage(
+                  key: ValueKey(DateTime.now().millisecondsSinceEpoch),
+                );
               },
             ),
             GoRoute(

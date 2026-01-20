@@ -8,10 +8,11 @@ class User extends Equatable {
   final String? firebaseUid;
   final String role; // 'teacher' or 'student'
   final int subscriptionId;
-  final String? subscriptionStatus; 
+  final String? subscriptionStatus;
   final bool isActive;
-  final int? currentAvatarId; 
+  final int? currentAvatarId;
   final String? currentAvatarUrl;
+  final int points; // App currency for avatar purchases
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -26,7 +27,8 @@ class User extends Equatable {
     this.subscriptionStatus,
     this.isActive = true,
     this.currentAvatarId,
-    this.currentAvatarUrl, 
+    this.currentAvatarUrl,
+    this.points = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -41,8 +43,9 @@ class User extends Equatable {
     subscriptionId: 0,
     subscriptionStatus: '',
     isActive: false,
-    currentAvatarId: null, 
+    currentAvatarId: null,
     currentAvatarUrl: null,
+    points: 0,
   );
 
   bool get isEmpty => this == User.empty;
@@ -57,33 +60,36 @@ class User extends Equatable {
     firebaseUid,
     role,
     subscriptionId,
-    subscriptionStatus, 
+    subscriptionStatus,
     isActive,
-    currentAvatarId, 
+    currentAvatarId,
     currentAvatarUrl,
+    points,
     createdAt,
     updatedAt,
   ];
 
-    User copyWith({
-      String? id,
-      String? name,
-      String? username,
-      String? email,
-      String? role,
-      int? currentAvatarId,
-      String? currentAvatarUrl,
-      int? subscriptionId,
-    }) {
-      return User(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        username: username ?? this.username,
-        email: email ?? this.email,
-        role: role ?? this.role,
-        subscriptionId: subscriptionId ?? 0,
-        currentAvatarId: currentAvatarId ?? this.currentAvatarId,
-        currentAvatarUrl: currentAvatarUrl ?? this.currentAvatarUrl,
-      );
-    }
+  User copyWith({
+    String? id,
+    String? name,
+    String? username,
+    String? email,
+    String? role,
+    int? currentAvatarId,
+    String? currentAvatarUrl,
+    int? subscriptionId,
+    int? points,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      username: username ?? this.username,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      subscriptionId: subscriptionId ?? 0,
+      currentAvatarId: currentAvatarId ?? this.currentAvatarId,
+      currentAvatarUrl: currentAvatarUrl ?? this.currentAvatarUrl,
+      points: points ?? this.points,
+    );
   }
+}

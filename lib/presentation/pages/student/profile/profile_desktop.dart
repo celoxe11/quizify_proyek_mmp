@@ -58,6 +58,17 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh profile data when page becomes visible
+    // This ensures points are updated after completing a quiz
+    final currentState = context.read<ProfileBloc>().state;
+    if (currentState is ProfileLoaded) {
+      context.read<ProfileBloc>().add(const RefreshProfileEvent());
+    }
+  }
+
   /// Helper function to convert subscription ID to display string
   String _getSubscriptionLevel(int subscriptionId) {
     switch (subscriptionId) {
@@ -313,6 +324,35 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
             _getSubscriptionLevel(state.profile.subscriptionId),
             _getSubscriptionColor(
               _getSubscriptionLevel(state.profile.subscriptionId),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Points Display
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.amber.shade400, Colors.amber.shade600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.stars_rounded, color: Colors.white, size: 28),
+                const SizedBox(width: 12),
+                Text(
+                  '${state.profile.points} Points',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

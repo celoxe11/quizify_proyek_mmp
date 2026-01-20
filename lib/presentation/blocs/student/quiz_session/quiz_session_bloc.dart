@@ -218,10 +218,15 @@ class QuizSessionBloc extends Bloc<QuizSessionEvent, QuizSessionState> {
           response['score_akhir'] as int? ?? response['score'] as int?;
       print('📊 [QuizSessionBloc] Extracted score: $score');
 
+      // Extract points from response
+      final points = response['points'] as int?;
+      print('⭐ [QuizSessionBloc] Extracted points: $points');
+
       emit(
         QuizSessionEnded(
           sessionId: currentState.session.id,
           score: score,
+          points: points,
           message: response['message'] as String? ?? 'Quiz selesai',
         ),
       );
