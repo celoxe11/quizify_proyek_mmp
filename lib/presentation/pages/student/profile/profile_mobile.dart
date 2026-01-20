@@ -6,7 +6,6 @@ import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile/profile_bloc.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/student/profile_detail/edit_profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile/profile_photo.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile/payment_history_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile_detail/edit_profile_page.dart';
@@ -73,8 +72,10 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
   String _getSubscriptionLevel(int subscriptionId) {
     switch (subscriptionId) {
       case 1:
+      case 3:
         return 'Free Tier';
       case 2:
+      case 4:
         return 'Premium';
       default:
         return 'Gold';
@@ -166,12 +167,10 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
 
             // Subscribe Button (if not premium)
             if (_getSubscriptionLevel(state.profile.subscriptionId) !=
-                'Premium')
+                'Premium') ...[
               _buildSubscribeButton(context),
-
-            if (_getSubscriptionLevel(state.profile.subscriptionId) !=
-                'Premium')
               const SizedBox(height: 20),
+            ],
 
             // Transaction History Button
             _buildHistoryButton(context, state.profile.id),
@@ -566,70 +565,70 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
     );
   }
 
-  Widget _buildEditModeControls(BuildContext context, ProfileLoaded state) {
-    return Column(
-      children: [
-        _buildEditField('Name', _nameController),
-        const SizedBox(height: 12),
-        _buildEditField('Username', _usernameController),
-        const SizedBox(height: 12),
-        _buildEditField('Email', _emailController),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  context.read<ProfileBloc>().add(
-                    // TODO: Use EditProfilePage navigation instead
-                    const RefreshProfileEvent(),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  // Cancel edit mode - reload profile
-                  context.read<ProfileBloc>().add(const RefreshProfileEvent());
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.darkAzure,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  // Widget _buildEditModeControls(BuildContext context, ProfileLoaded state) {
+  //   return Column(
+  //     children: [
+  //       _buildEditField('Name', _nameController),
+  //       const SizedBox(height: 12),
+  //       _buildEditField('Username', _usernameController),
+  //       const SizedBox(height: 12),
+  //       _buildEditField('Email', _emailController),
+  //       const SizedBox(height: 16),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: ElevatedButton(
+  //               onPressed: () {
+  //                 context.read<ProfileBloc>().add(
+  //                   // TODO: Use EditProfilePage navigation instead
+  //                   const RefreshProfileEvent(),
+  //                 );
+  //               },
+  //               style: ElevatedButton.styleFrom(
+  //                 backgroundColor: Colors.green,
+  //                 padding: const EdgeInsets.symmetric(vertical: 14),
+  //                 shape: RoundedRectangleBorder(
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //               ),
+  //               child: const Text(
+  //                 'Save',
+  //                 style: TextStyle(
+  //                   fontSize: 16,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: Colors.white,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Expanded(
+  //             child: OutlinedButton(
+  //               onPressed: () {
+  //                 // Cancel edit mode - reload profile
+  //                 context.read<ProfileBloc>().add(const RefreshProfileEvent());
+  //               },
+  //               style: OutlinedButton.styleFrom(
+  //                 padding: const EdgeInsets.symmetric(vertical: 14),
+  //                 shape: RoundedRectangleBorder(
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //               ),
+  //               child: const Text(
+  //                 'Cancel',
+  //                 style: TextStyle(
+  //                   fontSize: 16,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: AppColors.darkAzure,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildEditField(String label, TextEditingController controller) {
     return Column(
@@ -804,56 +803,56 @@ class _StudentProfileMobileState extends State<StudentProfileMobile> {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Change Password'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildEditField('Old Password', _oldPasswordController),
-                const SizedBox(height: 12),
-                _buildEditField('New Password', _newPasswordController),
-                const SizedBox(height: 12),
-                _buildEditField('Confirm Password', _confirmPasswordController),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                context.read<ProfileBloc>().add(
-                  ChangePasswordEvent(
-                    oldPassword: _oldPasswordController.text,
-                    newPassword: _newPasswordController.text,
-                    confirmPassword: _confirmPasswordController.text,
-                  ),
-                );
-                Navigator.of(context).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Change'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // void _showChangePasswordDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Change Password'),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               _buildEditField('Old Password', _oldPasswordController),
+  //               const SizedBox(height: 12),
+  //               _buildEditField('New Password', _newPasswordController),
+  //               const SizedBox(height: 12),
+  //               _buildEditField('Confirm Password', _confirmPasswordController),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               context.read<ProfileBloc>().add(
+  //                 ChangePasswordEvent(
+  //                   oldPassword: _oldPasswordController.text,
+  //                   newPassword: _newPasswordController.text,
+  //                   confirmPassword: _confirmPasswordController.text,
+  //                 ),
+  //               );
+  //               Navigator.of(context).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Change'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildErrorState(BuildContext context) {
     return Center(

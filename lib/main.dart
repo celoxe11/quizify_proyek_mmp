@@ -399,21 +399,9 @@ class _AppView extends StatelessWidget {
             ),
             GoRoute(
               path: '/teacher/profile',
-              redirect: (context, state) {
-                // Check if user is authenticated
-                final authRepo = context.read<AuthenticationRepositoryImpl>();
-                if (authRepo.currentUser.id.isEmpty) {
-                  return '/login';
-                }
-                return null; // Allow access
-              },
               builder: (context, state) {
-                return BlocProvider(
-                  create: (context) => ProfileBloc(
-                    authRepository: context
-                        .read<AuthenticationRepositoryImpl>(),
-                  ),
-                  child: const TeacherProfilePage(),
+                return TeacherProfilePage(
+                  key: ValueKey(DateTime.now().millisecondsSinceEpoch),
                 );
               },
             ),
