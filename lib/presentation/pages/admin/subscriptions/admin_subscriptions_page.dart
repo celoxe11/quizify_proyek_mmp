@@ -39,7 +39,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> with SingleTicker
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('System Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Subscriptions', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.darkAzure,
         elevation: 0.5,

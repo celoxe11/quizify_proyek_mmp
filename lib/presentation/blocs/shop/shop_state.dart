@@ -10,3 +10,11 @@ class ShopLoaded extends ShopState {
   
   ShopLoaded({required this.shopItems, required this.inventory});
 }
+class BuyItemSuccess extends ShopState {
+  final String message;
+  BuyItemSuccess(this.message);
+}
+class BuyItemError extends ShopState {
+  final String message;
+  BuyItemError(this.message);
+}
