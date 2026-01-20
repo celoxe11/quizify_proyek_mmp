@@ -167,7 +167,11 @@ class _ShopDesktopState extends State<ShopDesktop>
     );
   }
 
-  Widget _buildGrid(List<AvatarModel> items, bool isInventory, List<AvatarModel> inventory) {
+  Widget _buildGrid(
+    List<AvatarModel> items,
+    bool isInventory,
+    List<AvatarModel> inventory,
+  ) {
     return GridView.builder(
       padding: const EdgeInsets.all(32),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -178,8 +182,6 @@ class _ShopDesktopState extends State<ShopDesktop>
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        print("USER INVENTORY: ${inventory.toString()}");
-
         return ShopItemCard(
           avatar: items[index],
           isInventory: isInventory,
