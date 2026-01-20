@@ -35,30 +35,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) async {
     emit(const ProfileLoading());
     try {
-      // Get current logged-in user from repository
-      final currentUser = authRepository.currentUser;
-
-      if (currentUser.id.isEmpty) {
-        emit(const ProfileError('User not authenticated. Please login again.'));
-        return;
-      }
+      // Fetch fresh user data from backend to ensure points are up-to-date
+      final updatedUser = await authRepository.getUserProfile();
 
       // Convert User entity to UserModel
-      final profile = UserModel(
-        id: currentUser.id,
-        name: currentUser.name,
-        username: currentUser.username,
-        email: currentUser.email,
-        firebaseUid: currentUser.firebaseUid,
-        role: currentUser.role,
-        subscriptionId: currentUser.subscriptionId,
-        isActive: currentUser.isActive,
-        currentAvatarId: currentUser.currentAvatarId,
-        currentAvatarUrl: currentUser.currentAvatarUrl,
-        createdAt: currentUser.createdAt,
-        updatedAt: currentUser.updatedAt,
-      );
-
+      final profile = UserModel.fromEntity(updatedUser);
 
       emit(ProfileLoaded(profile: profile));
     } catch (e) {
@@ -74,11 +55,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     if (state is ProfileLoaded) {
       emit(const ProfileLoading());
       try {
-        final updatedUser = await authRepository.getUserProfile(); 
+        final updatedUser = await authRepository.getUserProfile();
 
-      // Konversi ke UserModel (jika repo mengembalikan Entity)
-      final profile = UserModel.fromEntity(updatedUser);
-
+        // Konversi ke UserModel (jika repo mengembalikan Entity)
+        final profile = UserModel.fromEntity(updatedUser);
 
         emit(ProfileLoaded(profile: profile));
       } catch (e) {
@@ -139,7 +119,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           createdAt: currentState.profile.createdAt,
           updatedAt: DateTime.now(),
         );
-
 
         emit(currentState.copyWith(profile: updatedProfile));
         emit(

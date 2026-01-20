@@ -4,19 +4,20 @@ import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/avatar_model.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_event.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/shop/shop_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/shop/shop_event.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_bloc.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_event.dart';
 
 class ShopItemCard extends StatefulWidget {
   final AvatarModel avatar;
   final bool isInventory;
+  final List<AvatarModel>? inventory; // Add inventory to check ownership
 
   const ShopItemCard({
     super.key,
     required this.avatar,
     required this.isInventory,
+    this.inventory, // Optional inventory list
   });
 
   @override
@@ -34,6 +35,81 @@ class _ShopItemCardState extends State<ShopItemCard> {
       return url.replaceAll('localhost', '10.0.2.2');
     }
     return url;
+  }
+
+  bool get _isOwned {
+    if (widget.inventory == null) return false;
+    return widget.inventory!.any((item) => item.id == widget.avatar.id);
+  }
+
+  void _handleBuyAvatar(int avatarId) {
+    // Get current user from AuthBloc
+    final authState = context.read<AuthBloc>().state;
+
+    if (authState is! AuthAuthenticated) {
+      _showErrorDialog('Please login to purchase items');
+      return;
+    }
+
+    final user = authState.user;
+    final avatarPrice = widget.avatar.price;
+
+    // Check if user has enough points
+    if (user.points < avatarPrice) {
+      _showErrorDialog(
+        'Insufficient Points!\n\n'
+        'You need ${avatarPrice.toInt()} points but only have ${user.points} points.\n'
+        'Complete more quizzes to earn points!',
+      );
+      return;
+    }
+
+    // User has enough points, proceed with purchase
+    context.read<ShopBloc>().add(BuyItemEvent(avatarId));
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Text('Successfully purchased ${widget.avatar.name}!'),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // Refresh user data to update balance
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (context.mounted) {
+        context.read<AuthBloc>().add(const RefreshUserEvent());
+      }
+    });
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Purchase Failed'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -169,7 +245,7 @@ class _ShopItemCardState extends State<ShopItemCard> {
                         const SizedBox(height: 4),
                         if (!widget.isInventory)
                           Text(
-                            "Rp ${widget.avatar.price.toInt()}",
+                            "${widget.avatar.price.toInt()} Points",
                             style: const TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.w900,
@@ -207,10 +283,11 @@ class _ShopItemCardState extends State<ShopItemCard> {
                                       Future.delayed(
                                         const Duration(milliseconds: 500),
                                         () {
-                                          if (context.mounted)
+                                          if (context.mounted) {
                                             context.read<AuthBloc>().add(
                                               const RefreshUserEvent(),
                                             );
+                                          }
                                         },
                                       );
                                     },
@@ -222,16 +299,20 @@ class _ShopItemCardState extends State<ShopItemCard> {
                                     ),
                                     child: const Text("Equip"),
                                   ))
+                          : _isOwned
+                          ? Center(
+                              child: Text(
+                                "OWNED",
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            )
                           : ElevatedButton(
-                              onPressed: () {
-                                context.read<PaymentBloc>().add(
-                                  CreatePaymentEvent(
-                                    type: 'avatar',
-                                    avatarId: widget.avatar.id.toString(),
-                                    amount: widget.avatar.price,
-                                  ),
-                                );
-                              },
+                              onPressed: () =>
+                                  _handleBuyAvatar(widget.avatar.id),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.darkAzure,
                                 foregroundColor: Colors.white,

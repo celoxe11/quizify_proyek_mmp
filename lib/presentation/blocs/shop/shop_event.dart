@@ -5,3 +5,7 @@ class EquipItemEvent extends ShopEvent {
   final int avatarId;
   EquipItemEvent(this.avatarId);
 }
+class BuyItemEvent extends ShopEvent {
+  final int avatarId;
+  BuyItemEvent(this.avatarId);
+}

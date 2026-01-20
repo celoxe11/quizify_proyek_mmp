@@ -87,16 +87,18 @@ class QuizSessionEnding extends QuizSessionState {
 class QuizSessionEnded extends QuizSessionState {
   final String sessionId;
   final int? score;
+  final int? points;
   final String message;
 
   const QuizSessionEnded({
     required this.sessionId,
     this.score,
+    this.points,
     this.message = 'Quiz selesai',
   });
 
   @override
-  List<Object?> get props => [sessionId, score, message];
+  List<Object?> get props => [sessionId, score, points, message];
 }
 
 class QuizSessionError extends QuizSessionState {
