@@ -7,7 +7,6 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
   final ShopRepository repo;
 
   ShopBloc(this.repo) : super(ShopInitial()) {
-    
     on<LoadShopData>((event, emit) async {
       emit(ShopLoading());
       try {
@@ -15,12 +14,10 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
           repo.fetchShopAvatars(),
           repo.fetchMyInventory(),
         ]);
-        
-        emit(ShopLoaded(
-          shopItems: results[0],
-          inventory: results[1],
-        ));
+
+        emit(ShopLoaded(shopItems: results[0], inventory: results[1]));
       } catch (e) {
+        print("Load Failed: $e"); // Handle error UI jika perlu
         emit(ShopError(e.toString()));
       }
     });
@@ -31,6 +28,17 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
         add(LoadShopData()); // Refresh data
       } catch (e) {
         print("Equip Failed: $e"); // Handle error UI jika perlu
+        emit(ShopError(e.toString()));
+      }
+    });
+
+    on<BuyItemEvent>((event, emit) async {
+      try {
+        await repo.buyAvatar(event.avatarId);
+        add(LoadShopData()); // Refresh data
+      } catch (e) {
+        print("Buy Failed: $e"); // Handle error UI jika perlu
+        emit(ShopError(e.toString()));
       }
     });
   }

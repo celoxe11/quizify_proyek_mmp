@@ -150,8 +150,8 @@ class _ShopDesktopState extends State<ShopDesktop>
                         return TabBarView(
                           controller: _tabController,
                           children: [
-                            _buildGrid(state.shopItems, false),
-                            _buildGrid(state.inventory, true),
+                            _buildGrid(state.shopItems, false, state.inventory),
+                            _buildGrid(state.inventory, true, state.inventory),
                           ],
                         );
                       }
@@ -167,7 +167,7 @@ class _ShopDesktopState extends State<ShopDesktop>
     );
   }
 
-  Widget _buildGrid(List<AvatarModel> items, bool isInventory) {
+  Widget _buildGrid(List<AvatarModel> items, bool isInventory, List<AvatarModel> inventory) {
     return GridView.builder(
       padding: const EdgeInsets.all(32),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -178,7 +178,13 @@ class _ShopDesktopState extends State<ShopDesktop>
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        return ShopItemCard(avatar: items[index], isInventory: isInventory);
+        print("USER INVENTORY: ${inventory.toString()}");
+
+        return ShopItemCard(
+          avatar: items[index],
+          isInventory: isInventory,
+          inventory: inventory,
+        );
       },
     );
   }
