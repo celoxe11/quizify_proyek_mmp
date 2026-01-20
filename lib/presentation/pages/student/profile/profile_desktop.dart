@@ -6,7 +6,6 @@ import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/profile/profile_bloc.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/student/profile_detail/edit_profile_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile/profile_photo.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/profile_detail/edit_profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/student/subscription/subscription_plan_page.dart';
@@ -73,8 +72,10 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
   String _getSubscriptionLevel(int subscriptionId) {
     switch (subscriptionId) {
       case 1:
+      case 3:
         return 'Free Tier';
       case 2:
+      case 4:
         return 'Premium';
       default:
         return 'Gold';
@@ -185,8 +186,8 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
                       'Premium') ...[
                     _buildSubscribeButton(context),
                     const SizedBox(height: 16),
-                    _buildHistoryButton(context, state.profile.id),
                   ],
+                  _buildHistoryButton(context, state.profile.id),
                 ],
               ),
             ),
@@ -815,56 +816,56 @@ class _StudentProfileDesktopState extends State<StudentProfileDesktop> {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Change Password'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildEditField('Old Password', _oldPasswordController),
-                const SizedBox(height: 16),
-                _buildEditField('New Password', _newPasswordController),
-                const SizedBox(height: 16),
-                _buildEditField('Confirm Password', _confirmPasswordController),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                context.read<ProfileBloc>().add(
-                  ChangePasswordEvent(
-                    oldPassword: _oldPasswordController.text,
-                    newPassword: _newPasswordController.text,
-                    confirmPassword: _confirmPasswordController.text,
-                  ),
-                );
-                Navigator.of(context).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Change'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // void _showChangePasswordDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Change Password'),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               _buildEditField('Old Password', _oldPasswordController),
+  //               const SizedBox(height: 16),
+  //               _buildEditField('New Password', _newPasswordController),
+  //               const SizedBox(height: 16),
+  //               _buildEditField('Confirm Password', _confirmPasswordController),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               context.read<ProfileBloc>().add(
+  //                 ChangePasswordEvent(
+  //                   oldPassword: _oldPasswordController.text,
+  //                   newPassword: _newPasswordController.text,
+  //                   confirmPassword: _confirmPasswordController.text,
+  //                 ),
+  //               );
+  //               Navigator.of(context).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Change'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showLogoutConfirmation(BuildContext context) {
     // Get ProfileBloc from context BEFORE creating the dialog
