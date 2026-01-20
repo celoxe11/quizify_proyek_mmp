@@ -123,8 +123,8 @@ class _ShopMobileState extends State<ShopMobile>
             return TabBarView(
               controller: _tabController,
               children: [
-                _buildGrid(state.shopItems, false),
-                _buildGrid(state.inventory, true),
+                _buildGrid(state.shopItems, false, state.inventory),
+                _buildGrid(state.inventory, true, state.inventory),
               ],
             );
           }
@@ -134,7 +134,11 @@ class _ShopMobileState extends State<ShopMobile>
     );
   }
 
-  Widget _buildGrid(List<AvatarModel> items, bool isInventory) {
+  Widget _buildGrid(
+    List<AvatarModel> items,
+    bool isInventory,
+    List<AvatarModel> inventory,
+  ) {
     if (items.isEmpty) return const Center(child: Text("No items available."));
 
     return GridView.builder(
@@ -147,7 +151,11 @@ class _ShopMobileState extends State<ShopMobile>
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        return ShopItemCard(avatar: items[index], isInventory: isInventory);
+        return ShopItemCard(
+          avatar: items[index],
+          isInventory: isInventory,
+          inventory: inventory,
+        );
       },
     );
   }
