@@ -191,7 +191,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     );
 
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
-
+    
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
@@ -276,7 +276,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 Text(
-                  currencyFormat.format(payment.amount),
+                  payment.type == 'subscription'
+                      ? currencyFormat.format(payment.amount)
+                      : "${payment.amount} Points",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
