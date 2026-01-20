@@ -25,7 +25,8 @@ class ShopPage extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => ShopBloc(context.read<ShopRepository>())..add(LoadShopData()),
+          create: (context) =>
+              ShopBloc(context.read<ShopRepository>())..add(LoadShopData()),
         ),
         BlocProvider.value(value: BlocProvider.of<PaymentBloc>(context)),
       ],
@@ -303,7 +304,7 @@ class _ShopGrid extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            childAspectRatio: 0.75,
+            childAspectRatio: 0.6,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
@@ -383,13 +384,13 @@ class _ShopItemCardState extends State<_ShopItemCard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.1 : 0.05),
-              blurRadius: _isHovered ? 16 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Colors.black.withOpacity(_isHovered ? 0.1 : 0.05),
+          //     blurRadius: _isHovered ? 16 : 8,
+          //     offset: const Offset(0, 4),
+          //   ),
+          // ],
           border: (widget.isInventory && widget.avatar.isActive)
               ? Border.all(color: Colors.green, width: 3)
               : (_isHovered
@@ -404,7 +405,7 @@ class _ShopItemCardState extends State<_ShopItemCard> {
           children: [
             // --- 1. IMAGE AREA ---
             Expanded(
-              flex: 3,
+              flex: 2,
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -498,11 +499,11 @@ class _ShopItemCardState extends State<_ShopItemCard> {
 
             // --- 2. INFO AREA ---
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
+                  horizontal: 12.0,
+                  vertical: 4.0,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -566,11 +567,18 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                                       side: const BorderSide(
                                         color: AppColors.darkAzure,
                                       ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    child: const Text("Equip"),
+                                    child: const Text(
+                                      "Equip",
+                                      style: TextStyle(fontSize: 13),
+                                    ),
                                   ))
                           : ElevatedButton(
                               onPressed: () {
@@ -587,11 +595,18 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                                 backgroundColor: AppColors.darkAzure,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text("Buy Now"),
+                              child: const Text(
+                                "Buy Now",
+                                style: TextStyle(fontSize: 13),
+                              ),
                             ),
                     ),
                   ],
