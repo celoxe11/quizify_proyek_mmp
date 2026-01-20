@@ -545,7 +545,7 @@ class _AvatarCardState extends State<_AvatarCard> {
                               ),
                             ],
                           ),
-                          Text("Rp ${widget.avatar.price.toInt()}",
+                          Text("${widget.avatar.price.toInt()} Points",
                               style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green, fontSize: 16)),
                         ],
                       ),

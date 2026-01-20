@@ -35,10 +35,10 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     on<BuyItemEvent>((event, emit) async {
       try {
         await repo.buyAvatar(event.avatarId);
-        add(LoadShopData()); // Refresh data
+        emit(BuyItemSuccess("Item berhasil dibeli!"));
       } catch (e) {
         print("Buy Failed: $e"); // Handle error UI jika perlu
-        emit(ShopError(e.toString()));
+        emit(BuyItemError(e.toString()));
       }
     });
   }

@@ -30,7 +30,7 @@ class PaymentStatusModel {
     return PaymentStatusModel(
       orderId: orderIdValue,
       status: json['status'] as String? ?? 'pending',
-      type: json['type'] as String? ?? 'subscription',
+      type: json['category'] as String? ?? 'subscription',
       amount: amountValue != null
           ? (amountValue is num ? amountValue.toDouble() : double.tryParse(amountValue.toString()) ?? 0.0)
           : 0.0,

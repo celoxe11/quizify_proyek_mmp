@@ -66,28 +66,6 @@ class _ShopItemCardState extends State<ShopItemCard> {
 
     // User has enough points, proceed with purchase
     context.read<ShopBloc>().add(BuyItemEvent(avatarId));
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Text('Successfully purchased ${widget.avatar.name}!'),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-
-    // Refresh user data to update balance
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (context.mounted) {
-        context.read<AuthBloc>().add(const RefreshUserEvent());
-      }
-    });
   }
 
   void _showErrorDialog(String message) {
