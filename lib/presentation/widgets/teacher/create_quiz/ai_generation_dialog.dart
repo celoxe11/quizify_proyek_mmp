@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class AIGenerationDialog extends StatefulWidget {
   final Function(Map<String, dynamic>) onGenerate;
 
-  const AIGenerationDialog({
-    super.key,
-    required this.onGenerate,
-  });
+  const AIGenerationDialog({super.key, required this.onGenerate});
 
   @override
   State<AIGenerationDialog> createState() => _AIGenerationDialogState();
@@ -63,10 +60,14 @@ class _AIGenerationDialogState extends State<AIGenerationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+        constraints: BoxConstraints(
+          maxWidth: screenWidth > 600 ? 600 : screenWidth * 0.95,
+          maxHeight: 700,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -116,6 +117,7 @@ class _AIGenerationDialogState extends State<AIGenerationDialog> {
 
                       // Question Type
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Question Type',
                           border: OutlineInputBorder(
@@ -142,6 +144,7 @@ class _AIGenerationDialogState extends State<AIGenerationDialog> {
 
                       // Difficulty
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Difficulty',
                           border: OutlineInputBorder(
@@ -153,7 +156,9 @@ class _AIGenerationDialogState extends State<AIGenerationDialog> {
                         items: const [
                           DropdownMenuItem(value: 'easy', child: Text('Easy')),
                           DropdownMenuItem(
-                              value: 'medium', child: Text('Medium')),
+                            value: 'medium',
+                            child: Text('Medium'),
+                          ),
                           DropdownMenuItem(value: 'hard', child: Text('Hard')),
                         ],
                         onChanged: (value) {
@@ -198,6 +203,7 @@ class _AIGenerationDialogState extends State<AIGenerationDialog> {
 
                       // Language
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Language',
                           border: OutlineInputBorder(
@@ -221,6 +227,7 @@ class _AIGenerationDialogState extends State<AIGenerationDialog> {
 
                       // Age Group
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Age Group',
                           border: OutlineInputBorder(
@@ -255,6 +262,7 @@ class _AIGenerationDialogState extends State<AIGenerationDialog> {
 
                       // Question Style
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Question Style',
                           border: OutlineInputBorder(
