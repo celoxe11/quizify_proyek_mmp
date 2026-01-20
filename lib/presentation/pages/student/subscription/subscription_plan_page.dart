@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/payment_status_model.dart';
@@ -7,6 +8,8 @@ import 'package:quizify_proyek_mmp/data/models/subscription_model.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_bloc.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_event.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/student/payment/payment_state.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_event.dart';
 
 /// Halaman pilih subscription plan
 class SubscriptionPlanPage extends StatefulWidget {
@@ -84,6 +87,14 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
           _closeLoadingDialog(context);
           // Show payment method dialog
           _showPaymentMethod(context, state);
+        }
+
+        // Handle payment status loaded
+        if (state is PaymentStatusLoaded) {
+          // Close any loading dialog
+          _closeLoadingDialog(context);
+          // Show payment status result
+          _showPaymentStatusResult(context, state.status);
         }
 
         // Show error
@@ -561,6 +572,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
   /// Check payment status manually
   void _checkPaymentStatus(BuildContext context, String orderId) {
     // Show loading
+    _isLoadingDialogShowing = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -579,26 +591,8 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
       ),
     );
 
-    // Dispatch check status event
+    // Dispatch check status event - BlocListener will handle the response
     _paymentBloc.add(CheckPaymentStatusEvent(orderId));
-
-    // Listen for status response
-    _paymentBloc.stream
-        .firstWhere(
-          (state) => state is PaymentStatusLoaded || state is PaymentError,
-        )
-        .then((state) {
-          if (!context.mounted) return;
-
-          // Close loading dialog
-          Navigator.of(context, rootNavigator: true).pop();
-
-          if (state is PaymentStatusLoaded) {
-            _showPaymentStatusResult(context, state.status);
-          } else if (state is PaymentError) {
-            _showErrorDialog(context, state.message);
-          }
-        });
   }
 
   /// Show payment status result
@@ -615,7 +609,8 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
         title: Row(
           children: [
             Icon(
@@ -644,15 +639,53 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
               'Order ID: ${status.orderId}',
               style: const TextStyle(fontSize: 12),
             ),
+            if (isSuccess) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Subscription Anda telah aktif!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
+            onPressed: () async {
+              // Close dialog first
+              Navigator.of(dialogContext).pop();
+
               if (isSuccess) {
-                // Go back to previous page on success
-                Navigator.of(context).pop();
+                // Trigger auth refresh to update user data (including subscription)
+                try {
+                  context.read<AuthBloc>().add(const RefreshUserEvent());
+                } catch (e) {
+                  print('⚠️ Could not trigger auth refresh: $e');
+                }
+
+                // Pop until we're back at the main navigation
+                Navigator.of(context).popUntil((route) => route.isFirst);
+
+                // Navigate to profile
+                context.go('/student/profile');
               }
             },
             child: Text(isSuccess ? 'Selesai' : 'Tutup'),
@@ -660,9 +693,13 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
           if (isPending)
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.of(dialogContext).pop();
                 _checkPaymentStatus(context, status.orderId);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkAzure,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Cek Lagi'),
             ),
         ],

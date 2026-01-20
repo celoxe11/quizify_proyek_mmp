@@ -55,6 +55,17 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh profile data when page becomes visible
+    // This ensures points are updated after completing a quiz
+    final currentState = context.read<ProfileBloc>().state;
+    if (currentState is ProfileLoaded) {
+      context.read<ProfileBloc>().add(const RefreshProfileEvent());
+    }
+  }
+
   /// Helper function to convert subscription ID to display string
   String _getSubscriptionLevel(int subscriptionId) {
     switch (subscriptionId) {
@@ -316,6 +327,35 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          // Points Display
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.amber.shade400, Colors.amber.shade600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.stars_rounded, color: Colors.white, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  '${state.profile.points} Points',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
