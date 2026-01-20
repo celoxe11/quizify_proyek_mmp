@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile/profile_bloc.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile_detail/edit_profile_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/profile_photo.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile_detail/edit_profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/subscription/subscription_plan_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/payment_history_page.dart';
@@ -70,8 +72,10 @@ class _TeacherProfileDesktopState extends State<TeacherProfileDesktop> {
   String _getSubscriptionLevel(int subscriptionId) {
     switch (subscriptionId) {
       case 1:
+      case 3:
         return 'Free Tier';
       case 2:
+      case 4:
         return 'Premium';
       default:
         return 'Gold';
@@ -182,8 +186,8 @@ class _TeacherProfileDesktopState extends State<TeacherProfileDesktop> {
                       'Premium') ...[
                     _buildSubscribeButton(context),
                     const SizedBox(height: 16),
-                    _buildHistoryButton(context, state.profile.id),
                   ],
+                  _buildHistoryButton(context, state.profile.id),
                 ],
               ),
             ),
@@ -225,34 +229,45 @@ class _TeacherProfileDesktopState extends State<TeacherProfileDesktop> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 200,
-          height: 200,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.darkAzure, width: 4),
-            image: DecorationImage(
-              image: NetworkImage(
-                'https://ui-avatars.com/api/?name=${state.profile.name}&size=200&background=random',
-              ),
-              fit: BoxFit.cover,
+        // [UPDATE] Gunakan Widget ProfilePhoto dengan ukuran lebih besar
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            BlocBuilder<AuthBloc, AuthState>(
+              buildWhen: (prev, curr) =>
+                  curr is AuthAuthenticated &&
+                  prev is AuthAuthenticated &&
+                  prev.user.currentAvatarUrl != curr.user.currentAvatarUrl,
+              builder: (context, authState) {
+                if (authState is AuthAuthenticated) {
+                  return ProfilePhoto(
+                    name: authState.user.name,
+                    currentAvatarId: authState.user.currentAvatarId,
+                    currentAvatarUrl: authState.user.currentAvatarUrl,
+                    size: 200,
+                  );
+                }
+                return const SizedBox();
+              },
             ),
-          ),
-          child: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.darkAzure,
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 24),
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.darkAzure,
+                border: Border.all(color: Colors.white, width: 3),
               ),
-            ],
-          ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.storefront,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                onPressed: () => context.go('/student/shop'),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         Text(
@@ -801,56 +816,56 @@ class _TeacherProfileDesktopState extends State<TeacherProfileDesktop> {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Change Password'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildEditField('Old Password', _oldPasswordController),
-                const SizedBox(height: 16),
-                _buildEditField('New Password', _newPasswordController),
-                const SizedBox(height: 16),
-                _buildEditField('Confirm Password', _confirmPasswordController),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                context.read<ProfileBloc>().add(
-                  ChangePasswordEvent(
-                    oldPassword: _oldPasswordController.text,
-                    newPassword: _newPasswordController.text,
-                    confirmPassword: _confirmPasswordController.text,
-                  ),
-                );
-                Navigator.of(context).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Change'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // void _showChangePasswordDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Change Password'),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               _buildEditField('Old Password', _oldPasswordController),
+  //               const SizedBox(height: 16),
+  //               _buildEditField('New Password', _newPasswordController),
+  //               const SizedBox(height: 16),
+  //               _buildEditField('Confirm Password', _confirmPasswordController),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               context.read<ProfileBloc>().add(
+  //                 ChangePasswordEvent(
+  //                   oldPassword: _oldPasswordController.text,
+  //                   newPassword: _newPasswordController.text,
+  //                   confirmPassword: _confirmPasswordController.text,
+  //                 ),
+  //               );
+  //               Navigator.of(context).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Change'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showLogoutConfirmation(BuildContext context) {
     // Get ProfileBloc from context BEFORE creating the dialog

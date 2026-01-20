@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/repositories/auth_repository.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/blocs/auth/auth_state.dart';
 import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile/profile_bloc.dart';
-import 'package:quizify_proyek_mmp/presentation/blocs/teacher/profile_detail/edit_profile_bloc.dart';
+import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/profile_photo.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile/payment_history_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/profile_detail/edit_profile_page.dart';
 import 'package:quizify_proyek_mmp/presentation/pages/teacher/subscription/subscription_plan_page.dart';
@@ -70,8 +72,10 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
   String _getSubscriptionLevel(int subscriptionId) {
     switch (subscriptionId) {
       case 1:
+      case 3:
         return 'Free Tier';
       case 2:
+      case 4:
         return 'Premium';
       default:
         return 'Gold';
@@ -163,12 +167,10 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
 
             // Subscribe Button (if not premium)
             if (_getSubscriptionLevel(state.profile.subscriptionId) !=
-                'Premium')
+                'Premium') ...[
               _buildSubscribeButton(context),
-
-            if (_getSubscriptionLevel(state.profile.subscriptionId) !=
-                'Premium')
               const SizedBox(height: 20),
+            ],
 
             // Transaction History Button
             _buildHistoryButton(context, state.profile.id),
@@ -199,34 +201,50 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
   Widget _buildProfilePhotoSection(BuildContext context, ProfileLoaded state) {
     return Column(
       children: [
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.darkAzure, width: 3),
-            image: DecorationImage(
-              image: NetworkImage(
-                'https://ui-avatars.com/api/?name=${state.profile.name}&background=random',
-              ),
-              fit: BoxFit.cover,
+        // [UPDATE] Gunakan Widget ProfilePhoto
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            BlocBuilder<AuthBloc, AuthState>(
+              buildWhen: (prev, curr) =>
+                  curr is AuthAuthenticated &&
+                  prev is AuthAuthenticated &&
+                  prev.user.currentAvatarUrl != curr.user.currentAvatarUrl,
+              builder: (context, authState) {
+                if (authState is AuthAuthenticated) {
+                  return ProfilePhoto(
+                    name: authState.user.name,
+                    currentAvatarId: authState.user.currentAvatarId,
+                    currentAvatarUrl: authState.user.currentAvatarUrl,
+                    size: 120,
+                  );
+                }
+                return const SizedBox();
+              },
             ),
-          ),
-          child: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.darkAzure,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+            // Tombol Edit Kecil
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.darkAzure,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-            ],
-          ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(
+                  Icons.storefront,
+                  color: Colors.white,
+                  size: 20,
+                ), // Ikon Toko
+                onPressed: () {
+                  // Shortcut ke Shop buat ganti avatar
+                  context.go('/student/shop');
+                },
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Text(
@@ -547,70 +565,70 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
     );
   }
 
-  Widget _buildEditModeControls(BuildContext context, ProfileLoaded state) {
-    return Column(
-      children: [
-        _buildEditField('Name', _nameController),
-        const SizedBox(height: 12),
-        _buildEditField('Username', _usernameController),
-        const SizedBox(height: 12),
-        _buildEditField('Email', _emailController),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  context.read<ProfileBloc>().add(
-                    // TODO: Use EditProfilePage navigation instead
-                    const RefreshProfileEvent(),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  // Cancel edit mode - reload profile
-                  context.read<ProfileBloc>().add(const RefreshProfileEvent());
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.darkAzure,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  // Widget _buildEditModeControls(BuildContext context, ProfileLoaded state) {
+  //   return Column(
+  //     children: [
+  //       _buildEditField('Name', _nameController),
+  //       const SizedBox(height: 12),
+  //       _buildEditField('Username', _usernameController),
+  //       const SizedBox(height: 12),
+  //       _buildEditField('Email', _emailController),
+  //       const SizedBox(height: 16),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: ElevatedButton(
+  //               onPressed: () {
+  //                 context.read<ProfileBloc>().add(
+  //                   // TODO: Use EditProfilePage navigation instead
+  //                   const RefreshProfileEvent(),
+  //                 );
+  //               },
+  //               style: ElevatedButton.styleFrom(
+  //                 backgroundColor: Colors.green,
+  //                 padding: const EdgeInsets.symmetric(vertical: 14),
+  //                 shape: RoundedRectangleBorder(
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //               ),
+  //               child: const Text(
+  //                 'Save',
+  //                 style: TextStyle(
+  //                   fontSize: 16,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: Colors.white,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Expanded(
+  //             child: OutlinedButton(
+  //               onPressed: () {
+  //                 // Cancel edit mode - reload profile
+  //                 context.read<ProfileBloc>().add(const RefreshProfileEvent());
+  //               },
+  //               style: OutlinedButton.styleFrom(
+  //                 padding: const EdgeInsets.symmetric(vertical: 14),
+  //                 shape: RoundedRectangleBorder(
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //               ),
+  //               child: const Text(
+  //                 'Cancel',
+  //                 style: TextStyle(
+  //                   fontSize: 16,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: AppColors.darkAzure,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildEditField(String label, TextEditingController controller) {
     return Column(
@@ -785,60 +803,60 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
-    // Capture parent context so we can read providers located above this widget
-    final parentContext = context;
+  // void _showChangePasswordDialog(BuildContext context) {
+  //   // Capture parent context so we can read providers located above this widget
+  //   final parentContext = context;
 
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Change Password'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildEditField('Old Password', _oldPasswordController),
-                const SizedBox(height: 12),
-                _buildEditField('New Password', _newPasswordController),
-                const SizedBox(height: 12),
-                _buildEditField('Confirm Password', _confirmPasswordController),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Use parent context to access the ProfileBloc provider
-                parentContext.read<ProfileBloc>().add(
-                  ChangePasswordEvent(
-                    oldPassword: _oldPasswordController.text,
-                    newPassword: _newPasswordController.text,
-                    confirmPassword: _confirmPasswordController.text,
-                  ),
-                );
-                Navigator.of(dialogContext).pop();
-                _oldPasswordController.clear();
-                _newPasswordController.clear();
-                _confirmPasswordController.clear();
-              },
-              child: const Text('Change'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext dialogContext) {
+  //       return AlertDialog(
+  //         title: const Text('Change Password'),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               _buildEditField('Old Password', _oldPasswordController),
+  //               const SizedBox(height: 12),
+  //               _buildEditField('New Password', _newPasswordController),
+  //               const SizedBox(height: 12),
+  //               _buildEditField('Confirm Password', _confirmPasswordController),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(dialogContext).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               // Use parent context to access the ProfileBloc provider
+  //               parentContext.read<ProfileBloc>().add(
+  //                 ChangePasswordEvent(
+  //                   oldPassword: _oldPasswordController.text,
+  //                   newPassword: _newPasswordController.text,
+  //                   confirmPassword: _confirmPasswordController.text,
+  //                 ),
+  //               );
+  //               Navigator.of(dialogContext).pop();
+  //               _oldPasswordController.clear();
+  //               _newPasswordController.clear();
+  //               _confirmPasswordController.clear();
+  //             },
+  //             child: const Text('Change'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildErrorState(BuildContext context) {
     return Center(
@@ -872,31 +890,31 @@ class _TeacherProfileMobileState extends State<TeacherProfileMobile> {
     );
   }
 
-  void _submitChangePassword() {
-    final oldPassword = _oldPasswordController.text.trim();
-    final newPassword = _newPasswordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+  // void _submitChangePassword() {
+  //   final oldPassword = _oldPasswordController.text.trim();
+  //   final newPassword = _newPasswordController.text.trim();
+  //   final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Harap isi semua kolom')));
-      return;
-    }
+  //   if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(const SnackBar(content: Text('Harap isi semua kolom')));
+  //     return;
+  //   }
 
-    context.read<ProfileBloc>().add(
-      ChangePasswordEvent(
-        oldPassword: oldPassword,
-        newPassword: newPassword,
-        confirmPassword: confirmPassword,
-      ),
-    );
+  //   context.read<ProfileBloc>().add(
+  //     ChangePasswordEvent(
+  //       oldPassword: oldPassword,
+  //       newPassword: newPassword,
+  //       confirmPassword: confirmPassword,
+  //     ),
+  //   );
 
-    // Bersihkan controller setelah submit
-    _oldPasswordController.clear();
-    _newPasswordController.clear();
-    _confirmPasswordController.clear();
-  }
+  //   // Bersihkan controller setelah submit
+  //   _oldPasswordController.clear();
+  //   _newPasswordController.clear();
+  //   _confirmPasswordController.clear();
+  // }
 
   Color _getSubscriptionColor(String level) {
     if (level == 'Premium') return Colors.amber[700] ?? Colors.amber;

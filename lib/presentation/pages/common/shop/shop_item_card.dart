@@ -59,7 +59,7 @@ class _ShopItemCardState extends State<ShopItemCard> {
       _showErrorDialog(
         'Insufficient Points!\n\n'
         'You need ${avatarPrice.toInt()} points but only have ${user.points} points.\n'
-        'Complete more quizzes to earn points!',
+        '${user.role == 'student' ? 'Complete more quizzes to earn points!' : 'You can earn more points by having students take your quiz!'}',
       );
       return;
     }

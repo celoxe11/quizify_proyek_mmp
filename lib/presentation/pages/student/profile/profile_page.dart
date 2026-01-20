@@ -21,7 +21,6 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       create: (context) => ProfileBloc(
         authRepository: context.read<AuthenticationRepositoryImpl>(),
       )..add(const LoadProfileEvent()), // Load awal
-      
       // [FIX] Tambahkan BlocListener untuk AuthBloc
       child: BlocListener<AuthBloc, AuthState>(
         listener: (context, authState) {
