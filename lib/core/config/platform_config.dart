@@ -36,12 +36,18 @@ class PlatformConfig {
     switch (environment) {
       case 'prod':
       case 'production':
-        // TODO: Replace with your production URL
-        return 'https://api.yourapp.com/api';
+        if (kIsWeb) {
+          // Web: Use relative path (Firebase Hosting will rewrite to Cloud Function)
+          return '/api';
+        }
+        // Mobile: Use direct Cloud Function URL
+        return 'https://asia-southeast2-proyek-mmp-484808.cloudfunctions.net/api';
 
       case 'staging':
-        // TODO: Replace with your staging URL
-        return 'https://staging-api.yourapp.com/api';
+        if (kIsWeb) {
+          return '/api';
+        }
+        return 'https://asia-southeast2-proyek-mmp-484808.cloudfunctions.net/api';
 
       case 'dev':
       case 'development':
@@ -66,7 +72,7 @@ class PlatformConfig {
       if (localIp.isNotEmpty) {
         return 'http://$localIp:3000/api';
       }
-      
+
       // For emulator: use 10.0.2.2 (requires backend to listen on 0.0.0.0)
       // Note: If using ADB reverse (adb reverse tcp:3000 tcp:3000), you can use localhost
       return 'http://10.0.2.2:3000/api';
