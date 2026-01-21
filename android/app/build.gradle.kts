@@ -37,11 +37,23 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = "upload"
+            keyPassword = "Cella2117*"
+            storeFile = file("C:\\Users\\hp\\upload-keystore.jks")
+            storePassword = "Cella2117*"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // signingConfig = signingConfigs.getByName("debug")
+
+            // Pakai production key
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

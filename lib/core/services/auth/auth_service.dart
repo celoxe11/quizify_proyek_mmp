@@ -1,9 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  // Platform-aware GoogleSignIn configuration
+  // serverClientId is ONLY for mobile (Android/iOS), NOT for web
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
+    // Only provide serverClientId on mobile platforms
+    serverClientId: kIsWeb
+        ? null
+        : '770798800435-7fck3mg1vsk7rv212u2navj5ksl49aei.apps.googleusercontent.com',
+  );
 
   // Get current user
   User? get currentUser => _auth.currentUser;
