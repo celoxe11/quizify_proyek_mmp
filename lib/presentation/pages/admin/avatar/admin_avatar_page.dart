@@ -1,7 +1,6 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:quizify_proyek_mmp/core/constants/app_colors.dart';
 import 'package:quizify_proyek_mmp/data/models/avatar_model.dart';
 import 'package:quizify_proyek_mmp/data/repositories/admin_repository.dart';
@@ -113,7 +112,18 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
             ),
 
             Expanded(
-              child: BlocBuilder<AdminAvatarBloc, AdminAvatarState>(
+              child: BlocConsumer<AdminAvatarBloc, AdminAvatarState>(
+                listener: (context, state) {
+                  if (state is AvatarError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: Colors.redAccent,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
                 builder: (context, state) {
                   if (state is AvatarLoading)
                     return const Center(
@@ -121,7 +131,7 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
                         color: AppColors.darkAzure,
                       ),
                     );
-                  if (state is AvatarError)
+                  if (state is AvatarError && state is! AvatarLoaded)
                     return Center(child: Text("Error: ${state.message}"));
                   if (state is AvatarLoaded) {
                     final processedList = _applyFilterAndSort(state.allAvatars);
@@ -205,7 +215,7 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
     return filtered;
   }
 
-  // --- LOGIC DIALOG (DiceBear) ---
+  // --- LOGIC DIALOG (DiceBear + Image Upload) ---
   void _showAvatarDialog(
     BuildContext context, {
     AvatarModel? avatar,
@@ -220,13 +230,18 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
     String rarity = isEdit ? avatar.rarity : 'common';
 
     String selectedDiceBearStyle = 'adventurer';
-    bool isUsingDiceBear = false;
+    String imageSource = 'dicebear'; // 'dicebear', 'url', or 'upload'
+    XFile? selectedImage;
+    final ImagePicker picker = ImagePicker();
+
     Map<String, bool> diceBearFeatures = {
       'smile': false,
       'bigSmile': false,
       'bald': false,
       'glasses': false,
     };
+
+    bool isSaving = false;
 
     showDialog(
       context: context,
@@ -239,8 +254,29 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
           // Jika Desktop (>900), set lebar 700px. Jika Mobile, 90% dari layar.
           double dialogWidth = screenWidth > 900 ? 700 : screenWidth * 0.9;
 
+          Future<void> pickImage() async {
+            try {
+              final XFile? image = await picker.pickImage(
+                source: ImageSource.gallery,
+                maxWidth: 1024,
+                maxHeight: 1024,
+                imageQuality: 85,
+              );
+              if (image != null) {
+                setState(() {
+                  selectedImage = image;
+                  imageSource = 'upload';
+                });
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error picking image: $e')),
+              );
+            }
+          }
+
           void updateDiceBearUrl() {
-            if (!isUsingDiceBear) return;
+            if (imageSource != 'dicebear') return;
             final seed = nameCtrl.text.isEmpty ? 'seed' : nameCtrl.text;
             final config = _diceBearConfigs[selectedDiceBearStyle];
             final Map<String, List<String>> queryParams = {};
@@ -287,15 +323,18 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    buildAvatarPreview(urlCtrl.text, selectedImage: null),
+                    buildAvatarPreview(
+                      imageSource == 'upload' ? '' : (urlCtrl.text),
+                      selectedImage: selectedImage,
+                    ),
                     const SizedBox(height: 20),
 
-                    // --- Agar Layout Lebih Rapi di Desktop, Kita Bisa Pakai Row untuk Switch ---
-                    _buildSourceSwitch(
-                      isUsingDiceBear: isUsingDiceBear,
+                    // --- Source Selection (3 options) ---
+                    _buildSourceSelector(
+                      imageSource: imageSource,
                       onChanged: (val) => setState(() {
-                        isUsingDiceBear = val;
-                        if (val) updateDiceBearUrl();
+                        imageSource = val;
+                        if (val == 'dicebear') updateDiceBearUrl();
                       }),
                     ),
 
@@ -305,13 +344,13 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
                       "Avatar Name",
                       Icons.face_rounded,
                       onChanged: (val) {
-                        if (isUsingDiceBear)
+                        if (imageSource == 'dicebear')
                           setState(() => updateDiceBearUrl());
                       },
                     ),
                     const SizedBox(height: 12),
 
-                    if (isUsingDiceBear) ...[
+                    if (imageSource == 'dicebear') ...[
                       const SizedBox(height: 12),
                       InkWell(
                         onTap: () => _showStylePicker(
@@ -359,8 +398,51 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
                           });
                         },
                       ),
-                    ] else ...[
+                    ] else if (imageSource == 'url') ...[
                       _buildField(urlCtrl, "Image URL", Icons.link_rounded),
+                    ] else if (imageSource == 'upload') ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: isSaving ? null : pickImage,
+                              icon: const Icon(Icons.upload_file),
+                              label: Text(
+                                selectedImage == null
+                                    ? 'Choose Image'
+                                    : 'Change Image',
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.darkAzure,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 48),
+                              ),
+                            ),
+                          ),
+                          if (selectedImage != null) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () =>
+                                  setState(() => selectedImage = null),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+                              tooltip: 'Clear Selection',
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (selectedImage != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Selected: ${selectedImage!.name}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ],
 
                     const SizedBox(height: 12),
@@ -410,31 +492,71 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
                 child: const Text("Cancel"),
               ),
               ElevatedButton(
-                onPressed: () {
-                  final price = double.tryParse(priceCtrl.text) ?? 0;
-                  if (isEdit) {
-                    bloc.add(
-                      EditAvatarEvent(
-                        avatar.id,
-                        nameCtrl.text,
-                        urlCtrl.text,
-                        price,
-                        rarity,
-                      ),
-                    );
-                  } else {
-                    bloc.add(
-                      AddAvatarEvent(
-                        nameCtrl.text,
-                        urlCtrl.text,
-                        price,
-                        rarity,
-                      ),
-                    );
-                  }
-                  Navigator.pop(ctx);
-                },
-                child: const Text("Save Avatar"),
+                onPressed: isSaving
+                    ? null
+                    : () {
+                        final price = double.tryParse(priceCtrl.text) ?? 0;
+                        final fileToUpload = imageSource == 'upload'
+                            ? selectedImage
+                            : null;
+
+                        // Basic Validation
+                        if (nameCtrl.text.isEmpty || priceCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Name and Price are required'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (imageSource == 'upload' &&
+                            selectedImage == null &&
+                            urlCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please select an image to upload'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        setState(() => isSaving = true);
+
+                        if (isEdit) {
+                          bloc.add(
+                            EditAvatarEvent(
+                              avatar.id,
+                              nameCtrl.text,
+                              urlCtrl.text,
+                              price,
+                              rarity,
+                              file: fileToUpload,
+                            ),
+                          );
+                        } else {
+                          bloc.add(
+                            AddAvatarEvent(
+                              nameCtrl.text,
+                              urlCtrl.text,
+                              price,
+                              rarity,
+                              file: fileToUpload,
+                            ),
+                          );
+                        }
+                        Navigator.pop(ctx);
+                      },
+                child: isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text("Save Avatar"),
               ),
             ],
           );
@@ -446,161 +568,6 @@ class _AdminAvatarPageState extends State<AdminAvatarPage> {
 
 // --- EXTRACTED WIDGETS & HELPERS ---
 
-class _AvatarCard extends StatefulWidget {
-  final AvatarModel avatar;
-  const _AvatarCard({required this.avatar});
-
-  @override
-  State<_AvatarCard> createState() => _AvatarCardState();
-}
-
-class _AvatarCardState extends State<_AvatarCard> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    Color rarityColor;
-    switch (widget.avatar.rarity.toLowerCase()) {
-      case 'rare': rarityColor = Colors.blue; break;
-      case 'epic': rarityColor = Colors.purple; break;
-      case 'legendary': rarityColor = Colors.amber; break;
-      default: rarityColor = Colors.grey;
-    }
-
-    final displayImageUrl = widget.avatar.imageUrl.replaceAll('/svg', '/png');
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        transform: _isHovered ? (Matrix4.identity()..scale(1.03)) : Matrix4.identity(),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: rarityColor.withOpacity(_isHovered ? 0.2 : 0.05),
-              blurRadius: _isHovered ? 20 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          border: Border.all(
-              color: _isHovered ? rarityColor.withOpacity(0.5) : Colors.transparent,
-              width: 2),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Container(
-                            margin: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: rarityColor.withOpacity(0.05),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Image.network(
-                              displayImageUrl,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) =>
-                                  const Icon(Icons.broken_image, color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            children: [
-                              Text(widget.avatar.name,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: rarityColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(widget.avatar.rarity.toUpperCase(),
-                                    style: TextStyle(color: rarityColor, fontSize: 10, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                          Text("${widget.avatar.price.toInt()} Points",
-                              style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green, fontSize: 16)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Positioned(
-                top: 8, right: 8,
-                child: PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_horiz, color: Colors.grey),
-                  onSelected: (val) {
-                    final pageState = context.findAncestorStateOfType<_AdminAvatarPageState>();
-                    final bloc = context.read<AdminAvatarBloc>();
-                    if (val == 'edit') {
-                       if(pageState != null) pageState._showAvatarDialog(context, avatar: widget.avatar, bloc: bloc);
-                    }
-                    if (val == 'toggle') bloc.add(ToggleAvatarEvent(widget.avatar.id));
-                  },
-                  itemBuilder: (ctx) => [
-                    const PopupMenuItem(value: 'edit', child: Text("Edit")),
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: Text(
-                          widget.avatar.isActive ? "Archive" : "Restore",
-                          style: TextStyle(color: widget.avatar.isActive ? Colors.red : Colors.green)),
-                    ),
-                  ],
-                ),
-              ),
-              if (!widget.avatar.isActive)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.white.withOpacity(0.8),
-                    child: const Center(
-                      child: Chip(
-                        label: Text("ARCHIVED", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                        backgroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // --- HELPERS STATIC ---
 
 String _getStyleName(String id) {
@@ -611,26 +578,35 @@ String _getStyleName(String id) {
   return style['name']!;
 }
 
-Widget _buildSourceSwitch({
-  required bool isUsingDiceBear,
-  required Function(bool) onChanged,
+Widget _buildSourceSelector({
+  required String imageSource,
+  required Function(String) onChanged,
 }) {
   return Row(
     children: [
       Expanded(
         child: ChoiceChip(
-          label: const Text("Manual URL"),
-          selected: !isUsingDiceBear,
-          onSelected: (val) => onChanged(false),
+          label: const Text("DiceBear"),
+          selected: imageSource == 'dicebear',
+          onSelected: (val) => onChanged('dicebear'),
           selectedColor: AppColors.darkAzure.withOpacity(0.2),
         ),
       ),
       const SizedBox(width: 8),
       Expanded(
         child: ChoiceChip(
-          label: const Text("DiceBear API"),
-          selected: isUsingDiceBear,
-          onSelected: (val) => onChanged(true),
+          label: const Text("URL"),
+          selected: imageSource == 'url',
+          onSelected: (val) => onChanged('url'),
+          selectedColor: AppColors.darkAzure.withOpacity(0.2),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: ChoiceChip(
+          label: const Text("Upload"),
+          selected: imageSource == 'upload',
+          onSelected: (val) => onChanged('upload'),
           selectedColor: AppColors.darkAzure.withOpacity(0.2),
         ),
       ),

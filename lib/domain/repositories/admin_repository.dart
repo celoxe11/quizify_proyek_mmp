@@ -29,8 +29,21 @@ abstract class AdminRepository {
   Future<void> updateSubscriptionTier(int id, String name, double price);
   Future<List<TransactionModel>> fetchAllTransactions();
   Future<List<AvatarModel>> fetchAvatars();
-  Future<void> createAvatar(String name, String url, double price, String rarity, {XFile? file});
-  Future<void> updateAvatar(int id, String name, String url, double price, String rarity);
+  Future<void> createAvatar(
+    String name,
+    String url,
+    double price,
+    String rarity, {
+    XFile? file,
+  });
+  Future<void> updateAvatar(
+    int id,
+    String name,
+    String url,
+    double price,
+    String rarity, {
+    XFile? file,
+  });
   Future<void> toggleAvatarStatus(int id);
 
   Future<Map<String, dynamic>> saveQuizWithQuestions({

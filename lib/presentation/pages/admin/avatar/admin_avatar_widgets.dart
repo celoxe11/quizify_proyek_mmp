@@ -24,10 +24,14 @@ class AdminAvatarFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     Color getRarityColor(String rarity) {
       switch (rarity.toLowerCase()) {
-        case 'rare': return Colors.blue;
-        case 'epic': return Colors.purple;
-        case 'legendary': return Colors.amber;
-        default: return AppColors.darkAzure;
+        case 'rare':
+          return Colors.blue;
+        case 'epic':
+          return Colors.purple;
+        case 'legendary':
+          return Colors.amber;
+        default:
+          return AppColors.darkAzure;
       }
     }
 
@@ -40,7 +44,9 @@ class AdminAvatarFilterBar extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
-              children: ['All', 'Common', 'Rare', 'Epic', 'Legendary'].map((rarity) {
+              children: ['All', 'Common', 'Rare', 'Epic', 'Legendary'].map((
+                rarity,
+              ) {
                 final isSelected = selectedRarity == rarity;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -48,13 +54,20 @@ class AdminAvatarFilterBar extends StatelessWidget {
                     label: Text(rarity),
                     selected: isSelected,
                     onSelected: (val) => onRarityChanged(rarity),
-                    selectedColor: isSelected ? getRarityColor(rarity) : Colors.grey[100]!,
+                    selectedColor: isSelected
+                        ? getRarityColor(rarity)
+                        : Colors.grey[100]!,
                     backgroundColor: Colors.grey[100],
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : Colors.grey[600]!,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide.none,
+                    ),
                     showCheckmark: false,
                   ),
                 );
@@ -67,18 +80,36 @@ class AdminAvatarFilterBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Sorting by:", style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                Text(
+                  "Sorting by:",
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                ),
                 PopupMenuButton<String>(
                   onSelected: onSortChanged,
                   child: Row(
                     children: [
-                      Text(sortBy, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.darkAzure)),
-                      const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.darkAzure),
+                      Text(
+                        sortBy,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.darkAzure,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.darkAzure,
+                      ),
                     ],
                   ),
                   itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'Lowest Price', child: Text('Lowest Price')),
-                    const PopupMenuItem(value: 'Highest Price', child: Text('Highest Price')),
+                    const PopupMenuItem(
+                      value: 'Lowest Price',
+                      child: Text('Lowest Price'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'Highest Price',
+                      child: Text('Highest Price'),
+                    ),
                   ],
                 ),
               ],
@@ -114,10 +145,17 @@ class _AvatarCardState extends State<AvatarCard> {
   Widget build(BuildContext context) {
     Color rarityColor;
     switch (widget.avatar.rarity.toLowerCase()) {
-      case 'rare': rarityColor = Colors.blue; break;
-      case 'epic': rarityColor = Colors.purple; break;
-      case 'legendary': rarityColor = Colors.amber; break;
-      default: rarityColor = Colors.grey;
+      case 'rare':
+        rarityColor = Colors.blue;
+        break;
+      case 'epic':
+        rarityColor = Colors.purple;
+        break;
+      case 'legendary':
+        rarityColor = Colors.amber;
+        break;
+      default:
+        rarityColor = Colors.grey;
     }
 
     final displayImageUrl = widget.avatar.imageUrl.replaceAll('/svg', '/png');
@@ -128,7 +166,9 @@ class _AvatarCardState extends State<AvatarCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        transform: _isHovered ? (Matrix4.identity()..scale(1.03)) : Matrix4.identity(),
+        transform: _isHovered
+            ? (Matrix4.identity()..scale(1.03))
+            : Matrix4.identity(),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -140,8 +180,11 @@ class _AvatarCardState extends State<AvatarCard> {
             ),
           ],
           border: Border.all(
-              color: _isHovered ? rarityColor.withOpacity(0.5) : Colors.transparent,
-              width: 2),
+            color: _isHovered
+                ? rarityColor.withOpacity(0.5)
+                : Colors.transparent,
+            width: 2,
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
@@ -169,7 +212,10 @@ class _AvatarCardState extends State<AvatarCard> {
                             child: Image.network(
                               displayImageUrl,
                               fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.broken_image,
+                                color: Colors.grey,
+                              ),
                             ),
                           ),
                         ),
@@ -185,25 +231,45 @@ class _AvatarCardState extends State<AvatarCard> {
                         children: [
                           Column(
                             children: [
-                              Text(widget.avatar.name,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
+                              Text(
+                                widget.avatar.name,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               const SizedBox(height: 4),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: rarityColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Text(widget.avatar.rarity.toUpperCase(),
-                                    style: TextStyle(color: rarityColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  widget.avatar.rarity.toUpperCase(),
+                                  style: TextStyle(
+                                    color: rarityColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          Text("Rp ${widget.avatar.price.toInt()}",
-                              style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green, fontSize: 16)),
+                          Text(
+                            "${widget.avatar.price.toInt()} Points",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: Colors.green,
+                              fontSize: 16,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -211,7 +277,8 @@ class _AvatarCardState extends State<AvatarCard> {
                 ],
               ),
               Positioned(
-                top: 8, right: 8,
+                top: 8,
+                right: 8,
                 child: PopupMenuButton<String>(
                   icon: const Icon(Icons.more_horiz, color: Colors.grey),
                   onSelected: (val) {
@@ -223,8 +290,13 @@ class _AvatarCardState extends State<AvatarCard> {
                     PopupMenuItem(
                       value: 'toggle',
                       child: Text(
-                          widget.avatar.isActive ? "Archive" : "Restore",
-                          style: TextStyle(color: widget.avatar.isActive ? Colors.red : Colors.green)),
+                        widget.avatar.isActive ? "Archive" : "Restore",
+                        style: TextStyle(
+                          color: widget.avatar.isActive
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -235,7 +307,13 @@ class _AvatarCardState extends State<AvatarCard> {
                     color: Colors.white.withOpacity(0.8),
                     child: const Center(
                       child: Chip(
-                        label: Text("ARCHIVED", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                        label: Text(
+                          "ARCHIVED",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
                         backgroundColor: Colors.white,
                       ),
                     ),
@@ -252,12 +330,36 @@ class _AvatarCardState extends State<AvatarCard> {
 // --- HELPER UNTUK PREVIEW IMAGE (SHARED) ---
 Widget buildAvatarPreview(String imageUrl, {XFile? selectedImage}) {
   return Container(
-    height: 120, width: 120,
-    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.darkAzure.withOpacity(0.3))),
-    child: selectedImage != null 
-      ? ClipRRect(borderRadius: BorderRadius.circular(18), child: kIsWeb ? Image.network(selectedImage.path) : Image.file(File(selectedImage.path)))
-      : (imageUrl.isNotEmpty
-          ? ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.network(imageUrl.replaceAll('/svg', '/png'), errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40, color: Colors.grey)))
-          : const Icon(Icons.cloud_upload_rounded, size: 40, color: AppColors.darkAzure)),
+    height: 120,
+    width: 120,
+    decoration: BoxDecoration(
+      color: Colors.grey[200],
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: AppColors.darkAzure.withOpacity(0.3)),
+    ),
+    child: selectedImage != null
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: kIsWeb
+                ? Image.network(selectedImage.path)
+                : Image.file(File(selectedImage.path)),
+          )
+        : (imageUrl.isNotEmpty
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Image.network(
+                    imageUrl.replaceAll('/svg', '/png'),
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.broken_image,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  ),
+                )
+              : const Icon(
+                  Icons.cloud_upload_rounded,
+                  size: 40,
+                  color: AppColors.darkAzure,
+                )),
   );
 }

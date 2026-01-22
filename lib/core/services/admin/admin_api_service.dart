@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AdminApiService {
@@ -113,18 +114,23 @@ class AdminApiService {
     final response = await _dio.get('/api/admin/subscriptions');
     return response.data['data'];
   }
-  
- // UPDATE USER
-  Future<void> updateUser(String userId, {String? role, int? subscriptionId}) async {
+
+  // UPDATE USER
+  Future<void> updateUser(
+    String userId, {
+    String? role,
+    int? subscriptionId,
+  }) async {
     try {
       print("📡 Sending Update to Backend: Role=$role, SubID=$subscriptionId");
-      
+
       await _dio.put(
-        '/api/admin/users/$userId', 
+        '/api/admin/users/$userId',
         data: {
           // Pastikan key-nya persis dengan yang diminta Backend (req.body)
           if (role != null) 'role': role,
-          if (subscriptionId != null) 'subscription_id': subscriptionId, // <--- HARUS subscription_id
+          if (subscriptionId != null)
+            'subscription_id': subscriptionId, // <--- HARUS subscription_id
         },
       );
       print("✅ Update Success");
@@ -135,14 +141,14 @@ class AdminApiService {
   }
 
   // CREATE SUBSCRIPTION TIER
-  Future<void> createSubscription(String statusName, {required double price}) async {
+  Future<void> createSubscription(
+    String statusName, {
+    required double price,
+  }) async {
     try {
       await _dio.post(
         '/api/admin/subscriptions', // Endpoint backend Anda
-        data: {
-          'status': statusName, 
-          'price': price,
-        },
+        data: {'status': statusName, 'price': price},
       );
     } catch (e) {
       throw Exception("Gagal membuat subscription: $e");
@@ -150,14 +156,15 @@ class AdminApiService {
   }
 
   // UPDATE SUBSCRIPTION TIER
-  Future<void> updateSubscription(int id, String statusName, double price) async {
+  Future<void> updateSubscription(
+    int id,
+    String statusName,
+    double price,
+  ) async {
     try {
       await _dio.put(
         '/api/admin/subscriptions/$id', // Asumsi endpoint backend: PUT /subscriptions/:id
-        data: {
-          'status': statusName,
-          'price': price,
-        },
+        data: {'status': statusName, 'price': price},
       );
     } catch (e) {
       throw Exception("Gagal update subscription: $e");
@@ -168,7 +175,7 @@ class AdminApiService {
   Future<List<dynamic>> getAllTransactions() async {
     try {
       final response = await _dio.get('/api/admin/transactions');
-      
+
       // Handle response structure { data: [...] }
       if (response.data is Map && response.data['data'] != null) {
         return response.data['data'];
@@ -200,19 +207,30 @@ class AdminApiService {
         'price': price,
         'rarity': rarity,
         // Kirim URL jika ada (dan file tidak ada)
-        if (imageFile == null && imageUrl.isNotEmpty)
-          'image_url': imageUrl,
+        if (imageFile == null && imageUrl.isNotEmpty) 'image_url': imageUrl,
       });
 
       // 2. Jika ada File, masukkan ke FormData
       if (imageFile != null) {
-        formData.files.add(MapEntry(
-          'avatar_file', // <--- Pastikan nama field ini sama dengan di Backend (Multer)
-          await MultipartFile.fromFile(
-            imageFile.path,
-            filename: imageFile.path.split('/').last,
-          ),
-        ));
+        if (kIsWeb) {
+          final bytes = await imageFile.readAsBytes();
+          formData.files.add(
+            MapEntry(
+              'image_url',
+              MultipartFile.fromBytes(bytes, filename: imageFile.name),
+            ),
+          );
+        } else {
+          formData.files.add(
+            MapEntry(
+              'image_url',
+              await MultipartFile.fromFile(
+                imageFile.path,
+                filename: imageFile.path.split('/').last,
+              ),
+            ),
+          );
+        }
       }
 
       // 3. Kirim ke Backend
@@ -225,9 +243,49 @@ class AdminApiService {
     }
   }
 
+  Future<void> updateAvatar(
+    int id,
+    Map<String, dynamic> data, {
+    XFile? imageFile,
+  }) async {
+    try {
+      if (imageFile != null) {
+        // If updating with a new image file, use FormData
+        final formData = FormData.fromMap({
+          'name': data['name'],
+          'price': data['price'],
+          'rarity': data['rarity'],
+        });
 
-  Future<void> updateAvatar(int id, Map<String, dynamic> data) async {
-    await _dio.put('/api/admin/avatars/$id', data: data);
+        // Add the image file
+        if (kIsWeb) {
+          final bytes = await imageFile.readAsBytes();
+          formData.files.add(
+            MapEntry(
+              'image_url',
+              MultipartFile.fromBytes(bytes, filename: imageFile.name),
+            ),
+          );
+        } else {
+          formData.files.add(
+            MapEntry(
+              'image_url',
+              await MultipartFile.fromFile(
+                imageFile.path,
+                filename: imageFile.path.split('/').last,
+              ),
+            ),
+          );
+        }
+
+        await _dio.put('/api/admin/avatars/$id', data: formData);
+      } else {
+        // No file, just send JSON data
+        await _dio.put('/api/admin/avatars/$id', data: data);
+      }
+    } catch (e) {
+      throw Exception("Failed to update avatar: $e");
+    }
   }
 
   Future<void> toggleAvatarStatus(int id) async {

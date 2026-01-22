@@ -368,7 +368,13 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<void> createAvatar(String name, String url, double price, String rarity, {XFile? file}) async {
+  Future<void> createAvatar(
+    String name,
+    String url,
+    double price,
+    String rarity, {
+    XFile? file,
+  }) async {
     await apiService.createAvatar(
       name: name,
       imageUrl: url,
@@ -378,15 +384,21 @@ class AdminRepositoryImpl implements AdminRepository {
     );
   }
 
-
   @override
-  Future<void> updateAvatar(int id, String name, String url, double price, String rarity) async {
+  Future<void> updateAvatar(
+    int id,
+    String name,
+    String url,
+    double price,
+    String rarity, {
+    XFile? file,
+  }) async {
     await apiService.updateAvatar(id, {
       'name': name,
       'image_url': url,
       'price': price,
       'rarity': rarity,
-    });
+    }, imageFile: file);
   }
 
   @override

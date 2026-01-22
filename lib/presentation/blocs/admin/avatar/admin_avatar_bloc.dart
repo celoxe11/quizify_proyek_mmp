@@ -8,7 +8,6 @@ class AdminAvatarBloc extends Bloc<AdminAvatarEvent, AdminAvatarState> {
   final AdminRepository repo;
 
   AdminAvatarBloc(this.repo) : super(AvatarInitial()) {
-    
     // 1. LOAD DATA
     on<LoadAvatarsEvent>((event, emit) async {
       emit(AvatarLoading());
@@ -38,11 +37,17 @@ class AdminAvatarBloc extends Bloc<AdminAvatarEvent, AdminAvatarState> {
       }
     });
 
-
     // 3. EDIT AVATAR
     on<EditAvatarEvent>((event, emit) async {
       try {
-        await repo.updateAvatar(event.id, event.name, event.url, event.price, event.rarity);
+        await repo.updateAvatar(
+          event.id,
+          event.name,
+          event.url,
+          event.price,
+          event.rarity,
+          file: event.file,
+        );
         add(LoadAvatarsEvent());
       } catch (e) {
         emit(AvatarError("Gagal edit: $e"));
@@ -69,9 +74,11 @@ class AdminAvatarBloc extends Bloc<AdminAvatarEvent, AdminAvatarState> {
 
         // A. Filter Rarity
         if (event.rarity != 'All') {
-          results = results.where((a) => 
-            a.rarity.toLowerCase() == event.rarity.toLowerCase()
-          ).toList();
+          results = results
+              .where(
+                (a) => a.rarity.toLowerCase() == event.rarity.toLowerCase(),
+              )
+              .toList();
         }
 
         // B. Sort Price
@@ -82,10 +89,12 @@ class AdminAvatarBloc extends Bloc<AdminAvatarEvent, AdminAvatarState> {
         }
 
         // Emit state baru dengan list terfilter, tapi allAvatars tetap utuh
-        emit(AvatarLoaded(
-          allAvatars: currentState.allAvatars,
-          filteredAvatars: results,
-        ));
+        emit(
+          AvatarLoaded(
+            allAvatars: currentState.allAvatars,
+            filteredAvatars: results,
+          ),
+        );
       }
     });
   }
